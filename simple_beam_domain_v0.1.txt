@@ -1,0 +1,224 @@
+
+%just considering beams for now - ignoring robot
+
+Sorts:
+Object O with subsorts:
+- Beam B = {1..n}
+
+Inertial Fluents:
+-in_assembly(B)
+
+Statics?: % properties of beams in goal configuration
+-through(B1,B2)
+-in(B1,B2)
+-on(B1,B2)
+% not sure if this is a defined fluent?
+-capped(B1,B2,B3)
+
+Actions:
+-Add(B1)
+-
+
+Causal Laws:
+-add(B) causes in_assembly(B)
+
+State Constraints:
+% if both ends are covered by other beams the beam is capped
+- capped(B1, B2, B3) if in(B1, B2), in(B1, B3), B2!=B3 
+
+Executability Conditions:
+% cannot move fixed beams
+- impossible add(B) if in_assembly(B)
+
+% cannot add a beam if capping beams are already in the assembly
+- impossible add(B1) if in_assembly(B2), in_assembly(B3), capped(B1, B2, B3)
+
+% cannot add beams after beams which should pass through them
+- impossible add(B1) if in_assembly(B2), through(B2, B1)
+
+
+-------------------------
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% SPARC file for beam domain
+%% Author: MARK ROBSON
+%% Description: BEAM DOMAIN
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+#const numSteps = 12.
+
+sorts
+#beam = [d][1..13].
+#object = #beam.
+#boolean = {true, false}.
+#inertial_fluent = in_assembly(#beam) + supported(#beam).
+#fluent = #inertial_fluent.
+#step = 0..numSteps.
+#action = add(#beam).
+
+predicates
+val(#fluent, #boolean, #step).
+occurs(#action, #step).
+success().
+goal(#step).
+something_happened(#step).
+
+%statics
+fits_into(#beam, #beam).
+fits_through(#beam, #beam).
+is_capped_by(#beam, #beam, #beam).
+
+rules
+% casual rules
+val(in_assembly(B), true, I+1) :- occurs(add(B), I).
+
+% state constraints
+% define support - a beam can be supported if either of its ends can phsyically
+% connected to a beam already in the assembly.
+val(supported(B1), true, I) :- val(in_assembly(B2), true, I), fits_into(B1, B2).
+val(supported(B1), true, I) :- val(in_assembly(B2), true, I), fits_into(B2, B1).
+
+% define capped
+is_capped_by(B1, B2, B3) :- fits_into(B1,B2), fits_into(B1,B3), B2!=B3.
+is_capped_by(B1, B2, B3) :- is_capped_by(B1, B3, B2).
+
+% these rules govern legal interactions between beams
+% cant in-ception
+-fits_into(B1,B2) :- fits_into(B2,B1).
+-fits_through(B1,B2) :- fits_through(B2,B1).
+% through and in are mutually exclusive
+-fits_through(B1, B2) :- fits_into(B1, B2).
+-fits_into(B1, B2) :- fits_through(B1,B2).
+% beams cannot self intersect
+-fits_into(B1,B2) :- B1=B2.
+-fits_through(B1,B2) :- B1=B2.
+
+% executability conditions
+% cannot add beams already in assembly
+-occurs(add(B1), I) :- val(in_assembly(B1), true, I).
+% cannot add beam if both cap beams are already in place
+-occurs(add(B1), I) :- val(in_assembly(B3), true, I), val(in_assembly(B2), true, I), is_capped_by(B1, B2, B3), B3!=B2.
+% cannot add beam if another beam which needs to pass through the beam is alread in the assembly
+-occurs(add(B1), I) :- val(in_assembly(B2), true, I), fits_through(B2, B1).
+% cannot (should not) add a beam if it needs to have assembled beams place into it, unless it caps those beams
+-occurs(add(B1), I) :- val(in_assembly(B2), true, I), fits_into(B2,B1), -is_capped_by(B2,B1,B3).
+% cannot add a beam which would cap another beam if the beams to be capped are not yet in the assembly
+-occurs(add(B1), I) :- not val(in_assembly(B2), true, I), val(in_assembly(B3), true, I), is_capped_by(B2, B1, B3), B2!=B3.
+% cannot add a beam unless it fits into to another beam already in the assembly 
+% this constraint could be relaxed with suitable fixturing
+-occurs(add(B1), I) :- not val(supported(B1), true, I).
+
+%% Fluents can only have one value at a time...
+-val(F, V2, I) :- val(F, V1, I), V1!=V2.
+
+%inertia
+val(F, Y, I+1) :- #inertial_fluent(F),
+             	  val(F, Y, I),
+                  not -val(F, Y, I+1), I < numSteps.
+
+%% CWA for Actions
+-occurs(A,I) :- not occurs(A,I).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Planning and goal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Failure is not an option...
+success :- goal(I), I <= numSteps.
+:- not success. 
+
+%% Cannot stop executing actions, until goal achieved...
+occurs(A, I) | -occurs(A, I) :- not goal(I).
+
+%% Cannot have two actions happening concurrently
+-occurs(A2, I) :- occurs(A1, I), A1 != A2. 
+
+something_happened(I) :- occurs(A, I).
+
+:- not goal(I), not something_happened(I).
+   
+% goal description   
+goal(I) :- val(in_assembly(d6), true, I).
+
+% domain set up
+% always start with base beam in place
+val(in_assembly(d1), true, 0).
+
+% simple square (1)
+%fits_into(d2, d1).
+%fits_into(d3, d1).
+%fits_into(d3, d4).
+%fits_into(d2, d4).
+
+% criss cross (4)
+%fits_into(d4, d1).
+%fits_into(d6, d1).
+%fits_into(d5, d1).
+%fits_through(d5, d3).
+%fits_into(d3, d4).
+%fits_into(d3, d6).
+%fits_into(d5, d2).
+%fits_into(d4, d2).
+%fits_into(d6, d2).
+
+% example 6
+%fits_into(d4, d1).
+%fits_into(d6, d1).
+%fits_into(d5, d1).
+%fits_through(d5, d3).
+%fits_into(d3, d4).
+%fits_into(d3, d6).
+%fits_into(d5, d2).
+%fits_into(d4, d2).
+%fits_into(d6, d2).
+%fits_into(d7, d6). %d7 is additional diagonal
+%fits_into(d7, d1).
+%fits_through(d3, d7).
+
+% example 7 -- too many answersets!
+fits_into(d2, d1).
+fits_into(d2, d6).
+fits_through(d2, d11).
+
+fits_into(d3, d1).
+fits_into(d3, d7).
+fits_through(d3, d11).
+
+fits_into(d4, d1).
+fits_into(d4, d7).
+
+fits_into(d5, d1).
+fits_into(d5, d6).
+
+fits_into(d7, d2).
+fits_into(d7, d5).
+
+fits_into(d8, d1).
+fits_into(d8, d6).
+
+fits_into(d9, d5).
+fits_into(d9, d8).
+fits_through(d9, d12).
+
+fits_into(d10, d16).
+fits_into(d10, d2).
+
+fits_into(d11, d16).
+
+fits_into(d12, d6).
+fits_into(d12, d8).
+
+fits_into(d13, d6).
+fits_into(d13, d15).
+
+fits_into(d14, d6).
+fits_into(d14, d15).
+
+fits_into(d15, d2).
+fits_into(d15, d5).
+
+fits_into(d16, d1).
+fits_into(d16, d6).
+
+
+display
+occurs.

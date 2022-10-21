@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<assembly>
+    <component beam="beam7" base="True"/>
+    <component beam="beam4" />
+    <component beam="beam5" />
+    <component beam="beam8" />
+    <!-- vertical internal beams -->
+    <component beam="beam1" />
+    <component beam="beam2" />
+    <component beam="beam3" />
+
+    <connection name="C1">
+        <element component="beam4" joint="J4-1" />
+        <element component="beam7" joint="J7-1" />
+    </connection>
+    <connection name="C2">
+        <element component="beam5" joint="J5-1" />
+        <element component="beam7" joint="J7-5" />
+    </connection>
+    <connection name="C3">
+        <element component="beam4" joint="J4-3" />
+        <element component="beam8" joint="J8-1" />
+    </connection>
+    <connection name="C4">
+        <element component="beam5" joint="J5-3" />
+        <element component="beam8" joint="J8-5" />
+    </connection>
+
+    <connection name="C5">
+        <element component="beam1" joint="J1-3" />
+        <element component="beam8" joint="J8-2" />
+    </connection>
+    <connection name="C6">
+        <element component="beam1" joint="J1-1" />
+        <element component="beam7" joint="J7-2" />
+    </connection>
+
+    <connection name="C7">
+        <element component="beam2" joint="J2-3" />
+        <element component="beam8" joint="J8-3" />
+    </connection>
+    <connection name="C8">
+        <element component="beam2" joint="J2-1" />
+        <element component="beam7" joint="J7-3" />
+    </connection>
+
+    <connection name="C9">
+        <element component="beam3" joint="J3-3" />
+        <element component="beam8" joint="J8-4" />
+    </connection>
+    <connection name="C10">
+        <element component="beam3" joint="J3-1" />
+        <element component="beam7" joint="J7-4" />
+    </connection>
+</assembly>

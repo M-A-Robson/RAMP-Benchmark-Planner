@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<assembly>
+    <!-- outer horizontal beams -->
+    <component beam="beam7" base="True"/>
+    <component beam="beam8" />
+    <!-- outer vertical beams -->
+    <component beam="beam4" />
+    <component beam="beam5" />
+    <!-- internal vertical beams -->
+    <component beam="beam1" />
+    <component beam="beam2" />
+    <component beam="beam3" />
+    <!-- central horizontal beam-->
+    <component beam="beam9" />
+    <!-- outer ring connections -->
+    <connection name="C1">
+        <element component="beam4" joint="J4-1" />
+        <element component="beam7" joint="J7-1" />
+    </connection>
+    <connection name="C2">
+        <element component="beam5" joint="J5-1" />
+        <element component="beam7" joint="J7-5" />
+    </connection>
+    <connection name="C3">
+        <element component="beam4" joint="J4-3" />
+        <element component="beam8" joint="J8-1" />
+    </connection>
+    <connection name="C4">
+        <element component="beam5" joint="J5-3" />
+        <element component="beam8" joint="J8-5" />
+    </connection>
+    <!--inner vertical connections to outer ring-->
+    <connection name="C5">
+        <element component="beam1" joint="J1-3" />
+        <element component="beam8" joint="J8-2" />
+    </connection>
+    <connection name="C6">
+        <element component="beam1" joint="J1-1" />
+        <element component="beam7" joint="J7-2" />
+    </connection>
+    <connection name="C7">
+        <element component="beam2" joint="J2-3" />
+        <element component="beam8" joint="J8-3" />
+    </connection>
+    <connection name="C8">
+        <element component="beam2" joint="J2-1" />
+        <element component="beam7" joint="J7-3" />
+    </connection>
+    <connection name="C9">
+        <element component="beam3" joint="J3-3" />
+        <element component="beam8" joint="J8-4" />
+    </connection>
+    <connection name="C10">
+        <element component="beam3" joint="J3-1" />
+        <element component="beam7" joint="J7-4" />
+    </connection>
+    <!--conenctions between central horizontal and vertical beams-->
+    <connection name="C11">
+        <element component="beam9" joint="J9-1" />
+        <element component="beam4" joint="J4-2" />
+    </connection>
+    <connection name="C12">
+        <element component="beam9" joint="J9-5" />
+        <element component="beam5" joint="J5-2" />
+    </connection>
+    <!--inner verts-->
+    <connection name="C13">
+        <element component="beam9" joint="J9-2" />
+        <element component="beam1" joint="J1-2" />
+    </connection>
+    <connection name="C14">
+        <element component="beam9" joint="J9-3" />
+        <element component="beam2" joint="J2-2" />
+    </connection>
+    <connection name="C15">
+        <element component="beam9" joint="J9-4" />
+        <element component="beam3" joint="J3-2" />
+    </connection>
+
+</assembly>
