@@ -1,11 +1,3 @@
-######################################
-# Copyright MTC 2022
-# Author: Mark Robson
-# Contact: mark.robson@the-mtc.org
-# Description: Experiments in automatic layout gerneration
-# from xml files for ORI-MTC beam assembly benchmark tasks
-#######################################
-
 from __future__ import annotations
 from dataclasses import dataclass
 from email.mime import base

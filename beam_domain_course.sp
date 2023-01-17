@@ -1,43 +1,3 @@
-
-%just considering beams for now - ignoring robot
-
-Sorts:
-Object O with subsorts:
-- Beam B = {1..n}
-
-Inertial Fluents:
--in_assembly(B)
-
-Statics?: % properties of beams in goal configuration
--through(B1,B2)
--in(B1,B2)
--on(B1,B2)
-% not sure if this is a defined fluent?
--capped(B1,B2,B3)
-
-Actions:
--Add(B1)
-
-Causal Laws:
--add(B) causes in_assembly(B)
-
-State Constraints:
-% if both ends are covered by other beams the beam is capped
-- capped(B1, B2, B3) if in(B1, B2), in(B1, B3), B2!=B3 
-
-Executability Conditions:
-% cannot move fixed beams
-- impossible add(B) if in_assembly(B)
-
-% cannot add a beam if capping beams are already in the assembly
-- impossible add(B1) if in_assembly(B2), in_assembly(B3), capped(B1, B2, B3)
-
-% cannot add beams after beams which should pass through them
-- impossible add(B1) if in_assembly(B2), through(B2, B1)
-
-
--------------------------
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% SPARC file for beam domain
 %% Author: MARK ROBSON
@@ -143,81 +103,10 @@ goal(I) :- val(in_assembly(d6), true, I).
 val(in_assembly(d1), true, 0).
 
 % simple square (1)
-%fits_into(d2, d1).
-%fits_into(d3, d1).
-%fits_into(d3, d4).
-%fits_into(d2, d4).
-
-% criss cross (4)
-%fits_into(d4, d1).
-%fits_into(d6, d1).
-%fits_into(d5, d1).
-%fits_through(d5, d3).
-%fits_into(d3, d4).
-%fits_into(d3, d6).
-%fits_into(d5, d2).
-%fits_into(d4, d2).
-%fits_into(d6, d2).
-
-% example 6
-%fits_into(d4, d1).
-%fits_into(d6, d1).
-%fits_into(d5, d1).
-%fits_through(d5, d3).
-%fits_into(d3, d4).
-%fits_into(d3, d6).
-%fits_into(d5, d2).
-%fits_into(d4, d2).
-%fits_into(d6, d2).
-%fits_into(d7, d6). %d7 is additional diagonal
-%fits_into(d7, d1).
-%fits_through(d3, d7).
-
-% example 7 -- too many answersets!
 fits_into(d2, d1).
-fits_into(d2, d6).
-fits_through(d2, d11).
-
 fits_into(d3, d1).
-fits_into(d3, d7).
-fits_through(d3, d11).
-
-fits_into(d4, d1).
-fits_into(d4, d7).
-
-fits_into(d5, d1).
-fits_into(d5, d6).
-
-fits_into(d7, d2).
-fits_into(d7, d5).
-
-fits_into(d8, d1).
-fits_into(d8, d6).
-
-fits_into(d9, d5).
-fits_into(d9, d8).
-fits_through(d9, d12).
-
-fits_into(d10, d16).
-fits_into(d10, d2).
-
-fits_into(d11, d16).
-
-fits_into(d12, d6).
-fits_into(d12, d8).
-
-fits_into(d13, d6).
-fits_into(d13, d15).
-
-fits_into(d14, d6).
-fits_into(d14, d15).
-
-fits_into(d15, d2).
-fits_into(d15, d5).
-
-fits_into(d16, d1).
-fits_into(d16, d6).
-
+fits_into(d3, d4).
+fits_into(d2, d4).
 
 display
 occurs.
