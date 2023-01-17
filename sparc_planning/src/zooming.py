@@ -4,16 +4,6 @@ from typing import List
 from dataclasses import dataclass
 import re
 from al_structures import ActionLangSysDesc, SortType, BasicSort, SuperSort, Func, ActionInstance
-# exctract action executability conditions by
-# finding rules of format "-occurs(action( ..."
-# in the domain description DL eg:
-# -occurs(add(B1), I) :- val(in_assembly(B1), true, I).
-# -occurs(add(B1), I) :- val(in_assembly(B3), true, I), val(in_assembly(B2), true, I), is_capped_by(B1, B2, B3), B3!=B2.
-# -occurs(add(B1), I) :- val(in_assembly(B2), true, I), fits_through(B2, B1).
-# -occurs(add(B1), I) :- val(in_assembly(B2), true, I), fits_into(B2,B1), -is_capped_by(B2,B1,B3).
-# -occurs(add(B1), I) :- not val(in_assembly(B2), true, I), val(in_assembly(B3), true, I), is_capped_by(B2, B1, B3), B2!=B3.
-# -occurs(add(B1), I) :- not val(supported(B1), true, I).
-
 
 # can find each action from answer set by displaying
 # occurs. and extract by timestep example result:
@@ -78,9 +68,13 @@ def zoom(s1:List[str], s2:List[str], aH:ActionInstance, DH:ActionLangSysDesc, ):
     # 13.2
     # functions in s1 or s2 but not both
     funcs = {*s1}.difference({*s2}).union({*s2}.difference({*s1}))
-    # extract object_instances from funcs using string splitting
-    # expects format 'foo(x1,x2,...xn)' with objects x1,x2,..xn
     for func in funcs:
+        # extract functions from holds(func(x1,x2..xn),step) statements
+        ret = re.search('holds\(.+\(.+\),', func)
+        if ret:
+            func = ret.group()[6:-1]
+        # extract object_instances from funcs using string splitting
+        # expects format 'foo(x1,x2,...xn)' with objects x1,x2,..xn
         for f in re.split('\(|\)|\,', func)[1:-1]:
             relObConH.add(f)
         
@@ -148,23 +142,78 @@ def zoom(s1:List[str], s2:List[str], aH:ActionInstance, DH:ActionLangSysDesc, ):
     
     print('Relevant Sorts: ', sorts_DHT)
     
-    #TODO
-    #!  The domain attributes and actions of ΣH(T) are those of ΣH restricted to the basic sorts of ΣH(T), 
-    #!  and the axioms of DH(T) are restrictions of axioms of DH to ΣH(T).
+    # The domain attributes and actions of ΣH(T) are those of ΣH restricted to the basic sorts of ΣH(T)
+    new_inertial_fluents = []
+    for ifluent in DH.inertial_fluents:
+        if {*ifluent.sorts}.issubset(sorts_DHT):
+            new_inertial_fluents.append(ifluent)
+
+    new_defined_fluents = []
+    for dfluent in DH.defined_fluents:
+        if {*dfluent.sorts}.issubset(sorts_DHT):
+            new_defined_fluents.append(dfluent)
+
+    new_actions = []
+    for act in DH.actions:
+        if {*act.sorts}.issubset(sorts_DHT):
+            new_actions.append(act)
+
+    # the axioms of DH(T) are restrictions of axioms of DH to ΣH(T).
+    new_state_contraints = []
+    for stcon in DH.state_constraints:
+        if {*stcon.object_instances.values()}.issubset(sorts_DHT):
+            new_state_contraints.append(stcon)
+
+    new_statics = []
+    for stat in DH.statics:
+        if {*stat.sorts}.issubset(sorts_DHT):
+            new_statics.append(stat)
+
+    # we also need to refine goal and domain details as otherwise objects referenced
+    # may not be defined in sparc file leading to failures in planning. For example
+    # if course goal is location(block1,kitchen), location(block2,study). We don't 
+    # care about block1 or the kitchen whilst moving block2.
     
+    new_domain_setup = []
+    # domain setup is made up of strings refering to specific objects (history) 
+    for s in DH.domain_setup:
+        # check if all objects are relevant to this transistion
+        obs = {}
+        func = s
+        ret = re.search('holds\(.+\(.+\),', s)
+        if ret:
+            func = ret.group()[6:-1]
+        for f in re.split('\(|\)|\,', func)[1:-1]:
+            obs.add(f)
+        if obs.issubset(relObConH):
+            new_domain_setup.append(s)
+    
+    # goals
+    new_goals = []
+    for g in DH.goal_description:
+        if {*g.object_instances}.issubset(relObConH):
+            new_goals.append(g)
+
+    # create new course resolution system description
     DHT = ActionLangSysDesc(
             sorts = sorts_DHT,
-            inertial_fluents = ,#TODO
-            actions = , #TODO List[Action]
-            domain_setup = DH.domain_setup , # todo domain setup as s1? List[str]
-            goal_description = DH.goal_description , #todo goal remains the same?
-            defined_fluents  = , #TODO : Optional[List[Func]]
-            statics  = , #TODO : Optional[List[Func]]
-            state_constraints = , #TODO  : Optional[List[StateConstraint]]
+            inertial_fluents = new_inertial_fluents,
+            actions = new_actions, # List[Action]
+            domain_setup = new_domain_setup , # List[str]
+            goal_description = new_goals , # List[GoalDescription]
+            defined_fluents  = new_defined_fluents, # Optional[List[Func]]
+            statics  = new_statics, # Optional[List[Func]]
+            state_constraints = new_state_contraints, # Optional[List[StateConstraint]]
             constants = DH.constants ,# constants remain the same  : Optional[List[Constant]]
             display_hints = None,
             planning_steps = 1,
         )
+
+    #!
+    #TODO
+    #!
+    #! extract fine resolution description for this signature
+    
         
 dh = SparcProg.load(r'E:\linux_folder_backup_22-12-22\MTCORICollab\beam_domain_course.sp')        
 zoom(s1,s2,a, dh)

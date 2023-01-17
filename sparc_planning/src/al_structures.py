@@ -285,7 +285,16 @@ class ExecutabilityCondition:
                     s += f"{cond.name}({','.join(self.condition_object_instance_names[i])})"
             condition_strings.append(s)
         return f"-occurs({self.action.name}({','.join(self.action_object_instance_names)}), I) :- {', '.join(condition_strings)}."
-    
+
+@dataclass
+class GoalDefinition:
+    fluent:Func
+    object_instances:List[str]
+    value:bool
+
+    def to_sparc(self) -> str:
+        return f"holds({self.fluent.name}({','.join(self.object_instances)}), {str(self.value).lower()}, I)"
+
 @dataclass
 class Action:
     """simple class for grouping actions with their causal laws and executability conditions"""
@@ -312,7 +321,7 @@ class ActionLangSysDesc:
     inertial_fluents : List[Func]
     actions : List[Action]
     domain_setup : List[str]
-    goal_description : List[str]
+    goal_description : List[GoalDefinition]
     defined_fluents : Optional[List[Func]] = None
     statics : Optional[List[Func]] = None
     state_constraints : Optional[List[StateConstraint]] = None
@@ -374,8 +383,13 @@ class ActionLangSysDesc:
                 'something_happened(I) :- occurs(A, I).', #record what has happened
                 ':- not goal(I), not something_happened(I).' #if goal isnt reached do something
                 ]
+        
         # goal
-        rules += self.goal_description
+        goal = 'goal(I) :- '
+        goal_items = [item.to_sparc() for item in self.goal_description]
+        goal += f"{' + '.join(goal_items)}."
+        rules.append(goal)
+
         # domain setup
         rules += self.domain_setup
         return SparcProg(sparc_constants, sparc_sorts, sparc_predicates, rules, self.display_hints)
@@ -408,7 +422,7 @@ def test():
         inertial_fluents=[in_hand],
         actions=[A],
         domain_setup=['holds(in_hand(rob0,textbook), true, 0).'],
-        goal_description=['goal(I) :- holds(in_hand(rob0,textbook),false,I).'],
+        goal_description=GoalDefinition(in_hand,['rob0','textbook'],False),
         display_hints=['occurs.'], planning_steps=1)
 
     ASP = ALD.to_sparc_program()
