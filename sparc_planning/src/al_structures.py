@@ -81,6 +81,7 @@ class Relation(Enum):
     LESS_OR_EQUAL = auto()
     EQUAL = auto()
     NOT_EQUAL = auto()
+    IS_OF_SORT = auto()
 
 @dataclass
 class Property:
@@ -88,6 +89,9 @@ class Property:
     object2:str
     relation:Relation
     def to_string(self):
+        # a bit clunky but works for now
+        if rel == Relation.IS_OF_SORT:
+            return f'#{self.object1}({self.object2})'
         rel = {
         Relation.GREATER_THAN : '>',
         Relation.GREATER_OR_EQUAL : '>=',
