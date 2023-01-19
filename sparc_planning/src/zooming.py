@@ -2,23 +2,25 @@ import copy
 from typing import List, Tuple
 import re
 from al_structures import ActionLangSysDesc, SortType, BasicSort, SuperSort, Func, ActionInstance
+from sparc_io import SparcState
 
-def extract_state_transition(states:List[List[str]], occurs:List[str], DH:ActionLangSysDesc, step:int = 0) -> Tuple[List[str], List[str], ActionInstance]:
+def extract_state_transition(states:List[SparcState], occurs:List[str], DH:ActionLangSysDesc, step:int = 0) -> Tuple[SparcState, SparcState, ActionInstance]:
     """seperates state data for before and after action and creates ActionInstance object for transition aH.
     assumes single action at each timestep.
 
     Args:
-        states (List[List[str]]): state data from answer set
+        states (List[SparcState]): state data from answer set
         occurs (List[str]): action predicitons from answer set
         DH (ActionLangSysDesc): action language (at action resolution) definition of system
         step (int, optional): which transition in occurs if len(occurs)>1. Defaults to 0.
     Returns:
-        Tuple[List[str], List[str], ActionInstance]: zoom inputs
+        Tuple[SparcState, SparcState, ActionInstance]: zoom inputs s0,s1,aH
     """
-    occ = [occ for occ in occurs if int(occ[-2])==step][0] # assumes single action at each timestep
+    occ = [oc for oc in occurs if int(oc[-2])==step] 
     if len(occ) == 0:
         raise ValueError(f'no action in set {occurs} for time_step {step}')
-    action_full_text = re.search('occurs\(.+\(.+\),', occ).group()[7:-1]
+    # assumes single action at each timestep (occ[0] because list has a single element)
+    action_full_text = re.search('occurs\(.+\(.+\),', occ[0]).group()[7:-1]
     action_name, *object_constants = re.split('\(|\)|\,', action_full_text)[:-1]
     for ac in DH.actions:
         if ac.action_def.name == action_name:
@@ -28,26 +30,20 @@ def extract_state_transition(states:List[List[str]], occurs:List[str], DH:Action
     state1 = None
     #find state data
     for state in states:
-        timestamped_string = re.search('holds\(.+\(.+\),.+,[0-9]+\)',' '.join(state))
-        if not timestamped_string:
-            timestamped_string = re.search('val\(.+\(.+\),.+,[0-9]+\)',' '.join(state))
-        if not timestamped_string:    
-            raise ValueError(f"Could not find pattern 'x(fluent(x1,x2..xn),bool,t)' in state for either x='holds' or x='val'")
-        t = int(re.findall('[0-9]+', timestamped_string.group())[-1])
-        if t == step:
+        if state.time_step == step:
             state0 = state
-        if t == step+1:
+        if state.time_step == step+1:
             state1 = state
     if isinstance(state0, type(None)) or isinstance(state1, type(None)): 
-        raise ValueError(f'Could not finds state data for both timestep {step} and {step+1}')
+        raise ValueError(f'Could not find state data for both timestep {step} and {step+1}')
 
     return state0, state1, aH
 
-def zoom(s1:List[str], s2:List[str], aH:ActionInstance, DLR:ActionLangSysDesc):
+def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DLR:ActionLangSysDesc):
     """returns a zoomed system description for the transition aH
     Args:
-        s1 (List[str]): coarse resolution state (answer set) before transition
-        s2 (List[str]): coarse resolution state (answer set) after transition
+        s1 (SparcState): coarse resolution state (answer set) before transition
+        s2 (SparcState): coarse resolution state (answer set) after transition
         aH (ActionInstance): coarse resolution action instance causing the transition 
         DLR (ActionLangSysDesc): fine resolution domain description which
                 is a refinement of the coarse resolution domain DH.
@@ -58,14 +54,19 @@ def zoom(s1:List[str], s2:List[str], aH:ActionInstance, DLR:ActionLangSysDesc):
     # 13.1 start with set of object constants from aH
     relObConH = {*aH.object_constants}
     
+    # states strings are timestamped so this needs to be fixed for comparison
+    s1flu = [f1[:-2] for f1 in s1.fluents]
+    s2flu = [f2[:-2] for f2 in s2.fluents]
+    # statics dont change so can be ignored  
     # 13.2
     # functions in s1 or s2 but not both
-    funcs = {*s1}.difference({*s2}).union({*s2}.difference({*s1}))
+    funcs = {*s1flu}.difference({*s2flu}).union({*s2flu}.difference({*s1flu}))
     for func in funcs:
         # extract functions from holds(func(x1,x2..xn),step) statements
         ret = re.search('holds\(.+\(.+\),', func)
-        if ret:
-            func = ret.group()[6:-1]
+        if not ret:
+            ret = re.search('val\(.+\(.+\),', func)
+        func = ret.group()[6:-1]
         # extract object_instances from funcs using string splitting
         # expects format 'foo(x1,x2,...xn)' with objects x1,x2,..xn
         for f in re.split('\(|\)|\,', func)[1:-1]:

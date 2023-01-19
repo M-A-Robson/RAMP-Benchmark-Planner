@@ -1,9 +1,11 @@
+from __future__ import annotations
 from typing import Dict, List, Optional, Union
 from dataclasses import dataclass
 from enum import Enum, auto
-from abc import ABC
-
 from sparc_io import SparcProg
+import logging
+
+logger = logging.getLogger()
 
 @dataclass(frozen=True)
 class Constant:
@@ -40,7 +42,7 @@ class Sort:
             return f"#{self.name} = {' + '.join(self.instances)}."
 
 class BasicSort(Sort):
-    def __init__(self, name:str, instances:list[str]):
+    def __init__(self, name:str, instances:List[str]):
         super().__init__(name, instances, SortType.BASIC)
 
 class RangeSort(Sort):
@@ -318,7 +320,7 @@ class ActionInstance:
     action:Action
     object_constants:List[str]
     timestep:int
-
+    
 @dataclass
 class ActionLangSysDesc:
     sorts : List[Sort]
@@ -332,7 +334,95 @@ class ActionLangSysDesc:
     constants : Optional[List[Constant]] = None
     display_hints: Optional[List[str]] = None
     planning_steps: int = 3
-    
+
+    def add(self,prog:ActionLangSysDesc) -> None:
+        """combine another ALSD into this object"""
+        # add sorts
+        for sort in prog.sorts:
+            added = False
+            for s in self.sorts:
+                # new prog has sort of same name as existing sort
+                if s.name == sort.name:
+                    if s.sort_type != sort.sort_type:
+                        raise ValueError(f'new sort {sort.name} is of type {sort.sort_type}, but this sort already exisits with type {s.sort_type}')
+                    s.instances = [*{*s.instances}.union({*sort.instances})] # update instances
+                    added = True
+                if not added:
+                    # add new sort
+                    self.sorts.append(sort)
+
+        #inertial fluents
+        i_names = [inertial_fluent.name for inertial_fluent in self.inertial_fluents]
+        for iflu in prog.inertial_fluents:
+            if iflu.name in i_names:
+                logger.warn("Ignoring fluent '{iflu.name}' --> fluent with this name is already defined")
+            else:
+                self.inertial_fluents.append(iflu)
+
+        #defined fluents are optional
+        if not self.defined_fluents:
+            self.defined_fluents = prog.defined_fluents
+        else:
+            d_names = [d_fluent.name for d_fluent in self.d_fluents]
+            for dflu in prog.defined_fluents:
+                if dflu.name in d_names:
+                    logger.warn("Ignoring fluent '{dflu.name}' --> fluent with this name is already defined")
+                else:
+                    self.defined_fluents.append(dflu)
+
+        #constants are optional
+        if not self.constants:
+            self.constants = prog.constants
+        else:
+            c_names = [c.name for c in self.constants]
+            for cons in prog.constants:
+                if cons.name in c_names:
+                    logger.warn("Ignoring constant '{cons.name}' --> constant with this name is already defined")
+                else:
+                    self.constants.append(cons)
+
+        #statics are optional
+        if not self.statics:
+            self.statics = prog.statics
+        else:
+            s_names = [s.name for s in self.statics]
+            for stat in prog.statics:
+                if stat.name in s_names:
+                    logger.warn("Ignoring static '{stat.name}' --> static with this name is already defined")
+                else:
+                    self.statics.append(stat)
+        
+        # display_hints: Optional[List[str]] = None
+        self.display_hints = [*{*self.display_hints}.union({*prog.display_hints})]
+
+        # actions : List[Action]
+        for act in prog.actions:
+            a_names = [a.action_def.name for a in self.actions]
+            if act.action_def.name in a_names:
+                logger.warn("Ignoring action '{act.action_def.name}' --> action with this name is already defined")
+                continue
+            self.actions.append(act)
+
+        # domain_setup : List[str]
+        self.domain_setup = [*{*self.domain_setup}.union({*prog.domain_setup})]
+        
+        # goal_description : List[GoalDefinition]
+        goals_as_str = [g.to_sparc() for g in self.goal_description]
+        for goal in prog.goal_description:
+            if goal.to_sparc() in goals_as_str:
+                continue
+            self.goal_description.append(goal)
+
+        # state_constraints : Optional[List[StateConstraint]] = None
+        if not self.state_constraints:
+            self.state_constraints = prog.state_constraints
+        else:
+            const_as_str = [c.to_sparc() for c in self.state_constraints]
+            for p in prog.state_constraints:
+                if p.to_sparc in const_as_str:
+                    continue
+                self.state_constraints.append(p)      
+
     def to_sparc_program(self) -> SparcProg:
         # create constants
         sparc_constants = [f'#const numSteps = {self.planning_steps}.']

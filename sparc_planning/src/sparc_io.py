@@ -6,6 +6,15 @@ from typing import List, Tuple
 from sortedcollections import OrderedSet
 import re
 
+@dataclass(frozen=True)
+class SparcState:
+    statics : List[str] # things that don't change
+    fluents : List[str] # things that change
+    occurs : List[str] # planned actions at this timestep
+    history : List[str] # things that actually happened at this timestep(hpd(x))
+    goal_reached : bool
+    time_step : int
+
 @dataclass
 class SparcProg:
     constants: List[str] = field(default_factory=list)
@@ -131,7 +140,6 @@ class SparcProg:
                 
 
 # helper functions
-    
 def collect_sparc_files(files:list[str]) -> SparcProg:
     """fuse together multiple .sp files into one python object"""
     data = []
@@ -156,49 +164,46 @@ def parse_sparc_ouput(output_file:str='sparc.out') -> list[list[str]]:
             a_s[-1] = a_s[-1][:-2]
     return a_sets
 
-def extract_states_from_answer_set(answer_set:List[str]) -> Tuple[List[List[str]], List[str]]:
+def extract_states_from_answer_set(answer_set:List[str]) -> Tuple[List[SparcState], List[str]]:
     """extracts each state from answer set and planned actions
     Args:
         answer_set (List[str]): answer set parsed from sparc output
     Returns:
-        list[list[str]]: states by timestep
+        list[SparcState]: states by timestep
         List[str]: planned action to take at each timestep format 'occurs(A(x1,x2..xn))
     """
     fluents = []
     statics = []
     occurs = []
+    hpd = []
     goal = []
     for l in answer_set:
-        if ('something_happened' in l) or ('val' in l) or ('holds' in l): fluents.append(l)
+        #ignore planning stuff and things that don't happen
+        if ('something_happened'in l) or ('-occurs'in l): 
+            continue
+        if ('hpd' in l): hpd.append(l)
+        if ('val' in l) or ('holds' in l): fluents.append(l)
         elif 'occurs' in l: occurs.append(l)
         elif ('success'in l) or ('goal' in l): goal.append(l)
         else: statics.append(l)
-
 
     # find the largest step value
     max_time_step = max([int(f[-2]) for f in fluents])
     states = []
     actions = []
     for i in range(max_time_step):
-        #find fluents and occurs statements for this time step
-        state = [fluent for fluent in fluents if int(fluent[-2])==i]
-        occurs_t = [occ for occ in occurs if int(occ[-2])==i]
-        state += occurs_t
-        # find 'occurs(A,(x1,x2,..xn)' from other '-occurs(...)' statements)
-        # should only be one per timestep unless multi-agent planning
-        actions += [occ for occ in occurs_t if occ[0]!='-']
-        state += statics # valid in all states
-        if f'goal({i})' in goal:
-            state += goal
+        # find fluents and occurs statements for this time step
+        flu = [fluent for fluent in fluents if int(fluent[-2])==i]
+        occurs_t = [occ for occ in occurs if (int(occ[-2])==i) and (occ[0]!='-')]
+        actions += occurs_t
+        hpd_t = [h for h in hpd if int(h[-2])<=i]
+        if f'goal({i+1})' in goal:
+            state = SparcState(statics,flu,occurs_t,hpd_t,True,i)
+        else:
+            state = SparcState(statics,flu,occurs_t,hpd_t,False,i)
         states.append(state)
 
     return states, actions 
-
-
-
-
-    return state
-
 
 def run_sparc(sparc_file:str = './sparc_files/program.sp', output_file:str='sparc.out', sparc_location='/home/local/sparc'):
     """runs SPARC to generate answerset file with all answersets
