@@ -1,9 +1,47 @@
 import copy
-from sparc_io import SparcProg
-from typing import List
-from dataclasses import dataclass
+from typing import List, Tuple
 import re
 from al_structures import ActionLangSysDesc, SortType, BasicSort, SuperSort, Func, ActionInstance
+
+def extract_state_transition(states:List[List[str]], occurs:List[str], DH:ActionLangSysDesc, step:int = 0) -> Tuple[List[str], List[str], ActionInstance]:
+    """seperates state data for before and after action and creates ActionInstance object for transition aH.
+    assumes single action at each timestep.
+
+    Args:
+        states (List[List[str]]): state data from answer set
+        occurs (List[str]): action predicitons from answer set
+        DH (ActionLangSysDesc): action language (at action resolution) definition of system
+        step (int, optional): which transition in occurs if len(occurs)>1. Defaults to 0.
+    Returns:
+        Tuple[List[str], List[str], ActionInstance]: zoom inputs
+    """
+    occ = [occ for occ in occurs if int(occ[-2])==step][0] # assumes single action at each timestep
+    if len(occ) == 0:
+        raise ValueError(f'no action in set {occurs} for time_step {step}')
+    action_full_text = re.search('occurs\(.+\(.+\),', occ).group()[7:-1]
+    action_name, *object_constants = re.split('\(|\)|\,', action_full_text)[:-1]
+    for ac in DH.actions:
+        if ac.action_def.name == action_name:
+            aH = ActionInstance(ac,object_constants,step)
+    
+    state0 = None
+    state1 = None
+    #find state data
+    for state in states:
+        timestamped_string = re.search('holds\(.+\(.+\),.+,[0-9]+\)',' '.join(state))
+        if not timestamped_string:
+            timestamped_string = re.search('val\(.+\(.+\),.+,[0-9]+\)',' '.join(state))
+        if not timestamped_string:    
+            raise ValueError(f"Could not find pattern 'x(fluent(x1,x2..xn),bool,t)' in state for either x='holds' or x='val'")
+        t = int(re.findall('[0-9]+', timestamped_string.group())[-1])
+        if t == step:
+            state0 = state
+        if t == step+1:
+            state1 = state
+    if isinstance(state0, type(None)) or isinstance(state1, type(None)): 
+        raise ValueError(f'Could not finds state data for both timestep {step} and {step+1}')
+
+    return state0, state1, aH
 
 def zoom(s1:List[str], s2:List[str], aH:ActionInstance, DLR:ActionLangSysDesc):
     """returns a zoomed system description for the transition aH

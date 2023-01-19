@@ -2,7 +2,7 @@ from __future__ import annotations
 import subprocess
 from dataclasses import dataclass, field
 import os
-from typing import List
+from typing import List, Tuple
 from sortedcollections import OrderedSet
 import re
 
@@ -144,20 +144,69 @@ def collect_sparc_files(files:list[str]) -> SparcProg:
         combined += asp
     return combined
 
-def parse_sparc_ouput(output_file:str='sparc.out') -> list[str]:
-    """extracts lines from sparc results file and cleans up notation and newlines"""
+def parse_sparc_ouput(output_file:str='sparc.out') -> list[list[str]]:
+    """extracts lines from sparc results file and cleans up notation and newlines
+    returns a list of answer sets where each answer set is a list of strings"""
     with open(output_file, 'r') as f:
         lines = f.readlines()
-        lines = [line.strip('?- ') for line in lines]
-    return lines
+        lines = [line.strip('?- ')for line in lines]
+        a_sets = [line.split(', ') for line in lines]
+        for a_s in a_sets:
+            a_s[0] = a_s[0][1:]
+            a_s[-1] = a_s[-1][:-2]
+    return a_sets
 
-def run_sparc(sparc_file:str = './sparc_files/program.sp', output_file:str='sparc.out'):
+def extract_states_from_answer_set(answer_set:List[str]) -> Tuple[List[List[str]], List[str]]:
+    """extracts each state from answer set and planned actions
+    Args:
+        answer_set (List[str]): answer set parsed from sparc output
+    Returns:
+        list[list[str]]: states by timestep
+        List[str]: planned action to take at each timestep format 'occurs(A(x1,x2..xn))
+    """
+    fluents = []
+    statics = []
+    occurs = []
+    goal = []
+    for l in answer_set:
+        if ('something_happened' in l) or ('val' in l) or ('holds' in l): fluents.append(l)
+        elif 'occurs' in l: occurs.append(l)
+        elif ('success'in l) or ('goal' in l): goal.append(l)
+        else: statics.append(l)
+
+
+    # find the largest step value
+    max_time_step = max([int(f[-2]) for f in fluents])
+    states = []
+    actions = []
+    for i in range(max_time_step):
+        #find fluents and occurs statements for this time step
+        state = [fluent for fluent in fluents if int(fluent[-2])==i]
+        occurs_t = [occ for occ in occurs if int(occ[-2])==i]
+        state += occurs_t
+        # find 'occurs(A,(x1,x2,..xn)' from other '-occurs(...)' statements)
+        # should only be one per timestep unless multi-agent planning
+        actions += [occ for occ in occurs_t if occ[0]!='-']
+        state += statics # valid in all states
+        if f'goal({i})' in goal:
+            state += goal
+        states.append(state)
+
+    return states, actions 
+
+
+
+
+    return state
+
+
+def run_sparc(sparc_file:str = './sparc_files/program.sp', output_file:str='sparc.out', sparc_location='/home/local/sparc'):
     """runs SPARC to generate answerset file with all answersets
     requires SPARC install (https://github.com/iensen/sparc)
     Args:
         sparc_file (str, optional): input sparc file. Defaults to './sparc_files/program.sp'.
         output_file (str, optional): saved output. Defaults to 'sparc.out'.
     """
-    process = subprocess.run(f'java -jar sparc.jar {sparc_file} -A > {output_file}', 
+    process = subprocess.run(f'java -jar {sparc_location}/sparc.jar {sparc_file} -A > {output_file}', 
                          stdout=subprocess.PIPE, 
                          universal_newlines=True)
