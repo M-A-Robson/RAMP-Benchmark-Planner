@@ -842,6 +842,16 @@ def load_beam_xml(beam_xml_file:str) -> list[Beam]:
 
 def create_sparc_file(assem:BeamAssembly):
     #!WORK IN PROGRESS
+    # at course resolution we want:
+    # - beam ids
+    # - beam to beam connections and type
+
+    # at fine resolution we want:
+    # for subset of beams to reason about:
+    # - beam id
+    # - beam component data
+    # - component relations (connections) internal
+    # - component relations (connections) external and relevant
     beams = BeamAssembly.get_beams()
     # create sparc file for beams
     beam_names = []
@@ -865,26 +875,6 @@ def create_sparc_file(assem:BeamAssembly):
     #save to output file
     with open('example_output.sp','w') as outfi:
         outfi.write(''.join(data))
-
-# sparc defs
-# at course resolution we want:
-# - beam ids
-# - beam to beam connections and type
-
-# - scope? get rid of things we aren't interested in
-# (e.g. beams in assembly which are 'complete' where
-# 'complete' means they have all of their attachements)
-
-# at fine resolution we want:
-# for subset of beams to reason about:
-# - beam id
-# - beam component data
-# - component relations (connections) internal
-# - component relations (connections) external and relevant
-
-# zooming to "fine resolution state transitions" means we need
-# a zoom function for each action?
-
 
 
 def main():

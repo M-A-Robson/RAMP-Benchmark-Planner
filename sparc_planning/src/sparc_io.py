@@ -2,7 +2,7 @@ from __future__ import annotations
 import subprocess
 from dataclasses import dataclass, field
 import os
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 from sortedcollections import OrderedSet
 import re
 
@@ -21,7 +21,7 @@ class SparcProg:
     sorts: List[str] = field(default_factory=list)
     predicates: List[str] = field(default_factory=list)
     rules: List[str] = field(default_factory=list)
-    display: List[str] = field(default_factory=list)
+    display: Optional[List[str]] = None
 
     def save(self, filename:str) -> None:
         """save to sparc file"""
@@ -41,8 +41,10 @@ class SparcProg:
             f.writelines(line + '\n' for line in self.predicates)
             f.write('\nrules\n')
             f.writelines(line + '\n' for line in self.rules)
-            f.write('\ndisplay\n')
-            f.writelines(line + '\n' for line in self.display)
+            # display is optional
+            if self.display:
+                f.write('\ndisplay\n')
+                f.writelines(line + '\n' for line in self.display)
     
     @staticmethod
     def load(filename:str) -> SparcProg:

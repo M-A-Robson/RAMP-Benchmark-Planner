@@ -461,7 +461,12 @@ class ActionLangSysDesc:
         rules = []
         # state constraints
         if self.state_constraints:
-            rules += [s.to_sparc() for s in self.state_constraints]
+            for s in self.state_constraints:
+                try:
+                    rules.append(s.to_sparc())
+                except Exception as e:
+                    print(f'Error parsing state_constraint: {s}')
+                    print(e)
         # causal laws and executability conditions
         for a in self.actions:
             rules += [c.to_sparc() for c in a.causal_laws]
