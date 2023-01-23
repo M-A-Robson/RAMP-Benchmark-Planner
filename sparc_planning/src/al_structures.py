@@ -90,19 +90,20 @@ class Property:
     object1:str
     object2:str
     relation:Relation
+
     def to_string(self):
         # a bit clunky but works for now
-        if rel == Relation.IS_OF_SORT:
+        if self.relation.value == Relation.IS_OF_SORT.value:
             return f'#{self.object1}({self.object2})'
         rel = {
-        Relation.GREATER_THAN : '>',
-        Relation.GREATER_OR_EQUAL : '>=',
-        Relation.LESS_THAN : '<',
-        Relation.LESS_OR_EQUAL : '<=',
-        Relation.EQUAL : '=',
-        Relation.NOT_EQUAL : '!=',
+        Relation.GREATER_THAN.value : '>',
+        Relation.GREATER_OR_EQUAL.value : '>=',
+        Relation.LESS_THAN.value : '<',
+        Relation.LESS_OR_EQUAL.value : '<=',
+        Relation.EQUAL.value : '=',
+        Relation.NOT_EQUAL.value : '!=',
         }
-        return self.object1 + rel[self.relation] + self.object2
+        return self.object1 + rel[self.relation.value] + self.object2
 
 @dataclass
 class ActionDefinition:
@@ -160,10 +161,10 @@ class CausalLaw:
                 v = 'true'
                 if self.condition_values[i] == False:
                     v = 'false'
-                s += f"holds({cond.name}({','.join(self.condition_object_instance_names[i])}, {v}, I)"
+                s += f"holds({cond.name}({','.join(self.condition_object_instance_names[i])}), {v}, I)"
             else:
                 if self.condition_values[i] == False:
-                    s += 'not'
+                    s += 'not '
                 if isinstance(cond, Sort):
                     s += '#'
                 if isinstance(cond, Property):
@@ -211,13 +212,13 @@ class StateConstraint:
         """returns SPARC Rule string of form 'l :- p0,..pm.' """
         # form main causal relationship 'holds(l_in, value, I+1) :- occurs(a,I).
         if self.head.func_type == FuncType.FLUENT:
-            head = f"holds({self.head.name}({','.join(self.fluent_object_instance_names)}), {str(self.head_value).lower()}, I) "
+            head = f"holds({self.head.name}({','.join(self.head_object_instance_names)}), {str(self.head_value).lower()}, I) "
         else: 
             head = ''
             if self.head_value == False: head = '-'
             head += f"{self.head.name}"
             if self.head_object_instance_names:
-                head += f"({','.join(self.fluent_object_instance_names)})"
+                head += f"({','.join(self.head_object_instance_names)})"
         if not self.conditions:
             head += '.'
             return head
@@ -230,7 +231,7 @@ class StateConstraint:
                 s += f"holds({cond.name}({','.join(self.condition_object_instance_names[i])}), {str(self.condition_values[i]).lower()}, I)"
             else:
                 if self.condition_values[i] == False:
-                    s += 'not'
+                    s += 'not '
                 if isinstance(cond, Sort):
                     s += '#'
                 if isinstance(cond, Property):
@@ -281,7 +282,7 @@ class ExecutabilityCondition:
                 s += f"holds({cond.name}({','.join(self.condition_object_instance_names[i])}), true, I)"
             else:
                 if self.condition_values[i] == False:
-                    s += 'not'
+                    s += 'not '
                 if isinstance(cond, Sort):
                     s += '#'
                 if isinstance(cond, Property):
@@ -460,7 +461,7 @@ class ActionLangSysDesc:
         rules = []
         # state constraints
         if self.state_constraints:
-            rules += [s.to_sparc for s in self.state_constraints]
+            rules += [s.to_sparc() for s in self.state_constraints]
         # causal laws and executability conditions
         for a in self.actions:
             rules += [c.to_sparc() for c in a.causal_laws]
@@ -488,40 +489,5 @@ class ActionLangSysDesc:
         rules += self.domain_setup
         return SparcProg(sparc_constants, sparc_sorts, sparc_predicates, rules, self.display_hints)
 
-def test():
-    robot = BasicSort('robot', ['rob0'])
-    thing = BasicSort('thing', ['textbook', 'pickle'])
-    put_down = ActionDefinition('putdown',[robot, thing])
-    in_hand = Func('in_hand',[robot,thing],FuncType.FLUENT)
 
-    pd_ec1 = ExecutabilityCondition(
-                        action = put_down,
-                        object_instances= {'R':robot, 'T':thing},
-                        action_object_instance_names=['R','T'],
-                        conditions= [in_hand],
-                        condition_object_instance_names= [['R','T']],
-                        condition_values= [False] )
-
-    pd_c = CausalLaw(put_down,
-                in_hand,
-                False,
-                {'R':robot,'T':thing},
-                ['R','T'],['R','T'],
-                )
-
-    A = Action(put_down,[pd_c],[pd_ec1])
-
-    ALD = ActionLangSysDesc(
-        sorts=[robot, thing],
-        inertial_fluents=[in_hand],
-        actions=[A],
-        domain_setup=['holds(in_hand(rob0,textbook), true, 0).'],
-        goal_description=GoalDefinition(in_hand,['rob0','textbook'],False),
-        display_hints=['occurs.'], planning_steps=1)
-
-    ASP = ALD.to_sparc_program()
-    ASP.save('test_sparc.sp')
-    
-if __name__ == "__main__":
-    test()
         
