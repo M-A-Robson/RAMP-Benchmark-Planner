@@ -5,8 +5,8 @@ SAVE_DIR = '/home/local/MTC_ORI_Collab/sparc_planning/sparc_files/'
 #!sorts
 robot = BasicSort('robot', ['rob0'])
 #add beam and pin sorts
-beam = BasicSort('beam',[])
-pin = BasicSort('pin',[])
+beam = BasicSort('beam',['b1','b2','b3','b4'])
+pin = BasicSort('pin',['p1','p2','p3','p4'])
 thing = SuperSort('thing', [beam,pin])
 ob = SuperSort('object', [robot, thing])
 place = BasicSort('place', ['input_area', 'intermediate_area', 'assembly_area'])
@@ -223,6 +223,9 @@ pu_c2 = CausalLaw(
     fluent_affected=on,
     fluent_object_instance_names=['T1','T2'],
     fluent_value=False,
+    conditions=[on],
+    condition_object_instance_names=[['T1','T2']],
+    condition_values=[True],
 )
 pu_c3 = CausalLaw(
     action=pick_up,
@@ -242,9 +245,18 @@ pu_ec1 = ExecutabilityCondition(
     action_object_instance_names=['R','T1'],
     conditions=[clear],
     condition_object_instance_names=[['T1']],
-    condition_values=[True],
+    condition_values=[False],
 )
-pick_up_action = Action(pick_up,[pu_c1,pu_c2,pu_c3],[pu_ec1])
+##cannot pick up unless in same location
+pu_ec2 = ExecutabilityCondition(
+    action=pick_up,
+    object_instances={'R':robot,'T1':thing, 'P1':place, 'P2':place},
+    action_object_instance_names=['R','T1'],
+    conditions=[location, location, Property('P1','P2',Relation.NOT_EQUAL)],
+    condition_object_instance_names=[['T1','P1'],['R','P2'],['P1','P2']],
+    condition_values=[True, True, True],
+)
+pick_up_action = Action(pick_up,[pu_c1,pu_c2,pu_c3],[pu_ec1, pu_ec2])
 
 #!move action
 move = ActionDefinition('move', [robot,place])
@@ -502,8 +514,13 @@ ALD = ActionLangSysDesc(
         state_constraints=state_constraints,
         inertial_fluents=fluents,
         actions=[put_down_action,move_action,pick_up_action,assemble_action,fasten_action],
-        domain_setup=[],
-        goal_description=[],
-        display_hints=None, planning_steps=1)
+        domain_setup=['holds(in_assembly(b1),true,0).','holds(location(b1,assembly_area),true,0).','holds(location(b2,input_area),true,0).',
+                      'holds(location(b3,input_area),true,0).','holds(location(b4,input_area),true,0).','holds(location(rob0,input_area),true,0).',
+                      'next_to(input_area,intermediate_area).',
+                      'next_to(assembly_area,intermediate_area).','fits_into(b2, b1).','fits_into(b3, b1).','fits_into(b3, b4).',
+                      'fits_into(b2, b4).'],
+        goal_description=[GoalDefinition(in_assembly,['b4'],True)],
+        display_hints=None, planning_steps=3)
 
+ALD.complete_domain_setup_fluent(in_hand,False)
 ALD.to_sparc_program().save(SAVE_DIR+'beam_domain_coarse.sp')

@@ -1,9 +1,10 @@
 from __future__ import annotations
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 from dataclasses import dataclass
 from enum import Enum, auto
 from sparc_io import SparcProg
 import logging
+import itertools
 
 logger = logging.getLogger()
 
@@ -423,6 +424,54 @@ class ActionLangSysDesc:
                 if p.to_sparc in const_as_str:
                     continue
                 self.state_constraints.append(p)      
+    
+    def complete_domain_setup_fluent(self,inertial_fluent:Func,value:bool,exceptions:Optional[List[Tuple[str]]]=None)->None:
+        """
+        Edits domain_setup to indicate that for all valid objects this fluent has a specific value.
+        Exceptions must be in correct order to match fluent sort arrangement.
+        Does not apply closed world assumption on exceptions.
+        e.g. if fluent 'in_hand' has sorts: robot and thing:  
+
+        complete_domain_setup_fluent(in_hand,False,[(rob0,textbook),(rob1,cup)])
+        
+        would indicate that holds(in_hand(rob0,{things}-textbook),false,0). similarly
+        holds(in_hand(rob1,{things}-cup), false, 0).
+
+        limited to fluents with 2 or less sorts.
+
+        Args:
+            inertial_fluent (Func): fluent
+            value (bool): true/false
+            exception (Optional[List[Tuple[str]]]): any object names to skip
+                
+        raises:
+            ValueError: if fluent not defined
+            AssertionError: if fluent has too many sorts (combinatorial explosion)
+        """
+        if not inertial_fluent in self.inertial_fluents:
+            raise ValueError(f'fluent {inertial_fluent.name} not in inertial_fluents')
+        instances = []
+        for sort in inertial_fluent.sorts:
+            instances.append(self.get_sort_objects(sort))
+        assert len(instances) < 3, f'Fluent {inertial_fluent.name} has too many sorts'
+        combinations = instances[0]
+        for i in range(1,len(instances)):
+            combinations = list(zip(combinations,element) for element in itertools.product(instances[i],repeat=len(combinations)))
+        for combination in combinations:
+            if exceptions and (combination in exceptions):
+                self.domain_setup.append(f"holds({inertial_fluent.name}({','.join(list(list(combination)[0]))}),{str(not value).lower()},0).")
+            else:
+                self.domain_setup.append(f"holds({inertial_fluent.name}({','.join(list(list(combination)[0]))}),{str(value).lower()},0).")
+
+    def get_sort_objects(self,sort):
+        sort_dict = dict(zip([s.name for s in self.sorts],self.sorts))
+        objects = []
+        if isinstance(sort, SuperSort):
+            for instance in sort.instances:
+                objects += self.get_sort_objects(sort_dict[instance[1:]])
+        else:
+            objects += sort.instances
+        return objects
 
     def to_sparc_program(self) -> SparcProg:
         # create constants
@@ -433,7 +482,7 @@ class ActionLangSysDesc:
         # create sorts
         sparc_sorts = [s.to_sparc() for s in self.sorts]
         # add action sort
-        sparc_sorts.append(f"#action = {', '.join([a.action_def.to_sparc() for a in self.actions])}.")
+        sparc_sorts.append(f"#action = {' + '.join([a.action_def.to_sparc() for a in self.actions])}.")
         # handle case of empty set for defined fluents
         if self.defined_fluents:
             defined_fluent_sort = f"#defined_fluent = {'+ '.join([d.to_sparc()[:-1] for d in self.defined_fluents])}."

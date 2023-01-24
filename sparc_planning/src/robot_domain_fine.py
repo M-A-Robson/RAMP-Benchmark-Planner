@@ -171,9 +171,18 @@ pu_ec1 = ExecutabilityCondition(
     action_object_instance_names=['R','T1'],
     conditions=[clear],
     condition_object_instance_names=[['T1']],
-    condition_values=[True],
+    condition_values=[False],
 )
-pick_up_action = Action(pick_up,[pu_c1,pu_c2,pu_c3],[pu_ec1])
+##cannot pick up unless in same location
+pu_ec2 = ExecutabilityCondition(
+    action=pick_up,
+    object_instances={'R':robot,'T1':thing, 'P1':place_f, 'P2':place_f},
+    action_object_instance_names=['R','T1'],
+    conditions=[location, location, Property('P1','P2',Relation.NOT_EQUAL)],
+    condition_object_instance_names=[['T1','P1'],['T2','P2'],['P1','P2']],
+    condition_values=[True, True, True],
+)
+pick_up_action = Action(pick_up,[pu_c1,pu_c2,pu_c3],[pu_ec1,pu_ec2])
 
 #!move action (fine res)
 move_f = ActionDefinition('move_f', [robot,place_f])

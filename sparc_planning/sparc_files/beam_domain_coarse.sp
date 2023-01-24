@@ -3,16 +3,16 @@
 %% Author: MARK ROBSON 2023
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#const numSteps = 1.
+#const numSteps = 3.
 
 sorts
 #robot = {rob0}.
-#beam = {}.
-#pin = {}.
+#beam = {b1,b2,b3,b4}.
+#pin = {p1,p2,p3,p4}.
 #thing = #beam + #pin.
 #object = #robot + #thing.
 #place = {input_area,intermediate_area,assembly_area}.
-#action = putdown(#robot,#thing), move(#robot,#place), pick_up(#robot,#thing), assemble(#robot,#beam), fasten(#robot,#beam,#beam,#pin).
+#action = putdown(#robot,#thing) + move(#robot,#place) + pick_up(#robot,#thing) + assemble(#robot,#beam) + fasten(#robot,#beam,#beam,#pin).
 #boolean = {true, false}.
 #outcome = {true, false, undet}.
 #defined_fluent = {}.
@@ -55,9 +55,10 @@ holds(location(T,P), true, I+1) :- occurs(move(R,P), I), holds(in_hand(R,T), tru
 -occurs(move(R,P1), I) :- holds(location(R,P2), true, I), P1=P2.
 -occurs(move(R,P1), I) :- holds(location(R,P2), true, I), not next_to(P1,P2).
 holds(in_hand(R,T), true, I+1) :- occurs(pick_up(R,T), I).
-holds(on(T1,T2), false, I+1) :- occurs(pick_up(R,T1), I).
+holds(on(T1,T2), false, I+1) :- occurs(pick_up(R,T1), I), holds(on(T1,T2), true, I).
 holds(clear(T2), true, I+1) :- occurs(pick_up(R,T1), I), holds(on(T1,T2), true, I).
--occurs(pick_up(R,T1), I) :- holds(clear(T1), true, I).
+-occurs(pick_up(R,T1), I) :- not holds(clear(T1), true, I).
+-occurs(pick_up(R,T1), I) :- holds(location(T1,P1), true, I), holds(location(R,P2), true, I), P1!=P2.
 holds(in_assembly(B), true, I+1) :- occurs(assemble(R,B), I).
 -occurs(assemble(R,B), I) :- not holds(in_hand(R,B), true, I).
 -occurs(assemble(R,B1), I) :- holds(in_assembly(B2), true, I), holds(in_assembly(B3), true, I), is_capped_by(B1,B2,B3), B2!=B3.
@@ -80,4 +81,24 @@ occurs(A, I) | -occurs(A, I) :- not goal(I).
 -occurs(A2, I) :- occurs(A1, I), A1 != A2.
 something_happened(I) :- occurs(A, I).
 :- not goal(I), not something_happened(I).
-goal(I) :- .
+goal(I) :- holds(in_assembly(b4), true, I).
+holds(in_assembly(b1),true,0).
+holds(location(b1,assembly_area),true,0).
+holds(location(b2,input_area),true,0).
+holds(location(b3,input_area),true,0).
+holds(location(b4,input_area),true,0).
+holds(location(rob0,input_area),true,0).
+next_to(input_area,intermediate_area).
+next_to(assembly_area,intermediate_area).
+fits_into(b2, b1).
+fits_into(b3, b1).
+fits_into(b3, b4).
+fits_into(b2, b4).
+holds(in_hand(rob0,b1),false,0).
+holds(in_hand(rob0,b2),false,0).
+holds(in_hand(rob0,b3),false,0).
+holds(in_hand(rob0,b4),false,0).
+holds(in_hand(rob0,p1),false,0).
+holds(in_hand(rob0,p2),false,0).
+holds(in_hand(rob0,p3),false,0).
+holds(in_hand(rob0,p4),false,0).
