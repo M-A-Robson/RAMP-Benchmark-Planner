@@ -486,17 +486,18 @@ class ActionLangSysDesc:
         sparc_sorts = [s.to_sparc() for s in self.sorts]
         # add action sort
         sparc_sorts.append(f"#action = {' + '.join([a.action_def.to_sparc() for a in self.actions])}.")
-        # handle case of empty set for defined fluents
-        if self.defined_fluents:
-            defined_fluent_sort = f"#defined_fluent = {'+ '.join([d.to_sparc()[:-1] for d in self.defined_fluents])}."
-        else: defined_fluent_sort = r'#defined_fluent = {}.'
         # create special sorts for inertial fluents, fluent, boolean, step, and outcome
         sparc_sorts += ['#boolean = {true, false}.', '#outcome = {true, false, undet}.',
-                        defined_fluent_sort,
                         f"#inertial_fluent = {'+ '.join([i.to_sparc()[:-1] for i in self.inertial_fluents])}.",
-                        '#fluent = #inertial_fluent + #defined_fluent.',
                         f'#step = 0..numSteps.'
                         ]
+        # handle case of empty set for defined fluents
+        if self.defined_fluents:
+            sparc_sorts.extend([f"#defined_fluent = {'+ '.join([d.to_sparc()[:-1] for d in self.defined_fluents])}.",
+                            '#fluent = #inertial_fluent + #defined_fluent.'])
+        else: 
+            sparc_sorts.append('#fluent = #inertial_fluent.')
+        
 
         # create predicates
         # add statics

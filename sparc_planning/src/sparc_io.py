@@ -214,6 +214,9 @@ def run_sparc(sparc_file:str = './sparc_files/program.sp', output_file:str='spar
         sparc_file (str, optional): input sparc file. Defaults to './sparc_files/program.sp'.
         output_file (str, optional): saved output. Defaults to 'sparc.out'.
     """
-    process = subprocess.run(f'java -jar {sparc_location}/sparc.jar {sparc_file} -A > {output_file}', 
+    command = f'java -jar {sparc_location}/sparc.jar {sparc_file} -A >{output_file}'
+    process =  subprocess.run(command, 
                          stdout=subprocess.PIPE, 
-                         universal_newlines=True)
+                         universal_newlines=True, 
+                         shell=True)
+

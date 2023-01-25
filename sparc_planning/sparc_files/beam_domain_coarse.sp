@@ -15,10 +15,9 @@ sorts
 #action = putdown(#robot,#thing) + move(#robot,#place) + pick_up(#robot,#thing) + assemble(#robot,#beam) + fasten(#robot,#beam,#beam,#pin).
 #boolean = {true, false}.
 #outcome = {true, false, undet}.
-#defined_fluent = {}.
 #inertial_fluent = in_hand(#robot, #thing)+ location(#object, #place)+ on(#thing, #thing)+ clear(#thing)+ in_assembly(#beam)+ supported(#beam)+ fastened(#beam, #beam, #pin).
-#fluent = #inertial_fluent + #defined_fluent.
 #step = 0..numSteps.
+#fluent = #inertial_fluent.
 
 predicates
 next_to(#place, #place).
