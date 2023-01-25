@@ -454,6 +454,9 @@ class ActionLangSysDesc:
         for sort in inertial_fluent.sorts:
             instances.append(self.get_sort_objects(sort))
         assert len(instances) < 3, f'Fluent {inertial_fluent.name} has too many sorts'
+        if len(instances) == 1: 
+            self.domain_setup.extend([f"holds({inertial_fluent.name}({inst}),{str(value).lower()},0)." for inst in instances[0]])
+            return    
         combinations = instances[0]
         for i in range(1,len(instances)):
             combinations = list(zip(combinations,element) for element in itertools.product(instances[i],repeat=len(combinations)))

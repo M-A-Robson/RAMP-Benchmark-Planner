@@ -5,8 +5,8 @@ SAVE_DIR = '/home/local/MTC_ORI_Collab/sparc_planning/sparc_files/'
 #!sorts
 robot = BasicSort('robot', ['rob0'])
 #add beam and pin sorts
-beam = BasicSort('beam',['b1','b2','b3','b4'])
-pin = BasicSort('pin',['p1','p2','p3','p4'])
+beam = BasicSort('beam',['b1','b2','b3','b4','b5'])
+pin = BasicSort('pin',['p1','p2','p3','p4','p5','p6'])
 thing = SuperSort('thing', [beam,pin])
 ob = SuperSort('object', [robot, thing])
 place = BasicSort('place', ['input_area', 'intermediate_area', 'assembly_area'])
@@ -87,6 +87,38 @@ state_constraints.append(StateConstraint(
     condition_object_instance_names=[['T2','P1'],['T1','T2']],
     condition_values=[True,True]
 ))
+# objects cannot be on top of themselves
+state_constraints.append(StateConstraint(
+    object_instances={'T1':thing,'T2':thing},
+    head=on,
+    head_object_instance_names=['T1','T2'],
+    head_value=False,
+    conditions=[Property('T1','T2',Relation.EQUAL)],
+    condition_object_instance_names=[['T1','T2']],
+    condition_values=[True]
+))
+#if the robot is holding an object the object will move with it
+#this could alternatively be defined as a state constraint
+state_constraints.append(StateConstraint(
+    object_instances={'T1':thing,'T2':thing,'P1':place, 'R':robot},
+    head=location,
+    head_object_instance_names=['T1','P1'],
+    head_value=True,
+    conditions=[location,in_hand,Property('T1','T2',Relation.EQUAL)],
+    condition_object_instance_names=[['R','P1'],['R','T2'],['T1','T2']],
+    condition_values=[True, True, True]
+))
+# objects are no longer clear if items put onto them
+state_constraints.append(StateConstraint(
+    object_instances={'T1':thing,'T2':thing},
+    head=clear,
+    head_object_instance_names=['T2'],
+    head_value=False,
+    conditions=[on],
+    condition_object_instance_names=[['T1','T2']],
+    condition_values=[True]
+))
+
 #?beam domain state constraints
 capping_constraint = StateConstraint(
     object_instances={'B1':beam,'B2':beam,'B3':beam},
@@ -256,7 +288,16 @@ pu_ec2 = ExecutabilityCondition(
     condition_object_instance_names=[['T1','P1'],['R','P2'],['P1','P2']],
     condition_values=[True, True, True],
 )
-pick_up_action = Action(pick_up,[pu_c1,pu_c2,pu_c3],[pu_ec1, pu_ec2])
+##can only hold one item at once
+pu_ec3 = ExecutabilityCondition(
+    action=pick_up,
+    object_instances={'R':robot,'T1':thing, 'T2':thing},
+    action_object_instance_names=['R','T1'],
+    conditions=[in_hand, Property('thing','T2',Relation.IS_OF_SORT)],
+    condition_object_instance_names=[['rob0','T2'],['T2']],
+    condition_values=[True, True],
+)
+pick_up_action = Action(pick_up,[pu_c1,pu_c2,pu_c3],[pu_ec1, pu_ec2, pu_ec3])
 
 #!move action
 move = ActionDefinition('move', [robot,place])
@@ -268,19 +309,7 @@ m_c1 = CausalLaw(
     fluent_affected=location,
     fluent_value=True
     )
-#if the robot is holding an object the object will move with it
-#this could alternatively be defined as a state constraint
-m_c2 = CausalLaw(
-    action=move,
-    object_instances={'R':robot,'P':place,'T':thing},
-    action_object_instance_names=['R','P'],
-    fluent_object_instance_names=['T','P'],
-    fluent_affected=location,
-    fluent_value=True,
-    conditions=[in_hand],
-    condition_values=[True],
-    condition_object_instance_names=[['R','T']],
-    )
+
 ## TODO - think about fastenening 
 # beam domain specific --> moving without releasing the pin will cause the joint to no longer be fastened
 m_c3 = CausalLaw(
@@ -314,8 +343,25 @@ m_ec2 = ExecutabilityCondition(
     condition_object_instance_names=[['R','P2'],['P1','P2']],
     condition_values=[True,False],
    )
+# cannot move after assembling or fastening a beam (need to release object)
+m_ec3 = ExecutabilityCondition(
+    action=move,
+    object_instances={'R':robot,'P1':place,'B1':beam,'P2':place},
+    action_object_instance_names=['R','P1'],
+    conditions=[in_hand,in_assembly],
+    condition_object_instance_names=[['R','B1'],['B1']],
+    condition_values=[True,True],
+   )
+m_ec4 = ExecutabilityCondition(
+    action=move,
+    object_instances={'R':robot,'P1':place,'B1':beam,'B2':beam, 'P':pin},
+    action_object_instance_names=['R','P1'],
+    conditions=[in_hand,fastened],
+    condition_object_instance_names=[['R','P1'],['B1','B2','P']],
+    condition_values=[True,True],
+   )
 
-move_action = Action(move, [m_c1,m_c2], [m_ec1,m_ec2])
+move_action = Action(move, [m_c1], [m_ec1,m_ec2, m_ec3, m_ec4])
 
 #!put_down action
 put_down = ActionDefinition('putdown',[robot, thing])
@@ -337,13 +383,13 @@ pd_c1 = CausalLaw(put_down,
     )
 ##puts objects onto other objects
 pd_c2 = CausalLaw(put_down,
-    object_instances={'R':robot,'T1':thing,'T2':thing,'P1':place,'P2':place},
+    object_instances={'R':robot,'T1':thing,'T2':thing,'P1':place,},
     action_object_instance_names=['R','T1'],
     fluent_object_instance_names=['T1','T2'],
     fluent_affected=on,
     fluent_value=True,
-    conditions=[location,location,Property('P1','P2',Relation.EQUAL),clear],
-    condition_object_instance_names=[['R','P1'],['T1','P2'],['P1','P2'],['T2']],
+    conditions=[location,location,clear, Property('T1','T2', Relation.NOT_EQUAL)],
+    condition_object_instance_names=[['R','P1'],['T2','P1'],['T2'], ['T1','T2']],
     condition_values=[True,True,True,True],
     )
 put_down_action = Action(put_down,[pd_c1,pd_c2],[pd_ec1])
@@ -411,22 +457,9 @@ asem_ec3 = ExecutabilityCondition(
     action= assemble,
     object_instances={'R':robot,'B1':beam,'B2':beam},
     action_object_instance_names=['R','B1'],
-    conditions=[in_assembly,fits_through,
-                Property('beam','B2',Relation.IS_OF_SORT)],
-    condition_values=[True,True,True],
-    condition_object_instance_names=[['B2'],['B2','B1'],['B2']],
-)
-# don't add a beam if it needs to have assembled beams place into it, unless it caps those beams
-#TODO check the -is_capped_by comes through correctly
-asem_ec4 = ExecutabilityCondition(
-    action= assemble,
-    object_instances={'R':robot,'B1':beam},
-    action_object_instance_names=['R','B1'],
-    conditions=[in_assembly,fits_into,is_capped_by,
-                Property('beam','B2',Relation.IS_OF_SORT),
-                Property('beam','B3',Relation.IS_OF_SORT)],
-    condition_values=[True,True,False,True,True],
-    condition_object_instance_names=[['B2'],['B2','B1'],['B2','B1','B3'],['B2'],['B3']],
+    conditions=[in_assembly,fits_through],
+    condition_values=[True,True],
+    condition_object_instance_names=[['B2'],['B2','B1']],
 )
 #cannot add a beam which would cap another beam if the beams to be capped are not yet in the assembly
 asem_ec5 = ExecutabilityCondition(
@@ -466,7 +499,7 @@ asem_ec8 = ExecutabilityCondition(
     condition_object_instance_names=[['B']],
     condition_values=[False],
 )   
-assemble_action = Action(assemble,[asem_c1],[asem_ec1,asem_ec2,asem_ec3,asem_ec4,asem_ec5,asem_ec6,asem_ec7,asem_ec8])
+assemble_action = Action(assemble,[asem_c1],[asem_ec1,asem_ec2,asem_ec3,asem_ec5,asem_ec6,asem_ec7,asem_ec8])
 
 #!Fasten Action
 fasten = ActionDefinition('fasten',[robot,beam,beam,pin])
@@ -508,6 +541,7 @@ f_ec3 = ExecutabilityCondition(
 fasten_action = Action(fasten,[f_c1],[f_ec1,f_ec2,f_ec3])
 
 #!ALD
+# example with 5 beams
 ALD = ActionLangSysDesc(
         sorts=[robot,beam,pin,thing,ob,place],
         statics=statics,
@@ -516,11 +550,13 @@ ALD = ActionLangSysDesc(
         actions=[put_down_action,move_action,pick_up_action,assemble_action,fasten_action],
         domain_setup=['holds(in_assembly(b1),true,0).','holds(location(b1,assembly_area),true,0).','holds(location(b2,input_area),true,0).',
                       'holds(location(b3,input_area),true,0).','holds(location(b4,input_area),true,0).','holds(location(rob0,input_area),true,0).',
-                      'next_to(input_area,intermediate_area).',
+                      'next_to(input_area,intermediate_area).','holds(location(b5,input_area),true,0).',
                       'next_to(assembly_area,intermediate_area).','fits_into(b2, b1).','fits_into(b3, b1).','fits_into(b3, b4).',
-                      'fits_into(b2, b4).'],
+                      'fits_into(b2, b4).', 'fits_into(b5,b2).', 'fits_into(b5,b3).'],
         goal_description=[GoalDefinition(in_assembly,['b4'],True)],
-        display_hints=None, planning_steps=3)
+        display_hints=['occurs.'], planning_steps=25)
 
-ALD.complete_domain_setup_fluent(in_hand,False)
+ALD.complete_domain_setup_fluent(in_hand,False) #assert robot hand is empty
+ALD.complete_domain_setup_fluent(clear,True) #assert objects are accessible
+
 ALD.to_sparc_program().save(SAVE_DIR+'beam_domain_coarse.sp')

@@ -3,12 +3,12 @@
 %% Author: MARK ROBSON 2023
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#const numSteps = 3.
+#const numSteps = 25.
 
 sorts
 #robot = {rob0}.
-#beam = {b1,b2,b3,b4}.
-#pin = {p1,p2,p3,p4}.
+#beam = {b1,b2,b3,b4,b5}.
+#pin = {p1,p2,p3,p4,p5,p6}.
 #thing = #beam + #pin.
 #object = #robot + #thing.
 #place = {input_area,intermediate_area,assembly_area}.
@@ -36,6 +36,9 @@ next_to(P1,P2):- next_to(P2,P1).
 -next_to(P1,P2):- not next_to(P1,P2).
 holds(location(T,P1), false, I) :- holds(location(T,P2), true, I), P1!=P2.
 holds(location(T1,P1), true, I) :- holds(location(T2,P1), true, I), holds(on(T1,T2), true, I).
+holds(on(T1,T2), false, I) :- T1=T2.
+holds(location(T1,P1), true, I) :- holds(location(R,P1), true, I), holds(in_hand(R,T2), true, I), T1=T2.
+holds(clear(T2), false, I) :- holds(on(T1,T2), true, I).
 is_capped_by(B1,B2,B3):- fits_into(B1,B2), fits_into(B1,B3), B2!=B3.
 is_capped_by(B1,B2,B3):- is_capped_by(B1,B3,B2).
 -is_capped_by(B1,B2,B3):- not is_capped_by(B1,B2,B3).
@@ -48,22 +51,23 @@ holds(supported(B1), true, I) :- holds(in_assembly(B2), true, I), fits_into(B2,B
 -fits_into(B1,B2):- fits_into(B2,B1).
 -fits_through(B1,B2):- fits_through(B2,B1).
 holds(in_hand(R,T), false, I+1) :- occurs(putdown(R,T), I).
-holds(on(T1,T2), true, I+1) :- occurs(putdown(R,T1), I), holds(location(R,P1), true, I), holds(location(T1,P2), true, I), P1=P2, holds(clear(T2), true, I).
+holds(on(T1,T2), true, I+1) :- occurs(putdown(R,T1), I), holds(location(R,P1), true, I), holds(location(T2,P1), true, I), holds(clear(T2), true, I), T1!=T2.
 -occurs(putdown(R,T), I) :- not holds(in_hand(R,T), true, I).
 holds(location(R,P), true, I+1) :- occurs(move(R,P), I).
-holds(location(T,P), true, I+1) :- occurs(move(R,P), I), holds(in_hand(R,T), true, I).
 -occurs(move(R,P1), I) :- holds(location(R,P2), true, I), P1=P2.
 -occurs(move(R,P1), I) :- holds(location(R,P2), true, I), not next_to(P1,P2).
+-occurs(move(R,P1), I) :- holds(in_hand(R,B1), true, I), holds(in_assembly(B1), true, I).
+-occurs(move(R,P1), I) :- holds(in_hand(R,P1), true, I), holds(fastened(B1,B2,P), true, I).
 holds(in_hand(R,T), true, I+1) :- occurs(pick_up(R,T), I).
 holds(on(T1,T2), false, I+1) :- occurs(pick_up(R,T1), I), holds(on(T1,T2), true, I).
 holds(clear(T2), true, I+1) :- occurs(pick_up(R,T1), I), holds(on(T1,T2), true, I).
 -occurs(pick_up(R,T1), I) :- not holds(clear(T1), true, I).
 -occurs(pick_up(R,T1), I) :- holds(location(T1,P1), true, I), holds(location(R,P2), true, I), P1!=P2.
+-occurs(pick_up(R,T1), I) :- holds(in_hand(rob0,T2), true, I), #thing(T2).
 holds(in_assembly(B), true, I+1) :- occurs(assemble(R,B), I).
 -occurs(assemble(R,B), I) :- not holds(in_hand(R,B), true, I).
 -occurs(assemble(R,B1), I) :- holds(in_assembly(B2), true, I), holds(in_assembly(B3), true, I), is_capped_by(B1,B2,B3), B2!=B3.
--occurs(assemble(R,B1), I) :- holds(in_assembly(B2), true, I), fits_through(B2,B1), #beam(B2).
--occurs(assemble(R,B1), I) :- holds(in_assembly(B2), true, I), fits_into(B2,B1), not is_capped_by(B2,B1,B3), #beam(B2), #beam(B3).
+-occurs(assemble(R,B1), I) :- holds(in_assembly(B2), true, I), fits_through(B2,B1).
 -occurs(assemble(R,B1), I) :- not holds(in_assembly(B2), true, I), holds(in_assembly(B3), true, I), is_capped_by(B2,B1,B3), B2!=B3.
 -occurs(assemble(R,B), I) :- holds(location(R,P), true, I), P!=assembly_area.
 -occurs(assemble(R,B), I) :- holds(in_assembly(B), true, I).
@@ -89,16 +93,36 @@ holds(location(b3,input_area),true,0).
 holds(location(b4,input_area),true,0).
 holds(location(rob0,input_area),true,0).
 next_to(input_area,intermediate_area).
+holds(location(b5,input_area),true,0).
 next_to(assembly_area,intermediate_area).
 fits_into(b2, b1).
 fits_into(b3, b1).
 fits_into(b3, b4).
 fits_into(b2, b4).
+fits_into(b5,b2).
+fits_into(b5,b3).
 holds(in_hand(rob0,b1),false,0).
 holds(in_hand(rob0,b2),false,0).
 holds(in_hand(rob0,b3),false,0).
 holds(in_hand(rob0,b4),false,0).
+holds(in_hand(rob0,b5),false,0).
 holds(in_hand(rob0,p1),false,0).
 holds(in_hand(rob0,p2),false,0).
 holds(in_hand(rob0,p3),false,0).
 holds(in_hand(rob0,p4),false,0).
+holds(in_hand(rob0,p5),false,0).
+holds(in_hand(rob0,p6),false,0).
+holds(clear(b1),true,0).
+holds(clear(b2),true,0).
+holds(clear(b3),true,0).
+holds(clear(b4),true,0).
+holds(clear(b5),true,0).
+holds(clear(p1),true,0).
+holds(clear(p2),true,0).
+holds(clear(p3),true,0).
+holds(clear(p4),true,0).
+holds(clear(p5),true,0).
+holds(clear(p6),true,0).
+
+display
+occurs.
