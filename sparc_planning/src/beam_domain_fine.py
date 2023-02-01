@@ -7,7 +7,8 @@ robot = BasicSort('robot', ['rob0'])
 #add beam and pin sorts (simple 4 beam set)
 beam = BasicSort('beam',['b1','b2','b3','b4'])
 link = BasicSort('link',['L1','L2','L3','L4'])
-#!only end joints in this example set
+#!only end joints in this simple example set
+#TODO define the other joint types (mid_joints)
 in_m_end = BasicSort('in_m_end',['J3','J4','J7','J8'])
 in_f_end = BasicSort('in_f_end',['J1','J2','J5','J6'])
 end_joint = SuperSort('end_joint', [in_m_end,in_f_end])
@@ -43,7 +44,6 @@ component = Func('component',[coarse_res_sort,fine_res_sort], FuncType.STATIC)
 # define close locations for recovery/motion control
 near_to = Func('near_to', [near_to_loc,place_f], FuncType.STATIC)
 # add beam domain statics with refinements
-#TODO sort out relationships between f and c for fits_into and fits_through
 fits_into_c = Func('fits_into_c', [beam,beam], FuncType.STATIC)
 fits_into_f = Func('fits_into_f', [beam_part,beam_part], FuncType.STATIC)
 fits_through_c = Func('fits_through_c',[beam,beam],FuncType.STATIC)
@@ -78,9 +78,9 @@ location = Func('loc_f', [ob,place_f], FuncType.FLUENT)
 # add beam domain fluents
 in_assembly = Func('in_assembly',[beam],FuncType.FLUENT)
 supported = Func('supported',[beam], FuncType.FLUENT)
-fastened = Func('fastened',[beam,beam,pin], FuncType.FLUENT)
-
-fluents = [in_hand_c,in_hand_f,location,in_assembly,supported,fastened]
+fastened_c = Func('fastened_c',[beam,beam,pin], FuncType.FLUENT)
+fastened_f = Func('fastened_f',[beam_part,beam_part,pin],FuncType.FLUENT)
+fluents = [in_hand_c,in_hand_f,coarse_location,location,in_assembly,supported,fastened_c,fastened_f]
 
 #!state constraints
 state_constraints=[]
@@ -95,6 +95,16 @@ place_component_limit = StateConstraint(
     condition_object_instance_names=[['P1'],['C1']]
 )
 state_constraints.append(place_component_limit)
+#only beam_part can be a component of beam
+state_constraints.append(StateConstraint(
+    object_instances={'C1':beam_part,'P1':beam,},
+    head=component,
+    head_value=False,
+    head_object_instance_names=['C1','P1'],
+    conditions=[Property('beam','P1',Relation.IS_OF_SORT),Property('beam_part','C1',Relation.IS_OF_SORT)],
+    condition_values=[True,False],
+    condition_object_instance_names=[['P1'],['C1']]
+))
 #next_to_transivity
 state_constraints.append(StateConstraint(
     object_instances={'C1':place_f,'C2':place_f},
@@ -259,9 +269,8 @@ support_constraint2 = StateConstraint(
     condition_values=[True,True]
 )
                       
-##TODO rules govenerning fit interactions
-##TODO do we need these static rules?
-##TODO fits must be defined by designer anyway?
+## rules govenerning fit interactions
+##TODO do we need these static rules if fits must be defined by designer anyway?
 inception = StateConstraint(
     object_instances={'B1':beam,'B2':beam},
     head=fits_into_c,
@@ -343,6 +352,28 @@ state_constraints += [capping_constraint,
                       inception,
                       thru_ception]
 
+#fastened bridge axiom
+state_constraints.append(StateConstraint(
+    object_instances={'B1':beam,'B2':beam,'P':pin,'BP1':beam_part,'BP2':beam_part},
+    head=fastened_c,
+    head_value=True,
+    head_object_instance_names=['B1','B2','P'],
+    conditions=[fastened_f,component,component],
+    condition_object_instance_names=[['BP1','BP2','P'],['BP1','B1'],['BP2','B2']],
+    condition_values=[True,True]
+))
+##transivity of fastened
+state_constraints.append(
+    StateConstraint(
+        object_instances={'BP1':beam_part,'BP2':beam_part,'P':pin},
+        head=fastened_f,
+        head_value=True,
+        head_object_instance_names=['BP1','BP2','P'],
+        conditions=[fastened_f],
+        condition_values=[True],
+        condition_object_instance_names=[['BP2','BP1','P']],
+    )
+)
 #?extended beam domain state constraints for new beam part connection relations
 ##transivity of beam part connections
 state_constraints.append(
@@ -438,7 +469,7 @@ state_constraints.append(StateConstraint(
     condition_values=[True,True,True]
 ))
 
-#TODO action refinements and new actions at fine resolution
+#! action refinements and new actions at fine resolution
 #removed on and clear as we can assume these for beam domain (no object stacking)
 #!pick_up_f action
 pick_up = ActionDefinition('pick_up_f', [robot, thing_part])
@@ -473,6 +504,7 @@ pick_up_action = Action(pick_up,[pu_c1,],[pu_ec2, pu_ec3])
 
 #!move_f action
 move = ActionDefinition('move_f', [robot,place_f])
+## move changes robot location
 m_c1 = CausalLaw(
     action=move,
     object_instances={'R':robot,'P':place_f},
@@ -512,11 +544,20 @@ m_ec4 = ExecutabilityCondition(
     action=move,
     object_instances={'R':robot,'P1':place_f,'B1':beam,'B2':beam, 'P':pin},
     action_object_instance_names=['R','P1'],
-    conditions=[in_hand_f,fastened],
+    conditions=[in_hand_f,fastened_c],
     condition_object_instance_names=[['R','P'],['B1','B2','P']],
     condition_values=[True,True],
    )
-move_action = Action(move, [m_c1], [m_ec1,m_ec2, m_ec3, m_ec4])
+#cannot use move action from near_to locaitons (force use of move_local)
+m_ec5 = ExecutabilityCondition(
+    action=move,
+    object_instances={'R':robot,'P1':place_f,'P2':place_f},
+    action_object_instance_names=['R','P2'],
+    conditions=[location,near_to],
+    condition_values=[True,True],
+    condition_object_instance_names=[['R','P1'],['P1','P2']]
+)
+move_action = Action(move, [m_c1], [m_ec1,m_ec2, m_ec3, m_ec4, m_ec5])
 
 #!put_down_f action
 put_down = ActionDefinition('putdown_f',[robot, thing_part])
@@ -538,8 +579,7 @@ pd_c1 = CausalLaw(put_down,
     )
 put_down_action = Action(put_down,[pd_c1],[pd_ec1])
 
-#!assemble action set
-
+#?beam assembly action set
 #!assem_f_square
 assemble_square = ActionDefinition('assemble_f_square',[robot,beam_part])
 # puts beam into position as long as the part inserted is not an angle end (which needs further rotating)
@@ -620,7 +660,6 @@ asem_cap_e2 = ExecutabilityCondition(
     condition_values=[True,True,True,True],
     condition_object_instance_names=[['B1','BP'],['R','C1'],['B1','C2'],['C1','C2']],
 )
-
 assemble_cap_action = Action(assemble_cap,[asem_cap_c1],[asem_cap_e1, asem_cap_e2])
 
 #TODO
@@ -739,50 +778,152 @@ for ac in assembly_actions:
     )
     
 
-#TODO refine fasten action to use beam_parts
+# refined fasten action to use beam_parts
 #!Fasten Action 
-fasten = ActionDefinition('fasten',[robot,beam,beam,pin])
+fasten = ActionDefinition('fasten',[robot,beam_part,beam_part,pin])
+## causes beam parts to be fastened by pin
 f_c1 = CausalLaw(
     action=fasten,
-    fluent_affected=fastened,
+    fluent_affected=fastened_f,
     fluent_value=True,
-    object_instances={'R':robot,'B1':beam,'B2':beam,'P1':pin},
+    object_instances={'R':robot,'B1':beam_part,'B2':beam_part,'P1':pin},
     action_object_instance_names=['R','B1','B2','P1'],
-    fluent_object_instance_names=['B1','B2','P1'],
+    fluent_object_instance_names=['B1','B2','P1']
 )
-## parts must be assembled to be fastened
+## causes movment to target_location for pin
+f_c2 = CausalLaw(
+    action=fasten,
+    fluent_affected=location,
+    fluent_value=True,
+    object_instances={'R':robot,'B1':beam_part,'B2':beam_part,'P1':pin,'C':place_f},
+    action_object_instance_names=['R','B1','B2','P1'],
+    fluent_object_instance_names=['R','C1'],
+    conditions=[assem_target_loc],
+    condition_object_instance_names=[['P1','C1']],
+    condition_values=[True]
+)
+## both beams must be in assembly to fasten them
 f_ec1 = ExecutabilityCondition(
     action= fasten,
-    object_instances={'R':robot,'B1':beam,'B2':beam,'P1':pin},
-    action_object_instance_names=['R','B1','B2','P1'],
-    conditions=[in_assembly],
-    condition_values=[False],
-    condition_object_instance_names=[['B1']],
+    object_instances={'R':robot,'B1':beam,'BP1':beam_part,'BP2':beam_part,'P1':pin},
+    action_object_instance_names=['R','BP1','BP2','P1'],
+    conditions=[in_assembly,component],
+    condition_values=[False, True],
+    condition_object_instance_names=[['B1'],['BP1','B1']]
 )
-## both parts must be in assembly to fasten them
 f_ec2 = ExecutabilityCondition(
-    action=fasten,
-    object_instances={'R':robot,'B1':beam,'B2':beam,'P1':pin},
-    action_object_instance_names=['R','B1','B2','P1'],
-    conditions=[in_assembly],
-    condition_values=[False],
-    condition_object_instance_names=[['B2']],
+    action= fasten,
+    object_instances={'R':robot,'B1':beam,'BP1':beam_part,'BP2':beam_part,'P1':pin},
+    action_object_instance_names=['R','BP1','BP2','P1'],
+    conditions=[in_assembly,component],
+    condition_values=[False, True],
+    condition_object_instance_names=[['B2'],['BP2','B2']]
 )
 ## must hold pin to do fastening
 f_ec3 = ExecutabilityCondition(
     action= fasten,
-    object_instances={'R':robot,'B1':beam,'B2':beam,'P1':pin},
+    object_instances={'R':robot,'B1':beam_part,'B2':beam_part,'P1':pin},
     action_object_instance_names=['R','B1','B2','P1'],
     conditions=[in_hand_f],
     condition_values=[False],
     condition_object_instance_names=[['R','P1']],
 )
-fasten_action = Action(fasten,[f_c1],[f_ec1,f_ec2,f_ec3])
+#parts must be at target_locations
+f_ec4 = ExecutabilityCondition(
+    action= fasten,
+    object_instances={'R':robot,'B1':beam,'BP1':beam_part,'BP2':beam_part,'P1':pin,'C1':place_f,'C2':place_f},
+    action_object_instance_names=['R','BP1','BP2','P1'],
+    conditions=[location,assem_target_loc,component,Property('C1','C2',Relation.NOT_EQUAL)],
+    condition_values=[True,True,True,True],
+    condition_object_instance_names=[['B1','C1'],['B1','C2'],['B1','BP1'],['C1','C2']],
+)
+f_ec5 = ExecutabilityCondition(
+    action= fasten,
+    object_instances={'R':robot,'B1':beam,'BP1':beam_part,'BP2':beam_part,'P1':pin,'C1':place_f,'C2':place_f},
+    action_object_instance_names=['R','BP1','BP2','P1'],
+    conditions=[location,assem_target_loc,component,Property('C1','C2',Relation.NOT_EQUAL)],
+    condition_values=[True,True,True,True],
+    condition_object_instance_names=[['B1','C1'],['B1','C2'],['B1','BP2'],['C1','C2']],
+)
+#can only be used at pin approach location
+f_ec6 = ExecutabilityCondition(
+    action= fasten,
+    object_instances={'R':robot,'BP1':beam_part,'BP2':beam_part,'P1':pin,'C1':place_f,'C2':place_f},
+    action_object_instance_names=['R','BP1','BP2','P1'],
+    conditions=[location,assem_approach_loc,Property('C1','C2',Relation.NOT_EQUAL)],
+    condition_values=[True,True,True],
+    condition_object_instance_names=[['R','C1'],['P1','C2'],['C1','C2']],
+)
+
+fasten_action = Action(fasten,[f_c1,f_c2],[f_ec1,f_ec2,f_ec3,f_ec4,f_ec5,f_ec6])
 
 
-#TODO add new fine res actions
+#? new fine res actions
 #!push action for beam adjustment when in assembly
-#!move_local action for control
+push = ActionDefinition('push',[robot,beam])
+##push causes beams to move to their target locations
+push_c1 = CausalLaw(
+    action=push,
+    action_object_instance_names=['R','B'],
+    fluent_affected=location,
+    fluent_object_instance_names=['B','C'],
+    fluent_value=True,
+    conditions=[assem_target_loc],
+    condition_object_instance_names=[['B','C']],
+    condition_values=[True]
+)
+##push also causes robot to move to the beam target location
+push_c2 = CausalLaw(
+    action=push,
+    action_object_instance_names=['R','B'],
+    fluent_affected=location,
+    fluent_object_instance_names=['R','C'],
+    fluent_value=True,
+    conditions=[assem_target_loc],
+    condition_object_instance_names=[['B','C']],
+    condition_values=[True]
+)
+#beam must already be in assembly
+push_ec1 = ExecutabilityCondition(
+    action=push,
+    object_instances={'R':robot,'B':beam},
+    action_object_instance_names=['R','B'],
+    conditions=[in_assembly],
+    condition_object_instance_names=[['B']],
+    condition_values=[False]
+)
+#robot's hand must be empty
+push_ec2 = ExecutabilityCondition(
+    action=push,
+    object_instances={'R':robot,'B':beam,'T':thing},
+    action_object_instance_names=['R','B'],
+    conditions=[in_hand_c, Property('thing','T',Relation.IS_OF_SORT)],
+    condition_object_instance_names=[['R','T'],['T']],
+    condition_values=[True,True]
+)
+#todo must be at "near_to" position to start a push action?
+push_action = Action(push,[push_c1],[push_ec1,push_ec2])
+
+#!move_local action for control (servo if a move gets near to but not at target)
+move_local = ActionDefinition('move_local',[robot,place_f])
+##move_local causes robot location to change
+ml_c1 = CausalLaw(
+    action = move_local,
+    action_object_instance_names=['R','C1'],
+    fluent_affected=location,
+    fluent_object_instance_names=['R','C1'],
+    fluent_value=True,
+)
+##move_local can only be used from near_to positions
+ml_ec1 = ExecutabilityCondition(
+    action=move_local,
+    action_object_instance_names=['R','C2'],
+    object_instances={'R':robot,'C1':place_f,'C2':place_f},
+    conditions=[location,near_to],
+    condition_object_instance_names=[['R','C1'], ['C1','C2']],
+    condition_values=[False,True]
+)
+move_local_action = Action(move_local,[ml_c1],[ml_ec1])
 
 #TODO create fine res ALD
 #!ALD
@@ -792,7 +933,7 @@ ALD = ActionLangSysDesc(
         statics=statics,
         state_constraints=state_constraints,
         inertial_fluents=fluents,
-        actions=[put_down_action,move_action,pick_up_action,assemble_action,fasten_action],
+        actions=[put_down_action,move_action,pick_up_action,*assembly_actions,fasten_action,push_action,move_local_action],
         domain_setup=['holds(in_assembly(b1),true,0).','holds(location(b1,assembly_area),true,0).','holds(location(b2,input_area),true,0).',
                       'holds(location(b3,input_area),true,0).','holds(location(b4,input_area),true,0).','holds(location(rob0,input_area),true,0).',
                       'next_to(input_area,intermediate_area).','holds(location(b5,input_area),true,0).',
@@ -801,7 +942,6 @@ ALD = ActionLangSysDesc(
         goal_description=[GoalDefinition(in_assembly,['b4'],True)],
         display_hints=['occurs.'], planning_steps=25)
 
-ALD.complete_domain_setup_fluent(in_hand,False) #assert robot hand is empty
-ALD.complete_domain_setup_fluent(clear,True) #assert objects are accessible
+ALD.complete_domain_setup_fluent(in_hand_f,False) #assert robot hand is empty
 
 ALD.to_sparc_program().save(SAVE_DIR+'beam_domain_coarse.sp')
