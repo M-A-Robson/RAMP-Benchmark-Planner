@@ -31,7 +31,7 @@ near_to_loc = BasicSort('near_to_location', ['nt_b1a','nt_b2a','nt_b3a','nt_b4a'
                                              'nt_p3a','nt_p4a','nt_b1t','nt_b2t','nt_b3t','nt_b4t',
                                              'nt_p1t','nt_p2t','nt_p3t','nt_p4t','nt_above_input',
                                              'nt_above_intermediate','nt_above_assembly'])
-input_locations = BasicSort('input_locaitons', ['b2i','b3i','b4i','p1i','p2i','p3i','p4i'])
+input_locations = BasicSort('input_locations', ['b2i','b3i','b4i','p1i','p2i','p3i','p4i'])
 place_f = SuperSort('place_f', [approach_loc,target_loc,non_placement_loc, near_to_loc, input_locations]) # through_loc, pre_rotate_loc
 # need sets to allow for more than one refined sort type using the component keyword
 fine_res_sort = SuperSort('fine_res_sort',[place_f])
@@ -190,6 +190,7 @@ state_constraints.append(StateConstraint(
     condition_values=[True,False],
     condition_object_instance_names=[['P1'],['C1']]
 ))
+
 #in_hand bridge axiom
 state_constraints.append(StateConstraint(
     object_instances={'T':thing,'R':robot,'TP':thing_part},
@@ -528,11 +529,11 @@ pu_c1 = CausalLaw(
 ##cannot pick up unless in same location
 pu_ec2 = ExecutabilityCondition(
     action=pick_up,
-    object_instances={'R':robot,'T1':thing_part, 'P1':place_f, 'P2':place_f},
+    object_instances={'R':robot,'T1':thing_part,'T':thing,'P1':place_f, 'P2':place_f},
     action_object_instance_names=['R','T1'],
-    conditions=[location, location, Property('P1','P2',Relation.NOT_EQUAL)],
-    condition_object_instance_names=[['T1','P1'],['R','P2'],['P1','P2']],
-    condition_values=[True, True, True],
+    conditions=[location, location, Property('P1','P2',Relation.NOT_EQUAL), component],
+    condition_object_instance_names=[['T','P1'],['R','P2'],['P1','P2'],['T','T1']],
+    condition_values=[True, True, True, True],
 )
 ##can only hold one item at once
 pu_ec3 = ExecutabilityCondition(
@@ -997,20 +998,56 @@ actions = [put_down_action,
 
 
 domain_setup = [
+    r'% beam locations',
     'holds(in_assembly(b1),true,0).',
     'holds(loc_f(b1,b1t),true,0).',
     'holds(loc_f(b2,b2i),true,0).',
     'holds(loc_f(b3,b3i),true,0).',
     'holds(loc_f(b4,b4i),true,0).',
-    'holds(loc_f(rob0,input_area),true,0).',
-    'next_to(input_area,intermediate_area).',
-    'next_to(assembly_area,intermediate_area).',
-    'fits_into(b2, b1).',
-    'fits_into(b3, b1).',
-    'fits_into(b3, b4).',
-    'fits_into(b2, b4).',
-    'fits_into(b5,b2).',
-    'fits_into(b5,b3).'
+    r'% beam components and connections',
+    'connected_to(J1,L1).',
+    'connected_to(L1,J2).',
+    'component(J1,b1).',
+    'component(L1,b1).',
+    'component(J2,b1).',
+    'connected_to(J3,L2).',
+    'connected_to(L2,J4).',
+    'component(J3,b2).',
+    'component(L2,b2).',
+    'component(J4,b2).',
+    'connected_to(J5,L3).',
+    'connected_to(L3,J6).',
+    'component(J5,b3).',
+    'component(L3,b3).',
+    'component(J6,b3).',
+    'connected_to(J7,L4).',
+    'connected_to(L4,J8).',
+    'component(J7,b4).',
+    'component(L4,b4).',
+    'component(J8,b4).',
+    r'% robot location',
+    'holds(loc_f(rob0,above_input_area),true,0).',
+    r'% next_to_f location map',
+    'next_to_f(above_input_area,b2i).',
+    'next_to_f(above_input_area,b3i).',
+    'next_to_f(above_input_area,b4i).',
+    'next_to_f(above_input_area,p1i).',
+    'next_to_f(above_input_area,p2i).',
+    'next_to_f(above_input_area,p3i).',
+    'next_to_f(above_input_area,p4i).',
+    'next_to_f(above_input_area,above_intermediate_area).',
+    'next_to_f(above_assembly_area,above_intermediate_area).',
+    'next_to_f(above_assembly_area,b2a).',
+    'next_to_f(above_assembly_area,b3a).',
+    'next_to_f(above_assembly_area,b4a).',
+    'next_to_f(b2t,b2a).',
+    'next_to_f(b3t,b3a).',
+    'next_to_f(b4t,b4a).',
+    r'% beam to beam connections',
+    'fits_into_f(J3, J1).',
+    'fits_into_f(b5, J2).',
+    'fits_into_f(b6, J8).',
+    'fits_into_f(J4, J7).',
 ]
 
 goal = [
