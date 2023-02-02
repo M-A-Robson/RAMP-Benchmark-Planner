@@ -31,7 +31,8 @@ near_to_loc = BasicSort('near_to_location', ['nt_b1a','nt_b2a','nt_b3a','nt_b4a'
                                              'nt_p3a','nt_p4a','nt_b1t','nt_b2t','nt_b3t','nt_b4t',
                                              'nt_p1t','nt_p2t','nt_p3t','nt_p4t','nt_above_input',
                                              'nt_above_intermediate','nt_above_assembly'])
-place_f = SuperSort('place_f', [approach_loc,target_loc,non_placement_loc, near_to_loc]) # through_loc, pre_rotate_loc
+input_locations = BasicSort('input_locaitons', ['b2i','b3i','b4i','p1i','p2i','p3i','p4i'])
+place_f = SuperSort('place_f', [approach_loc,target_loc,non_placement_loc, near_to_loc, input_locations]) # through_loc, pre_rotate_loc
 # need sets to allow for more than one refined sort type using the component keyword
 fine_res_sort = SuperSort('fine_res_sort',[place_f])
 coarse_res_sort = SuperSort('coarse_res_sort',[place_c])
@@ -52,15 +53,15 @@ fits_through_f = Func('fits_through_f',[beam_part,beam_part],FuncType.STATIC)
 is_capped_by = Func('is_capped_by',[beam,beam,beam],FuncType.STATIC)
 # new fine res statics of beam domain
 ## beam part association
-connected_to = Func('connected_to',[beam_part,beam_part])
-between = Func('between',[beam_part,beam_part,beam_part])
+connected_to = Func('connected_to',[beam_part,beam_part],FuncType.STATIC)
+between = Func('between',[beam_part,beam_part,beam_part],FuncType.STATIC)
 ## assembly location structure
-assem_target_loc = Func('assem_target_loc', [thing, target_loc])
-assem_approach_loc = Func('assem_approach_loc', [thing, approach_loc])
+assem_target_loc = Func('assem_target_loc', [thing, target_loc],FuncType.STATIC)
+assem_approach_loc = Func('assem_approach_loc', [thing, approach_loc],FuncType.STATIC)
 #! no rotation or through beams in this set
-beam_prerotate_loc = Func('beam_prerotate_loc', [beam, prerot_loc])
-beam_through_loc = Func('beam_through_loc', [beam, through_loc])
-assembly_loc = Func('assembly_loc', [thing,place_f])
+beam_prerotate_loc = Func('beam_prerotate_loc', [beam, prerot_loc],FuncType.STATIC)
+beam_through_loc = Func('beam_through_loc', [beam, through_loc],FuncType.STATIC)
+assembly_loc = Func('assembly_loc', [thing,place_f],FuncType.STATIC)
 
 statics = [next_to_c,next_to_f,component,near_to,fits_into_c,
            fits_into_f,fits_through_c,fits_through_f,is_capped_by,
@@ -76,11 +77,14 @@ location = Func('loc_f', [ob,place_f], FuncType.FLUENT)
 #on = Func('on', [thing,thing], FuncType.FLUENT)
 #clear = Func('clear', [thing], FuncType.FLUENT)
 # add beam domain fluents
-in_assembly = Func('in_assembly',[beam],FuncType.FLUENT)
-supported = Func('supported',[beam], FuncType.FLUENT)
+in_assembly_c = Func('in_assembly_c',[beam],FuncType.FLUENT)
+in_assembly_f = Func('in_assembly_f',[beam_part],FuncType.FLUENT)
+supported_c = Func('supported_c',[beam], FuncType.FLUENT)
+supported_f = Func('supported_f',[beam_part], FuncType.FLUENT)
 fastened_c = Func('fastened_c',[beam,beam,pin], FuncType.FLUENT)
 fastened_f = Func('fastened_f',[beam_part,beam_part,pin],FuncType.FLUENT)
-fluents = [in_hand_c,in_hand_f,coarse_location,location,in_assembly,supported,fastened_c,fastened_f]
+fluents = [in_hand_c,in_hand_f,coarse_location,location,in_assembly_c,
+           in_assembly_f,supported_c, supported_f,fastened_c,fastened_f]
 
 #!state constraints
 state_constraints=[]
@@ -196,7 +200,46 @@ state_constraints.append(StateConstraint(
     condition_object_instance_names=[['R','TP'],['TP','T']],
     condition_values=[True,True]
 ))
-
+#supported bridge axioms
+state_constraints.append(StateConstraint(
+    object_instances={'P1':beam_part,'B1':beam},
+    head=supported_c,
+    head_value=True,
+    head_object_instance_names=['B1'],
+    conditions=[supported_f,component],
+    condition_object_instance_names=[['P1'],['B1','P1']],
+    condition_values=[True,True]
+    ))
+##all parts of beam are supported if one is
+state_constraints.append(StateConstraint(
+    object_instances={'P1':beam_part,'B1':beam},
+    head=supported_f,
+    head_value=True,
+    head_object_instance_names=['P1'],
+    conditions=[supported_c,component],
+    condition_object_instance_names=[['B1'],['B1','P1']],
+    condition_values=[True,True]
+    ))
+#in_assembly bridge axioms
+state_constraints.append(StateConstraint(
+    object_instances={'P1':beam_part,'B1':beam},
+    head=in_assembly_c,
+    head_value=True,
+    head_object_instance_names=['B1'],
+    conditions=[in_assembly_f,component],
+    condition_object_instance_names=[['P1'],['B1','P1']],
+    condition_values=[True,True]
+    ))
+##all parts of beam are in_assembly if one is
+state_constraints.append(StateConstraint(
+    object_instances={'P1':beam_part,'B1':beam},
+    head=in_assembly_f,
+    head_value=True,
+    head_object_instance_names=['P1'],
+    conditions=[in_assembly_c,component],
+    condition_object_instance_names=[['B1'],['B1','P1']],
+    condition_values=[True,True]
+    ))
 #assembly locations bundle
 state_constraints.append(
     StateConstraint(
@@ -205,7 +248,7 @@ state_constraints.append(
     head_object_instance_names=['T','C'],
     head_value=True,
     conditions=[assem_approach_loc],
-    condition_values=True,
+    condition_values=[True],
     condition_object_instance_names=[['T','C']]
     )
 )
@@ -216,7 +259,7 @@ state_constraints.append(
     head_object_instance_names=['T','C'],
     head_value=True,
     conditions=[assem_target_loc],
-    condition_values=True,
+    condition_values=[True],
     condition_object_instance_names=[['T','C']]
     )
 )
@@ -252,19 +295,19 @@ CWA_on_capped = StateConstraint(
 ## beams supported if either end can be joined to another beam
 support_constraint = StateConstraint(
     object_instances={'B1':beam,'B2':beam},
-    head=supported,
+    head=supported_c,
     head_object_instance_names=['B1'],
     head_value=True,
-    conditions=[in_assembly,fits_into_c],
+    conditions=[in_assembly_c,fits_into_c],
     condition_object_instance_names=[['B2'],['B1','B2']],
     condition_values=[True,True]
 )
 support_constraint2 = StateConstraint(
     object_instances={'B1':beam,'B2':beam},
-    head=supported,
+    head=supported_c,
     head_object_instance_names=['B1'],
     head_value=True,
-    conditions=[in_assembly,fits_into_c],
+    conditions=[in_assembly_c,fits_into_c],
     condition_object_instance_names=[['B2'],['B2','B1']],
     condition_values=[True,True]
 )
@@ -331,7 +374,7 @@ not_thru_self = StateConstraint(
 # if beams reach their target location then they are "in_assembly"
 state_constraints.append(StateConstraint(
     object_instances={'B':beam,'C':place_f},
-    head=in_assembly,
+    head=in_assembly_c,
     head_object_instance_names=['B'],
     head_value=True,
     conditions=[location,assem_target_loc],
@@ -360,7 +403,7 @@ state_constraints.append(StateConstraint(
     head_object_instance_names=['B1','B2','P'],
     conditions=[fastened_f,component,component],
     condition_object_instance_names=[['BP1','BP2','P'],['BP1','B1'],['BP2','B2']],
-    condition_values=[True,True]
+    condition_values=[True,True,True]
 ))
 ##transivity of fastened
 state_constraints.append(
@@ -531,14 +574,14 @@ m_ec2 = ExecutabilityCondition(
     condition_object_instance_names=[['R','P2'],['P1','P2']],
     condition_values=[True,False],
    )
-# cannot move after assembling or fastening a beam (need to release object first)
+# cannot move after assembling a beam (need to release object first)
 m_ec3 = ExecutabilityCondition(
     action=move,
-    object_instances={'R':robot,'P1':place_f,'B1':beam,'BP':beam_part,'P2':place_f},
+    object_instances={'R':robot,'P1':place_f,'BP':beam_part,'P2':place_f},
     action_object_instance_names=['R','P1'],
-    conditions=[in_hand_f,in_assembly, component],
-    condition_object_instance_names=[['R','BP'],['B1'],['B1','BP']],
-    condition_values=[True,True,True],
+    conditions=[in_hand_f,in_assembly_f],
+    condition_object_instance_names=[['R','BP'],['BP']],
+    condition_values=[True,True],
    )
 m_ec4 = ExecutabilityCondition(
     action=move,
@@ -611,9 +654,9 @@ asem_sq_e1 = ExecutabilityCondition(
     action = assemble_square,
     object_instances={'R':robot,'B1':beam,'B2':beam,'B3':beam,'BP':beam_part},
     action_object_instance_names=['R','BP'],
-    conditions=[in_assembly,in_assembly,is_capped_by,
+    conditions=[in_assembly_c,in_assembly_c,is_capped_by,
                 Property('B2','B3',Relation.NOT_EQUAL),component],
-    condition_values=[True,True,True,True,True,True],
+    condition_values=[True,True,True,True,True],
     condition_object_instance_names=[['B2'],['B3'],['B1','B2','B3'],['B2','B3'],['B1','BP']],
 )
 # must be at approach location
@@ -646,7 +689,7 @@ asem_cap_e1 = ExecutabilityCondition(
     action = assemble_cap,
     object_instances={'R':robot,'B1':beam,'B2':beam,'B3':beam,'BP':beam_part},
     action_object_instance_names=['R','BP'],
-    conditions=[in_assembly,in_assembly,is_capped_by,
+    conditions=[in_assembly_c,in_assembly_c,is_capped_by,
                 Property('B2','B3',Relation.NOT_EQUAL),component],
     condition_values=[False,False,True,True,True,True],
     condition_object_instance_names=[['B2'],['B3'],['B1','B2','B3'],['B2','B3'],['B1','BP']],
@@ -679,7 +722,7 @@ for ac in assembly_actions:
         object_instances={'R':robot,'B1':beam,'B2':beam,'BP':beam_part,'C1':place_f,'C2':place_f},
         action_object_instance_names=['R','BP'],
         fluent_object_instance_names=['B1','C1'],
-        conditions=[component,in_assembly,near_to,assem_target_loc],
+        conditions=[component,in_assembly_c,near_to,assem_target_loc],
         condition_object_instance_names=[['B2','BP'],['B1'],['C1','C2'],['B1','C2']],
         condition_values=[True,True,True,True],
         )
@@ -698,7 +741,7 @@ for ac in assembly_actions:
     # cannot insert the part you are holding
     ac.executability_conditions.append(
         ExecutabilityCondition(
-            action = ac.action,
+            action = ac.action_def,
             object_instances={'R':robot,'BP':beam_part},
             action_object_instance_names=['R','BP'],
             conditions=[in_hand_f],
@@ -712,9 +755,9 @@ for ac in assembly_actions:
             action = ac.action_def,
             object_instances={'R':robot,'BP':beam_part,'B1':beam,'B2':beam,'B3':beam},
             action_object_instance_names=['R','BP'],
-            conditions=[in_assembly,in_assembly,is_capped_by,
+            conditions=[in_assembly_c,in_assembly_c,is_capped_by,
                         Property('B2','B3',Relation.NOT_EQUAL),component],
-            condition_values=[True,True,True,True],
+            condition_values=[True,True,True,True,True],
             condition_object_instance_names=[['B2'],['B3'],['B1','B2','B3'],['B2','B3'],['B1','BP']],
         )
     )
@@ -722,11 +765,11 @@ for ac in assembly_actions:
     ac.executability_conditions.append(
         ExecutabilityCondition(
             action = ac.action_def,
-            object_instances={'R':robot,'BP':beam_part,'B1':beam,'B2':beam},
+            object_instances={'R':robot,'BP':beam_part,'BP2':beam_part},
             action_object_instance_names=['R','BP'],
-            conditions=[in_assembly,fits_through_c,component],
-            condition_values=[True,True,True],
-            condition_object_instance_names=[['B2'],['B2','B1'],['B1','BP']],
+            conditions=[in_assembly_f,fits_through_f],
+            condition_values=[True,True],
+            condition_object_instance_names=[['BP2'],['BP2','BP']],
         )
     )
     #cannot add a beam which would cap another beam if the beams to be capped are not yet in the assembly
@@ -735,9 +778,9 @@ for ac in assembly_actions:
             action = ac.action_def,
             object_instances={'R':robot,'B1':beam,'B2':beam,'B3':beam,'BP':beam_part},
             action_object_instance_names=['R','BP'],
-            conditions=[in_assembly,in_assembly,is_capped_by,
+            conditions=[in_assembly_c,in_assembly_c,is_capped_by,
                         Property('B2','B3',Relation.NOT_EQUAL), component],
-            condition_values=[False,True,True,True,True,True],
+            condition_values=[False,True,True,True,True],
             condition_object_instance_names=[['B2'],['B3'],['B2','B1','B3'],['B2','B3'],['B1','BP']],
         )
     )
@@ -745,21 +788,21 @@ for ac in assembly_actions:
     ac.executability_conditions.append(
         ExecutabilityCondition(
             action=ac.action_def,
-            object_instances={'R':robot,'B':beam,'BP':beam_part},
+            object_instances={'R':robot,'BP':beam_part},
             action_object_instance_names=['R','BP'],
-            conditions=[in_assembly, component],
-            condition_object_instance_names=[['B'],['B','BP']],
-            condition_values=[True,True],
+            conditions=[in_assembly_f],
+            condition_object_instance_names=[['BP']],
+            condition_values=[True],
         )
     )
     #beams must be supported to add them
     ac.executability_conditions.append(
         ExecutabilityCondition(
             action=ac.action_def,
-            object_instances={'R':robot,'B':beam,'BP':beam_part},
+            object_instances={'R':robot,'BP':beam_part},
             action_object_instance_names=['R','BP'],
-            conditions=[supported,component],
-            condition_object_instance_names=[['B'],['B','BP']],
+            conditions=[supported_f],
+            condition_object_instance_names=[['BP']],
             condition_values=[False],
         )   
     )
@@ -769,11 +812,11 @@ for ac in assembly_actions:
             action = ac.action_def,
             object_instances={'R':robot,'B1':beam,'B2':beam,'BP':beam_part},
             action_object_instance_names=['R','BP'],
-            conditions=[in_assembly,Property('beam','B2',Relation.IS_OF_SORT),
+            conditions=[in_assembly_c,Property('beam','B2',Relation.IS_OF_SORT),
                         location,assem_target_loc,
                         Property('C1','C2',Relation.NOT_EQUAL)],
             condition_object_instance_names=[['B2'],['B2'],['B2','C1'],['B2','C2'],['C1','C2']],
-            condition_values=[False],
+            condition_values=[True,True,True,True,True],
         )   
     )
     
@@ -805,19 +848,19 @@ f_c2 = CausalLaw(
 ## both beams must be in assembly to fasten them
 f_ec1 = ExecutabilityCondition(
     action= fasten,
-    object_instances={'R':robot,'B1':beam,'BP1':beam_part,'BP2':beam_part,'P1':pin},
+    object_instances={'R':robot,'BP1':beam_part,'BP2':beam_part,'P1':pin},
     action_object_instance_names=['R','BP1','BP2','P1'],
-    conditions=[in_assembly,component],
-    condition_values=[False, True],
-    condition_object_instance_names=[['B1'],['BP1','B1']]
+    conditions=[in_assembly_f],
+    condition_values=[False],
+    condition_object_instance_names=[['BP1']]
 )
 f_ec2 = ExecutabilityCondition(
     action= fasten,
-    object_instances={'R':robot,'B1':beam,'BP1':beam_part,'BP2':beam_part,'P1':pin},
+    object_instances={'R':robot,'BP1':beam_part,'BP2':beam_part,'P1':pin},
     action_object_instance_names=['R','BP1','BP2','P1'],
-    conditions=[in_assembly,component],
-    condition_values=[False, True],
-    condition_object_instance_names=[['B2'],['BP2','B2']]
+    conditions=[in_assembly_f],
+    condition_values=[False],
+    condition_object_instance_names=[['BP2']]
 )
 ## must hold pin to do fastening
 f_ec3 = ExecutabilityCondition(
@@ -864,6 +907,7 @@ push = ActionDefinition('push',[robot,beam])
 ##push causes beams to move to their target locations
 push_c1 = CausalLaw(
     action=push,
+    object_instances={'R':robot,'B':beam,'C':place_f},
     action_object_instance_names=['R','B'],
     fluent_affected=location,
     fluent_object_instance_names=['B','C'],
@@ -875,6 +919,7 @@ push_c1 = CausalLaw(
 ##push also causes robot to move to the beam target location
 push_c2 = CausalLaw(
     action=push,
+    object_instances={'R':robot,'B':beam,'C':place_f},
     action_object_instance_names=['R','B'],
     fluent_affected=location,
     fluent_object_instance_names=['R','C'],
@@ -888,7 +933,7 @@ push_ec1 = ExecutabilityCondition(
     action=push,
     object_instances={'R':robot,'B':beam},
     action_object_instance_names=['R','B'],
-    conditions=[in_assembly],
+    conditions=[in_assembly_c],
     condition_object_instance_names=[['B']],
     condition_values=[False]
 )
@@ -901,14 +946,23 @@ push_ec2 = ExecutabilityCondition(
     condition_object_instance_names=[['R','T'],['T']],
     condition_values=[True,True]
 )
-#todo must be at "near_to" position to start a push action?
-push_action = Action(push,[push_c1],[push_ec1,push_ec2])
+# must be at postion "near_to" target position to start a push action?
+push_ec3 = ExecutabilityCondition(
+    action=push,
+    object_instances={'R':robot,'B':beam,'C1':place_f, 'C2':place_f},
+    action_object_instance_names=['R','B'],
+    conditions=[location, near_to, assem_target_loc],
+    condition_object_instance_names=[['R','C1'],['C1','C2'],['B','C2']],
+    condition_values=[True,False,True]
+)
+push_action = Action(push,[push_c1],[push_ec1,push_ec2,push_ec3])
 
 #!move_local action for control (servo if a move gets near to but not at target)
 move_local = ActionDefinition('move_local',[robot,place_f])
 ##move_local causes robot location to change
 ml_c1 = CausalLaw(
     action = move_local,
+    object_instances={'R':robot,'C1':place_f},
     action_object_instance_names=['R','C1'],
     fluent_affected=location,
     fluent_object_instance_names=['R','C1'],
@@ -927,21 +981,60 @@ move_local_action = Action(move_local,[ml_c1],[ml_ec1])
 
 #TODO create fine res ALD
 #!ALD
-# example with 4 beams
+
+sorts = [robot,beam,link,in_m_end,in_f_end,end_joint,beam_part,pin,thing,thing_part,ob,place_c,non_placement_loc,
+approach_loc,prerot_loc,through_loc,target_loc,near_to_loc,input_locations,place_f,fine_res_sort,coarse_res_sort]
+
+
+actions = [put_down_action,
+           move_action,
+           pick_up_action,
+           assemble_cap_action,
+           assemble_square_action,
+           fasten_action,
+           push_action,
+           move_local_action]
+
+
+domain_setup = [
+    'holds(in_assembly(b1),true,0).',
+    'holds(loc_f(b1,b1t),true,0).',
+    'holds(loc_f(b2,b2i),true,0).',
+    'holds(loc_f(b3,b3i),true,0).',
+    'holds(loc_f(b4,b4i),true,0).',
+    'holds(loc_f(rob0,input_area),true,0).',
+    'next_to(input_area,intermediate_area).',
+    'next_to(assembly_area,intermediate_area).',
+    'fits_into(b2, b1).',
+    'fits_into(b3, b1).',
+    'fits_into(b3, b4).',
+    'fits_into(b2, b4).',
+    'fits_into(b5,b2).',
+    'fits_into(b5,b3).'
+]
+
+goal = [
+    GoalDefinition(in_assembly_c,['b2'],True)
+]
+
+# for a in assembly_actions:
+#     print (f'ACTION: {a.action_def.name}')
+#     for e in a.executability_conditions:
+#         print(e.to_sparc())
+
+#example with 4 beams
 ALD = ActionLangSysDesc(
-        sorts=[robot,beam,pin,thing,ob,place],
+        sorts=sorts,
         statics=statics,
         state_constraints=state_constraints,
         inertial_fluents=fluents,
-        actions=[put_down_action,move_action,pick_up_action,*assembly_actions,fasten_action,push_action,move_local_action],
-        domain_setup=['holds(in_assembly(b1),true,0).','holds(location(b1,assembly_area),true,0).','holds(location(b2,input_area),true,0).',
-                      'holds(location(b3,input_area),true,0).','holds(location(b4,input_area),true,0).','holds(location(rob0,input_area),true,0).',
-                      'next_to(input_area,intermediate_area).','holds(location(b5,input_area),true,0).',
-                      'next_to(assembly_area,intermediate_area).','fits_into(b2, b1).','fits_into(b3, b1).','fits_into(b3, b4).',
-                      'fits_into(b2, b4).', 'fits_into(b5,b2).', 'fits_into(b5,b3).'],
-        goal_description=[GoalDefinition(in_assembly,['b4'],True)],
-        display_hints=['occurs.'], planning_steps=25)
+        actions=actions,
+        domain_setup=domain_setup,
+        goal_description=goal,
+        display_hints=['occurs.'], 
+        planning_steps = 25
+    )
 
 ALD.complete_domain_setup_fluent(in_hand_f,False) #assert robot hand is empty
 
-ALD.to_sparc_program().save(SAVE_DIR+'beam_domain_coarse.sp')
+ALD.to_sparc_program().save(SAVE_DIR+'beam_domain_fine.sp')

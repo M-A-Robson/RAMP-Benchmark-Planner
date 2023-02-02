@@ -478,11 +478,13 @@ class ActionLangSysDesc:
 
     def to_sparc_program(self) -> SparcProg:
         # create constants
+        print('Parsing constants...')
         sparc_constants = [f'#const numSteps = {self.planning_steps}.']
         if self.constants:
             sparc_constants += [c.to_sparc() for c in self.constants]
         
         # create sorts
+        print('Parsing sorts...')
         sparc_sorts = [s.to_sparc() for s in self.sorts]
         # add action sort
         sparc_sorts.append(f"#action = {' + '.join([a.action_def.to_sparc() for a in self.actions])}.")
@@ -501,6 +503,7 @@ class ActionLangSysDesc:
 
         # create predicates
         # add statics
+        print('Parsing predicates...')
         sparc_predicates = []
         if self.statics:
             sparc_predicates += [stat.to_sparc() for stat in self.statics]
@@ -511,6 +514,7 @@ class ActionLangSysDesc:
                               'something_happened(#step).']
         
         # create rules
+        print('Parsing rules...')
         rules = []
         # state constraints
         if self.state_constraints:
@@ -522,9 +526,11 @@ class ActionLangSysDesc:
                     print(e)
         # causal laws and executability conditions
         for a in self.actions:
+            print(f'Parsing action: {a.action_def.name}...')
             rules += [c.to_sparc() for c in a.causal_laws]
             rules += [e.to_sparc() for e in a.executability_conditions]
         # planning laws
+        print('Adding planning rules...')
         rules += [ 
                 '-holds(F, V2, I) :- holds(F, V1, I), V1!=V2.',#Fluents can only have one value at a time...
                 'holds(F, Y, I+1) :- #inertial_fluent(F), holds(F, Y, I), not -holds(F, Y, I+1), I < numSteps.', #inertia
@@ -538,12 +544,14 @@ class ActionLangSysDesc:
                 ]
         
         # goal
+        print('Parsing goal...')
         goal = 'goal(I) :- '
         goal_items = [item.to_sparc() for item in self.goal_description]
         goal += f"{' + '.join(goal_items)}."
         rules.append(goal)
 
         # domain setup
+        print('Parsing domain setup...')
         rules += self.domain_setup
         return SparcProg(sparc_constants, sparc_sorts, sparc_predicates, rules, self.display_hints)
 

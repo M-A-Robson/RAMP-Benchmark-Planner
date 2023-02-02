@@ -16,13 +16,12 @@ sorts
 #place_f = #table_locs + #non_placement_location.
 #fine_res_sort = #place_f.
 #coarse_res_sort = #place_c.
-#action = putdown(#robot,#thing), move_f(#robot,#place_f), pick_up(#robot,#thing), change_grasp_mode(#robot,#grasp_mode).
+#action = putdown(#robot,#thing) + move_f(#robot,#place_f) + pick_up(#robot,#thing) + change_grasp_mode(#robot,#grasp_mode).
 #boolean = {true, false}.
 #outcome = {true, false, undet}.
-#defined_fluent = {}.
 #inertial_fluent = in_hand(#robot, #thing)+ loc_c(#object, #place_c)+ loc_f(#object, #place_f)+ current_grasp_mode(#robot, #grasp_mode)+ on(#thing, #thing)+ clear(#thing).
-#fluent = #inertial_fluent + #defined_fluent.
 #step = 0..numSteps.
+#fluent = #inertial_fluent.
 
 predicates
 next_to_c(#place_c, #place_c).
@@ -54,7 +53,8 @@ holds(loc_f(T,P), true, I+1) :- occurs(move_f(R,P), I), holds(in_hand(R,T), true
 holds(in_hand(R,T), true, I+1) :- occurs(pick_up(R,T), I).
 holds(on(T1,T2), false, I+1) :- occurs(pick_up(R,T1), I).
 holds(clear(T2), true, I+1) :- occurs(pick_up(R,T1), I), holds(on(T1,T2), true, I).
--occurs(pick_up(R,T1), I) :- holds(clear(T1), true, I).
+-occurs(pick_up(R,T1), I) :- not holds(clear(T1), true, I).
+-occurs(pick_up(R,T1), I) :- holds(loc_f(T1,P1), true, I), holds(loc_f(T2,P2), true, I), P1!=P2.
 holds(current_grasp_mode(R,G), true, I+1) :- occurs(change_grasp_mode(R,G), I).
 -occurs(change_grasp_mode(R,G1), I) :- holds(current_grasp_mode(R,G1), true, I), G1=G2.
 -occurs(change_grasp_mode(R,G), I) :- holds(in_hand(R,T), true, I).
