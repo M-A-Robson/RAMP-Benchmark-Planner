@@ -6,19 +6,19 @@ SAVE_DIR = '/home/local/MTC_ORI_Collab/sparc_planning/sparc_files/'
 robot = BasicSort('robot', ['rob0'])
 #add beam and pin sorts (simple 4 beam set)
 beam = BasicSort('beam',['b1','b2','b3','b4'])
-link = BasicSort('link',['L1','L2','L3','L4'])
+link = BasicSort('link',['l1','l2','l3','l4'])
 #!only end joints in this simple example set
 #TODO define the other joint types (mid_joints)
-in_m_end = BasicSort('in_m_end',['J3','J4','J7','J8'])
-in_f_end = BasicSort('in_f_end',['J1','J2','J5','J6'])
+in_m_end = BasicSort('in_m_end',['j3','j4','j7','j8'])
+in_f_end = BasicSort('in_f_end',['j1','j2','j5','j6'])
 end_joint = SuperSort('end_joint', [in_m_end,in_f_end])
 beam_part = SuperSort('beam_part',[link,end_joint]) #mid_joint
 pin = BasicSort('pin',['p1','p2','p3','p4'])
 thing = SuperSort('thing', [beam,pin])
 thing_part = SuperSort('thing_part', [beam_part, pin]) # graspable things
 ob = SuperSort('object', [robot, thing])
-place_c = BasicSort('place', ['input_area', 'intermediate_area', 'assembly_area'])
-non_placement_loc = BasicSort('non_placement_location',['above_input','above_intermediate','above_assembly'])
+place_c = BasicSort('place_c', ['input_area', 'intermediate_area', 'assembly_area'])
+non_placement_loc = BasicSort('non_placement_location',['above_input_area','above_intermediate_area','above_assembly_area'])
 # approach locations from xml extraction
 approach_loc = BasicSort('approach_location', ['b1a','b2a','b3a','b4a','p1a','p2a','p3a','p4a'])
 #through and pre-rotate locations from beam xml extraction
@@ -34,8 +34,8 @@ near_to_loc = BasicSort('near_to_location', ['nt_b1a','nt_b2a','nt_b3a','nt_b4a'
 input_locations = BasicSort('input_locations', ['b2i','b3i','b4i','p1i','p2i','p3i','p4i'])
 place_f = SuperSort('place_f', [approach_loc,target_loc,non_placement_loc, near_to_loc, input_locations]) # through_loc, pre_rotate_loc
 # need sets to allow for more than one refined sort type using the component keyword
-fine_res_sort = SuperSort('fine_res_sort',[place_f])
-coarse_res_sort = SuperSort('coarse_res_sort',[place_c])
+fine_res_sort = SuperSort('fine_res_sort',[place_f, thing_part])
+coarse_res_sort = SuperSort('coarse_res_sort',[place_c,thing])
 
 #!statics
 next_to_c = Func('next_to_c', [place_c,place_c], FuncType.STATIC)
@@ -198,7 +198,7 @@ state_constraints.append(StateConstraint(
     head_value=True,
     head_object_instance_names=['R','T'],
     conditions=[in_hand_f,component],
-    condition_object_instance_names=[['R','TP'],['TP','T']],
+    condition_object_instance_names=[['R','TP'],['T','TP']],
     condition_values=[True,True]
 ))
 #supported bridge axioms
@@ -403,7 +403,7 @@ state_constraints.append(StateConstraint(
     head_value=True,
     head_object_instance_names=['B1','B2','P'],
     conditions=[fastened_f,component,component],
-    condition_object_instance_names=[['BP1','BP2','P'],['BP1','B1'],['BP2','B2']],
+    condition_object_instance_names=[['BP1','BP2','P'],['B1','BP1'],['B2','BP2']],
     condition_values=[True,True,True]
 ))
 ##transivity of fastened
@@ -500,7 +500,7 @@ state_constraints.append(StateConstraint(
     head_value=True,
     head_object_instance_names=['B1','B2'],
     conditions=[fits_into_f,component, component],
-    condition_object_instance_names=[['D1','D2'],['D1','B1'],['D2','B2']],
+    condition_object_instance_names=[['D1','D2'],['B1','D1'],['B2','D2']],
     condition_values=[True,True,True]
 ))
 state_constraints.append(StateConstraint(
@@ -509,7 +509,7 @@ state_constraints.append(StateConstraint(
     head_value=True,
     head_object_instance_names=['B1','B2'],
     conditions=[fits_through_f,component, component],
-    condition_object_instance_names=[['D1','D2'],['D1','B1'],['D2','B2']],
+    condition_object_instance_names=[['D1','D2'],['B1','D1'],['B2','D2']],
     condition_values=[True,True,True]
 ))
 
@@ -746,7 +746,7 @@ for ac in assembly_actions:
             object_instances={'R':robot,'BP':beam_part},
             action_object_instance_names=['R','BP'],
             conditions=[in_hand_f],
-            condition_object_instance_names=[['R,','BP']],
+            condition_object_instance_names=[['R','BP']],
             condition_values=[True]
         )
     )
@@ -999,32 +999,32 @@ actions = [put_down_action,
 
 domain_setup = [
     r'% beam locations',
-    'holds(in_assembly(b1),true,0).',
+    'holds(in_assembly_c(b1),true,0).',
     'holds(loc_f(b1,b1t),true,0).',
     'holds(loc_f(b2,b2i),true,0).',
     'holds(loc_f(b3,b3i),true,0).',
     'holds(loc_f(b4,b4i),true,0).',
     r'% beam components and connections',
-    'connected_to(J1,L1).',
-    'connected_to(L1,J2).',
-    'component(J1,b1).',
-    'component(L1,b1).',
-    'component(J2,b1).',
-    'connected_to(J3,L2).',
-    'connected_to(L2,J4).',
-    'component(J3,b2).',
-    'component(L2,b2).',
-    'component(J4,b2).',
-    'connected_to(J5,L3).',
-    'connected_to(L3,J6).',
-    'component(J5,b3).',
-    'component(L3,b3).',
-    'component(J6,b3).',
-    'connected_to(J7,L4).',
-    'connected_to(L4,J8).',
-    'component(J7,b4).',
-    'component(L4,b4).',
-    'component(J8,b4).',
+    'connected_to(j1,l1).',
+    'connected_to(l1,j2).',
+    'component(b1,j1).',
+    'component(b1,l1).',
+    'component(b1,j2).',
+    'connected_to(j3,l2).',
+    'connected_to(l2,j4).',
+    'component(b2,j3).',
+    'component(b2,l2).',
+    'component(b2,j4).',
+    'connected_to(j5,l3).',
+    'connected_to(l3,j6).',
+    'component(b3,j5).',
+    'component(b3,l3).',
+    'component(b3,j6).',
+    'connected_to(j7,l4).',
+    'connected_to(l4,j8).',
+    'component(b4,j7).',
+    'component(b4,l4).',
+    'component(b4,j8).',
     r'% robot location',
     'holds(loc_f(rob0,above_input_area),true,0).',
     r'% next_to_f location map',
@@ -1044,10 +1044,10 @@ domain_setup = [
     'next_to_f(b3t,b3a).',
     'next_to_f(b4t,b4a).',
     r'% beam to beam connections',
-    'fits_into_f(J3, J1).',
-    'fits_into_f(b5, J2).',
-    'fits_into_f(b6, J8).',
-    'fits_into_f(J4, J7).',
+    'fits_into_f(j3, j1).',
+    'fits_into_f(j5, j2).',
+    'fits_into_f(j6, j8).',
+    'fits_into_f(j4, j7).',
 ]
 
 goal = [
