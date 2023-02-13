@@ -3,7 +3,7 @@
 %% Author: MARK ROBSON 2023
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#const numSteps = 25.
+#const numSteps = 5.
 
 sorts
 #robot = {rob0}.
@@ -62,6 +62,8 @@ rules
 next_to_f(C1,C2):- next_to_f(C2,C1).
 -next_to_c(P1,P2):- not next_to_c(P1,P2).
 -next_to_f(P1,P2):- not next_to_f(P1,P2).
+-near_to(P1,P2):- not near_to(P1,P2).
+component(P1,C1):- near_to(C1,C2), component(P1,C2).
 holds(loc_f(T,P1), false, I) :- holds(loc_f(T,P2), true, I), P1!=P2.
 next_to_c(P1,P2):- next_to_f(C1,C2), component(P1,C1), component(P2,C2).
 holds(loc_c(T,P), true, I) :- holds(loc_f(T,C), true, I), component(P,C).
@@ -98,15 +100,18 @@ fits_into_c(B1,B2):- fits_into_f(D1,D2), component(B1,D1), component(B2,D2).
 fits_through_c(B1,B2):- fits_through_f(D1,D2), component(B1,D1), component(B2,D2).
 holds(in_hand_f(R,T), false, I+1) :- occurs(putdown_f(R,T), I).
 -occurs(putdown_f(R,T), I) :- not holds(in_hand_f(R,T), true, I).
+-occurs(putdown_f(R,T), I) :- holds(loc_f(R,C), true, I), #non_placement_location(C).
 holds(loc_f(R,P), true, I+1) :- occurs(move_f(R,P), I).
 -occurs(move_f(R,P1), I) :- holds(loc_f(R,P2), true, I), P1=P2.
--occurs(move_f(R,P1), I) :- holds(loc_f(R,P2), true, I), not next_to_f(P1,P2).
+-occurs(move_f(R,P1), I) :- holds(loc_f(R,P2), true, I), not next_to_f(P1,P2), P1!=P2.
 -occurs(move_f(R,P1), I) :- holds(in_hand_f(R,BP), true, I), holds(in_assembly_f(BP), true, I).
 -occurs(move_f(R,P1), I) :- holds(in_hand_f(R,P), true, I), holds(fastened_c(B1,B2,P), true, I).
 -occurs(move_f(R,P2), I) :- holds(loc_f(R,P1), true, I), near_to(P1,P2).
+-occurs(move_f(R,P1), I) :- holds(in_hand_c(R,T1), true, I), #target_location(P1).
 holds(in_hand_f(R,T), true, I+1) :- occurs(pick_up_f(R,T), I).
 -occurs(pick_up_f(R,T1), I) :- holds(loc_f(T,P1), true, I), holds(loc_f(R,P2), true, I), P1!=P2, component(T,T1).
 -occurs(pick_up_f(R,T1), I) :- holds(in_hand_f(rob0,T2), true, I), #thing_part(T2).
+-occurs(pick_up_f(R,T1), I) :- component(B,T1), not #link(T1).
 holds(loc_f(R,C), true, I+1) :- occurs(assemble_f_cap(R,BP), I), assem_target_loc(B,C), component(B,BP).
 holds(loc_f(B1,C1), true, I+1) :- occurs(assemble_f_cap(R,BP), I), component(B2,BP), holds(in_assembly_c(B1), true, I), near_to(C1,C2), assem_target_loc(B1,C2).
 -occurs(assemble_f_cap(R,BP), I) :- not holds(in_assembly_c(B2), true, I), not holds(in_assembly_c(B3), true, I), is_capped_by(B1,B2,B3), B2!=B3, component(B1,BP).
@@ -124,6 +129,7 @@ holds(loc_f(R,C), true, I+1) :- occurs(assemble_f_square(R,BP), I), #prerot_loca
 holds(loc_f(B1,C1), true, I+1) :- occurs(assemble_f_square(R,BP), I), component(B2,BP), holds(in_assembly_c(B1), true, I), near_to(C1,C2), assem_target_loc(B1,C2).
 -occurs(assemble_f_square(R,BP), I) :- holds(in_assembly_c(B2), true, I), holds(in_assembly_c(B3), true, I), is_capped_by(B1,B2,B3), B2!=B3, component(B1,BP).
 -occurs(assemble_f_square(R,BP), I) :- component(B1,BP), holds(loc_f(R,C1), true, I), assem_approach_loc(B1,C2), C1!=C2.
+-occurs(assemble_f_square(R,BP1), I) :- fits_into_f(BP1,BP2), not holds(in_assembly_f(BP2), true, I).
 -occurs(assemble_f_square(R,BP), I) :- not holds(in_hand_c(R,B), true, I), component(B,BP).
 -occurs(assemble_f_square(R,BP), I) :- holds(in_hand_f(R,BP), true, I).
 -occurs(assemble_f_square(R,BP), I) :- holds(in_assembly_c(B2), true, I), holds(in_assembly_c(B3), true, I), is_capped_by(B1,B2,B3), B2!=B3, component(B1,BP).
@@ -145,7 +151,9 @@ holds(loc_f(B,C), true, I+1) :- occurs(push(R,B), I), assem_target_loc(B,C).
 -occurs(push(R,B), I) :- holds(in_hand_c(R,T), true, I), #thing(T).
 -occurs(push(R,B), I) :- holds(loc_f(R,C1), true, I), not near_to(C1,C2), assem_target_loc(B,C2).
 holds(loc_f(R,C1), true, I+1) :- occurs(move_local(R,C1), I).
--occurs(move_local(R,C2), I) :- not holds(loc_f(R,C1), true, I), near_to(C1,C2).
+-occurs(move_local(R,C2), I) :- holds(loc_f(R,C1), true, I), not near_to(C1,C2).
+-occurs(move_local(R,P2), I) :- holds(loc_f(R,P1), true, I), not #near_to_location(P1).
+-occurs(move_local(R,P1), I) :- holds(loc_f(R,P2), true, I), P1=P2.
 -holds(F, V2, I) :- holds(F, V1, I), V1!=V2.
 holds(F, Y, I+1) :- #inertial_fluent(F), holds(F, Y, I), not -holds(F, Y, I+1), I < numSteps.
 -occurs(A,I) :- not occurs(A,I).
@@ -155,7 +163,7 @@ occurs(A, I) | -occurs(A, I) :- not goal(I).
 -occurs(A2, I) :- occurs(A1, I), A1 != A2.
 something_happened(I) :- occurs(A, I).
 :- not goal(I), not something_happened(I).
-goal(I) :- holds(in_assembly_c(b2), true, I).
+goal(I) :- holds(loc_f(b2,above_assembly_area), true, I).
 % beam locations
 holds(in_assembly_c(b1),true,0).
 holds(loc_f(b1,b1t),true,0).
@@ -198,9 +206,42 @@ next_to_f(above_assembly_area,above_intermediate_area).
 next_to_f(above_assembly_area,b2a).
 next_to_f(above_assembly_area,b3a).
 next_to_f(above_assembly_area,b4a).
+next_to_f(above_assembly_area,p1a).
+next_to_f(above_assembly_area,p2a).
+next_to_f(above_assembly_area,p3a).
+next_to_f(above_assembly_area,p4a).
 next_to_f(b2t,b2a).
 next_to_f(b3t,b3a).
 next_to_f(b4t,b4a).
+next_to_f(p1t,p1a).
+next_to_f(p2t,p2a).
+next_to_f(p3t,p3a).
+next_to_f(p4t,p4a).
+% location component relations
+component(input_area, b2i).
+component(input_area, b3i).
+component(input_area, b4i).
+component(input_area, p1i).
+component(input_area, p2i).
+component(input_area, p3i).
+component(input_area, p4i).
+component(input_area, above_input_area).
+component(intermediate_area, above_intermediate_area).
+component(assembly_area, above_assembly_area).
+component(assembly_area,b2t ).
+component(assembly_area,b2a).
+component(assembly_area,b3t).
+component(assembly_area,b3a).
+component(assembly_area,b4t).
+component(assembly_area,b4a).
+component(assembly_area,p1t).
+component(assembly_area,p1a).
+component(assembly_area,p2t).
+component(assembly_area,p2a).
+component(assembly_area,p3t).
+component(assembly_area,p3a).
+component(assembly_area,p4t).
+component(assembly_area,p4a).
 % beam to beam connections
 fits_into_f(j3, j1).
 fits_into_f(j5, j2).
