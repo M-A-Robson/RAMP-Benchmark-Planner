@@ -657,7 +657,7 @@ pd_c1 = CausalLaw(put_down,
     ['R','T'],['R','T'],
     )
 # causes object to no longer be in hand
-pd_c1 = CausalLaw(
+pd_c2 = CausalLaw(
     action=put_down,
     fluent_affected=in_hand_c,
     fluent_value=False,
@@ -668,7 +668,7 @@ pd_c1 = CausalLaw(
     condition_object_instance_names=[['T','TP']],
     condition_values=[True],
     )
-put_down_action = Action(put_down,[pd_c1],[pd_ec1, pd_ec2])
+put_down_action = Action(put_down,[pd_c1, pd_c2],[pd_ec1, pd_ec2])
 
 #?beam assembly action set
 #!assem_f_square
@@ -714,10 +714,9 @@ asem_sq_e1 = ExecutabilityCondition(
     action = assemble_square,
     object_instances={'R':robot,'B1':beam,'B2':beam,'B3':beam,'BP':beam_part},
     action_object_instance_names=['R','BP'],
-    conditions=[in_assembly_c,in_assembly_c,is_capped_by,
-                Property('B2','B3',Relation.NOT_EQUAL),component],
-    condition_values=[True,True,True,True,True],
-    condition_object_instance_names=[['B2'],['B3'],['B1','B2','B3'],['B2','B3'],['B1','BP']],
+    conditions=[is_capped_by,component],
+    condition_values=[True,True],
+    condition_object_instance_names=[['B1','B2','B3'],['B2','BP']],
 )
 # must be at approach location
 asem_sq_e2 = ExecutabilityCondition(
@@ -753,18 +752,16 @@ asem_cap_c1 = CausalLaw(
     condition_object_instance_names=[['B','C'],['B','BP']],
     condition_values=[True,True],
 )
-# adds to assembly
-asem_cap_c1 = CausalLaw(
+# adds beam to assembly
+asem_cap_c2 = CausalLaw(
     action=assemble_cap,
-    fluent_affected=in_assembly_c,
+    fluent_affected=in_assembly_f,
     fluent_value=True,
-    object_instances={'R':robot,'B':beam,'BP':beam_part},
+    object_instances={'R':robot,'BP':beam_part},
     action_object_instance_names=['R','BP'],
-    fluent_object_instance_names=['B'],
-    conditions=[component],
-    condition_object_instance_names=[['B','BP']],
-    condition_values=[True],
+    fluent_object_instance_names=['BP'],
 )
+
 # cannot be used for beams which get capped, unless it needs to cap other beams
 asem_cap_e1 = ExecutabilityCondition(
     action = assemble_cap,
@@ -783,7 +780,7 @@ asem_cap_e2 = ExecutabilityCondition(
     condition_values=[True,True,True,True],
     condition_object_instance_names=[['B1','BP'],['R','C1'],['B1','C2'],['C1','C2']],
 )
-assemble_cap_action = Action(assemble_cap,[asem_cap_c1],[asem_cap_e1, asem_cap_e2])
+assemble_cap_action = Action(assemble_cap,[asem_cap_c1,asem_cap_c2],[asem_cap_e1, asem_cap_e2])
 
 #TODO
 #! assem_f_rotate
@@ -1035,7 +1032,25 @@ push_ec3 = ExecutabilityCondition(
     condition_object_instance_names=[['R','C1'],['C1','C2'],['B','C2']],
     condition_values=[True,False,True]
 )
-push_action = Action(push,[push_c1],[push_ec1,push_ec2,push_ec3])
+# must share beam location to push
+push_ec4 = ExecutabilityCondition(
+    action=push,
+    object_instances={'R':robot,'B':beam,'C1':place_f, 'C2':place_f},
+    action_object_instance_names=['R','B'],
+    conditions=[location, location, Property('C1','C2',Relation.NOT_EQUAL)],
+    condition_object_instance_names=[['R','C1'],['B','C2'],['C1','C2']],
+    condition_values=[True,True,True]
+)
+# must be at a near_to location
+push_ec5 = ExecutabilityCondition(
+    action=push,
+    object_instances={'R':robot,'B':beam, 'C1':place_f},
+    action_object_instance_names=['R','B'],
+    conditions=[location, Property('near_to_location','C1',Relation.IS_OF_SORT)],
+    condition_object_instance_names=[['R','C1'],['C1']],
+    condition_values=[True,False]
+)
+push_action = Action(push,[push_c1, push_c2],[push_ec1,push_ec2,push_ec3,push_ec4, push_ec5])
 
 #!move_local action for control (servo if a move gets near to but not at target)
 move_local = ActionDefinition('move_local',[robot,place_f])
@@ -1098,9 +1113,11 @@ actions = [put_down_action,
 domain_setup = [
     r'% beam locations',
     'holds(in_assembly_c(b1),true,0).',
+    'holds(in_assembly_c(b2),true,0).',
+    'holds(in_assembly_c(b3),true,0).',
     'holds(loc_f(b1,b1t),true,0).',
-    'holds(loc_f(b2,b2i),true,0).',
-    'holds(loc_f(b3,b3i),true,0).',
+    'holds(loc_f(b2,b2t),true,0).',
+    'holds(loc_f(b3,b3t),true,0).',
     'holds(loc_f(b4,b4i),true,0).',
     r'% beam components and connections',
     'connected_to(j1,l1).',
@@ -1124,7 +1141,7 @@ domain_setup = [
     'component(b4,l4).',
     'component(b4,j8).',
     r'% robot location',
-    'holds(loc_f(rob0,above_input_area),true,0).',
+    'holds(loc_f(rob0,b4i),true,0).',
     r'% next_to_f location map',
     'next_to_f(above_input_area,b2i).',
     'next_to_f(above_input_area,b3i).',
@@ -1138,6 +1155,9 @@ domain_setup = [
     'next_to_f(above_assembly_area,b2a).',
     'next_to_f(above_assembly_area,b3a).',
     'next_to_f(above_assembly_area,b4a).',
+    'next_to_f(above_assembly_area,b2t).',
+    'next_to_f(above_assembly_area,b3t).',
+    'next_to_f(above_assembly_area,b4t).',
     'next_to_f(above_assembly_area,p1a).',
     'next_to_f(above_assembly_area,p2a).',
     'next_to_f(above_assembly_area,p3a).',
@@ -1179,10 +1199,27 @@ domain_setup = [
     'fits_into_f(j5, j2).',
     'fits_into_f(j6, j8).',
     'fits_into_f(j4, j7).',
+    r'% beam assembly location mapping',
+    'assem_approach_loc(b2, b2a).',
+    'assem_approach_loc(b3, b3a).',
+    'assem_approach_loc(b4, b4a).',
+    'assem_target_loc(b2, b2t).',
+    'assem_target_loc(b3, b3t).',
+    'assem_target_loc(b4, b4t).',
+    r'% near to mapping',
+    'near_to(nt_b2t, b2t).',
+    'near_to(nt_b3t, b3t).',
+    'near_to(nt_b4t, b4t).',
+    'next_to_f(above_assembly_area, nt_b2t).',
+    'next_to_f(above_assembly_area, nt_b3t).',
+    'next_to_f(above_assembly_area, nt_b4t).',
 ]
 
 goal = [
-    GoalDefinition(location,['b2','above_assembly_area'],True)
+    GoalDefinition(in_assembly_c,['b4'],True),
+    GoalDefinition(location,['b2','nt_b2t'],True),
+    GoalDefinition(location,['b3','nt_b3t'],True),
+    GoalDefinition(location,['b4','b4t'],True),
 ]
 
 # for a in assembly_actions:

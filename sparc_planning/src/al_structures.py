@@ -511,7 +511,8 @@ class ActionLangSysDesc:
         sparc_predicates += ['holds(#fluent, #boolean, #step).',
                               'occurs(#action, #step).',
                               'success().','goal(#step).',
-                              'something_happened(#step).']
+                              'something_happened(#step).',
+                              ]
         
         # create rules
         print('Parsing rules...')
@@ -527,11 +528,14 @@ class ActionLangSysDesc:
         # causal laws and executability conditions
         for a in self.actions:
             print(f'Parsing action: {a.action_def.name}...')
+            rules.append('')
             rules += [c.to_sparc() for c in a.causal_laws]
             rules += [e.to_sparc() for e in a.executability_conditions]
         # planning laws
         print('Adding planning rules...')
         rules += [ 
+                '',
+                r'% planning rules',
                 '-holds(F, V2, I) :- holds(F, V1, I), V1!=V2.',#Fluents can only have one value at a time...
                 'holds(F, Y, I+1) :- #inertial_fluent(F), holds(F, Y, I), not -holds(F, Y, I+1), I < numSteps.', #inertia
                 '-occurs(A,I) :- not occurs(A,I).', # CWA for Actions
@@ -547,11 +551,15 @@ class ActionLangSysDesc:
         print('Parsing goal...')
         goal = 'goal(I) :- '
         goal_items = [item.to_sparc() for item in self.goal_description]
-        goal += f"{' + '.join(goal_items)}."
+        goal += f"{' , '.join(goal_items)}."
+        rules.append('')
+        rules.append(r'% goal definition')
         rules.append(goal)
 
         # domain setup
         print('Parsing domain setup...')
+        rules.append('')
+        rules.append(r'% domain setup')
         rules += self.domain_setup
         return SparcProg(sparc_constants, sparc_sorts, sparc_predicates, rules, self.display_hints)
 
