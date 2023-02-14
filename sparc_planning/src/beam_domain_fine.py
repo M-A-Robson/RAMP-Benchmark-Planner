@@ -557,9 +557,9 @@ pu_ec4 = ExecutabilityCondition(
     action=pick_up,
     object_instances={'R':robot,'T1':thing_part, 'B':beam},
     action_object_instance_names=['R','T1'],
-    conditions=[component, Property('link','T1',Relation.IS_OF_SORT)],
-    condition_object_instance_names=[['B','T1'],['T1']],
-    condition_values=[True, False],
+    conditions=[component, Property('link','T1',Relation.IS_OF_SORT),Property('beam','B',Relation.IS_OF_SORT)],
+    condition_object_instance_names=[['B','T1'],['T1'],['B']],
+    condition_values=[True, False, True],
 )
 pick_up_action = Action(pick_up,[pu_c1,],[pu_ec2, pu_ec3, pu_ec4])
 
@@ -974,8 +974,26 @@ f_ec6 = ExecutabilityCondition(
     condition_values=[True,True,True],
     condition_object_instance_names=[['R','C1'],['P1','C2'],['C1','C2']],
 )
-
-fasten_action = Action(fasten,[f_c1,f_c2],[f_ec1,f_ec2,f_ec3,f_ec4,f_ec5,f_ec6])
+#can only fasten joints which fit together
+f_ec7 = ExecutabilityCondition(
+    action = fasten,
+    object_instances={'R':robot,'BP1':beam_part,'BP2':beam_part,'P1':pin},
+    action_object_instance_names=['R','BP1','BP2','P1'],
+    conditions=[fits_into_f],
+    condition_values=[True],
+    condition_object_instance_names=[['BP1','BP2']],
+)
+#can only fasten joints which dont already have a pin in
+f_ec8 = ExecutabilityCondition(
+    action = fasten,
+    object_instances={'R':robot,'BP1':beam_part,'BP2':beam_part,'P1':pin,'P2':pin},
+    action_object_instance_names=['R','BP1','BP2','P1'],
+    conditions=[fastened_f],
+    condition_values=[True],
+    condition_object_instance_names=[['BP1','BP2','P2']],
+)
+fasten_action = Action(fasten,[f_c1,f_c2],
+                       [f_ec1,f_ec2,f_ec3,f_ec4,f_ec5,f_ec6,f_ec7,f_ec8])
 
 
 #? new fine res actions
@@ -1119,6 +1137,10 @@ domain_setup = [
     'holds(loc_f(b2,b2t),true,0).',
     'holds(loc_f(b3,b3t),true,0).',
     'holds(loc_f(b4,b4i),true,0).',
+    'holds(loc_f(p1,p1i),true,0).',
+    'holds(loc_f(p2,p2i),true,0).',
+    'holds(loc_f(p3,p3i),true,0).',
+    'holds(loc_f(p4,p4i),true,0).',
     r'% beam components and connections',
     'connected_to(j1,l1).',
     'connected_to(l1,j2).',
@@ -1141,7 +1163,7 @@ domain_setup = [
     'component(b4,l4).',
     'component(b4,j8).',
     r'% robot location',
-    'holds(loc_f(rob0,b4i),true,0).',
+    'holds(loc_f(rob0,above_input_area),true,0).',
     r'% next_to_f location map',
     'next_to_f(above_input_area,b2i).',
     'next_to_f(above_input_area,b3i).',
@@ -1216,10 +1238,11 @@ domain_setup = [
 ]
 
 goal = [
-    GoalDefinition(in_assembly_c,['b4'],True),
-    GoalDefinition(location,['b2','nt_b2t'],True),
-    GoalDefinition(location,['b3','nt_b3t'],True),
-    GoalDefinition(location,['b4','b4t'],True),
+    GoalDefinition(fastened_c,['b1','b2','p1'],True),
+    #GoalDefinition(in_assembly_c,['b4'],True),
+    #GoalDefinition(location,['b2','nt_b2t'],True),
+    #GoalDefinition(location,['b3','nt_b3t'],True),
+    #GoalDefinition(location,['b4','b4t'],True),
 ]
 
 # for a in assembly_actions:

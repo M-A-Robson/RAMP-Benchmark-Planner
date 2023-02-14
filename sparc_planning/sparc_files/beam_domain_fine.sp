@@ -114,7 +114,7 @@ holds(loc_f(R,P), true, I+1) :- occurs(move_f(R,P), I).
 holds(in_hand_f(R,T), true, I+1) :- occurs(pick_up_f(R,T), I).
 -occurs(pick_up_f(R,T1), I) :- holds(loc_f(T,P1), true, I), holds(loc_f(R,P2), true, I), P1!=P2, component(T,T1).
 -occurs(pick_up_f(R,T1), I) :- holds(in_hand_f(rob0,T2), true, I), #thing_part(T2).
--occurs(pick_up_f(R,T1), I) :- component(B,T1), not #link(T1).
+-occurs(pick_up_f(R,T1), I) :- component(B,T1), not #link(T1), #beam(B).
 
 holds(loc_f(R,C), true, I+1) :- occurs(assemble_f_cap(R,BP), I), assem_target_loc(B,C), component(B,BP).
 holds(in_assembly_f(BP), true, I+1) :- occurs(assemble_f_cap(R,BP), I).
@@ -154,6 +154,8 @@ holds(loc_f(R,C1), true, I+1) :- occurs(fasten(R,B1,B2,P1), I), assem_target_loc
 -occurs(fasten(R,BP1,BP2,P1), I) :- holds(loc_f(B1,C1), true, I), assem_target_loc(B1,C2), component(B1,BP1), C1!=C2.
 -occurs(fasten(R,BP1,BP2,P1), I) :- holds(loc_f(B1,C1), true, I), assem_target_loc(B1,C2), component(B1,BP2), C1!=C2.
 -occurs(fasten(R,BP1,BP2,P1), I) :- holds(loc_f(R,C1), true, I), assem_approach_loc(P1,C2), C1!=C2.
+-occurs(fasten(R,BP1,BP2,P1), I) :- fits_into_f(BP1,BP2).
+-occurs(fasten(R,BP1,BP2,P1), I) :- holds(fastened_f(BP1,BP2,P2), true, I).
 
 holds(loc_f(B,C), true, I+1) :- occurs(push(R,B), I), assem_target_loc(B,C).
 holds(loc_f(R,C), true, I+1) :- occurs(push(R,B), I), assem_target_loc(B,C).
@@ -180,7 +182,7 @@ something_happened(I) :- occurs(A, I).
 :- not goal(I), not something_happened(I).
 
 % goal definition
-goal(I) :- holds(in_assembly_c(b4), true, I) , holds(loc_f(b2,nt_b2t), true, I) , holds(loc_f(b3,nt_b3t), true, I) , holds(loc_f(b4,b4t), true, I).
+goal(I) :- holds(fastened_c(b1,b2,p1), true, I).
 
 % domain setup
 % beam locations
@@ -191,6 +193,10 @@ holds(loc_f(b1,b1t),true,0).
 holds(loc_f(b2,b2t),true,0).
 holds(loc_f(b3,b3t),true,0).
 holds(loc_f(b4,b4i),true,0).
+holds(loc_f(p1,p1i),true,0).
+holds(loc_f(p2,p2i),true,0).
+holds(loc_f(p3,p3i),true,0).
+holds(loc_f(p4,p4i),true,0).
 % beam components and connections
 connected_to(j1,l1).
 connected_to(l1,j2).
@@ -213,7 +219,7 @@ component(b4,j7).
 component(b4,l4).
 component(b4,j8).
 % robot location
-holds(loc_f(rob0,b4i),true,0).
+holds(loc_f(rob0,above_input_area),true,0).
 % next_to_f location map
 next_to_f(above_input_area,b2i).
 next_to_f(above_input_area,b3i).
