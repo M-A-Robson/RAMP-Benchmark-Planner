@@ -20,6 +20,7 @@ class ElementType(Enum):
     ANGLE_F = 6
     IN_F = 7
     THRU_F = 8
+    IN_M_END_FEET = 9
 
     @staticmethod
     def as_dict():
@@ -32,7 +33,8 @@ class ElementType(Enum):
             "thru-m": 5,
             "angle-f": 6,
             "in-f": 7,
-            "thru-f": 8
+            "thru-f": 8,
+            "in-m-end-feet": 9,
         }
 
 # offsets for stacking up with other parts
@@ -46,9 +48,10 @@ OFFSET_DATA = {
     ElementType.THRU_F: 16.0,
     ElementType.IN_F_END: 4.0,
     ElementType.LINK:0.0,
+    ElementType.IN_M_END_FEET: 0.0,
 }
 
-# offsets for specifying hole locations in parts (distance in z from object centre)
+# offsets for specifying hole locations in parts (distance in z from object centre) - change to 
 PEG_OFFSET_DATA = {
     ElementType.THRU_M: 0.0,
     ElementType.ANGLE_M_END: -19,
@@ -58,6 +61,7 @@ PEG_OFFSET_DATA = {
     ElementType.THRU_F_END: -11.0,
     ElementType.THRU_F: 0.0,
     ElementType.IN_F_END: -12.0,
+    ElementType.IN_M_END_FEET: 0.0,
 }
 
 # offsets in [x,y,z] to top right corner of the object tag from object center
@@ -66,16 +70,18 @@ TAG_POSITION_DATA = { #TODO
     ElementType.IN_M_END:[5.0, 10.0, 12.0], 
     ElementType.IN_F_END:[5.0,10.0,12.0],
     ElementType.THRU_F_END: [],
+    ElementType.IN_M_END_FEET: [],
 }
 
-MODEL_DATA = {ElementType.THRU_M: "models/thru-m_v3.STL",
-    ElementType.ANGLE_M_END: "models/angle-m-end_v3.STL",
-    ElementType.IN_M_END: "models/in-m-end_v2.STL",
-    ElementType.ANGLE_F: "models/angle-f_v2.STL",
-    ElementType.IN_F: "models/in-f.STL",
-    ElementType.THRU_F_END:"models/Thru-end_v2.STL",
-    ElementType.THRU_F: "models/Thru.STL",
-    ElementType.IN_F_END: "models/in-f-end_v2.STL",
+MODEL_DATA = {ElementType.THRU_M: "models/jack/thru-m.stl",
+    # ElementType.ANGLE_M_END: "models/jack/angle-m-end_v3.STL",
+    ElementType.IN_M_END: "models/jack/in-m-end.stl",
+    ElementType.IN_M_END_FEET: "models/jack/in-m-end-feet.stl",
+    ElementType.ANGLE_F: "models/jack/angle-f.stl",
+    ElementType.IN_F: "models/jack/in-f.stl",
+    # ElementType.THRU_F_END:"models/jack/Thru-end_v2.STL",
+    ElementType.THRU_F: "models/jack/thru.stl",
+    ElementType.IN_F_END: "models/jack/in-f-end.stl",
     ElementType.LINK: None,
 }
 
@@ -99,7 +105,7 @@ class BeamComponent:
         return False
 
     def is_male(self) -> bool:
-        if self.type.value in [1,2,5]:
+        if self.type.value in [1,2,5,9]:
             return True
         return False
     
