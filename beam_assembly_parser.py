@@ -12,39 +12,33 @@ from matplotlib import pyplot as plt
 
 class ElementType(Enum):
     LINK = 0
-    ANGLE_M_END = 1
-    IN_M_END = 2
-    THRU_F_END = 3
-    IN_F_END = 4
-    THRU_M = 5
-    ANGLE_F = 6
-    IN_F = 7
-    THRU_F = 8
-    IN_M_END_FEET = 9
+    IN_M_END = 1
+    IN_F_END = 2
+    THRU_M = 3
+    ANGLE_F = 4
+    IN_F = 5
+    THRU_F = 6
+    IN_M_END_FEET = 7
 
     @staticmethod
     def as_dict():
         return {
             "link": 0,
-            "angle-m-end": 1,
-            "in-m-end": 2,
-            "thru-f-end": 3,
-            "in-f-end": 4,
-            "thru-m": 5,
-            "angle-f": 6,
-            "in-f": 7,
-            "thru-f": 8,
-            "in-m-end-feet": 9,
+            "in-m-end": 1,
+            "in-f-end": 2,
+            "thru-m": 3,
+            "angle-f": 4,
+            "in-f": 5,
+            "thru-f": 6,
+            "in-m-end-feet": 7,
         }
 
 # offsets for stacking up with other parts
 OFFSET_DATA = {
     ElementType.THRU_M: 17.6,
-    ElementType.ANGLE_M_END: -8.0,
     ElementType.IN_M_END: 8.6,
     ElementType.ANGLE_F: 33.0,
     ElementType.IN_F: 17.6,
-    ElementType.THRU_F_END: 5.0,
     ElementType.THRU_F: 17.6,
     ElementType.IN_F_END: 23.200,
     ElementType.LINK:0.0,
@@ -54,11 +48,9 @@ OFFSET_DATA = {
 # offsets for specifying hole locations in parts (distance in z from object centre) - change to 
 PEG_OFFSET_DATA = {
     ElementType.THRU_M: 0.0,
-    ElementType.ANGLE_M_END: 0.0,
     ElementType.IN_M_END: 0.0,
     ElementType.ANGLE_F: 0.0,
     ElementType.IN_F: 0.0,
-    ElementType.THRU_F_END: 0.0,
     ElementType.THRU_F: 0.0,
     ElementType.IN_F_END: 0.0,
     ElementType.IN_M_END_FEET: 0.0,
@@ -66,22 +58,19 @@ PEG_OFFSET_DATA = {
 
 # offsets in [x,y,z] to top right corner of the object tag from object center
 TAG_POSITION_DATA = { #TODO
-    # ElementType.ANGLE_M_END:[8.5, 10.0, 11.8],
     ElementType.IN_M_END:[12.750, -29.600, 26.600], 
     ElementType.IN_F_END:[12.750,-17.150,29.900],
-    ElementType.THRU_F_END: [],
     ElementType.IN_M_END_FEET: [12.750, -29.600, 26.600],
 }
 
-MODEL_DATA = {ElementType.THRU_M: "models/jack/thru-m.stl",
-    # ElementType.ANGLE_M_END: "models/jack/angle-m-end_v3.STL",
-    ElementType.IN_M_END: "models/jack/in-m-end.stl",
-    ElementType.IN_M_END_FEET: "models/jack/in-m-end-feet.stl",
-    ElementType.ANGLE_F: "models/jack/angle-f.stl",
-    ElementType.IN_F: "models/jack/in-f.stl",
-    # ElementType.THRU_F_END:"models/jack/Thru-end_v2.STL",
-    ElementType.THRU_F: "models/jack/thru.stl",
-    ElementType.IN_F_END: "models/jack/in-f-end.stl",
+MODEL_DATA = {
+    ElementType.THRU_M: "models/thru-m.stl",
+    ElementType.IN_M_END: "models/in-m-end.stl",
+    ElementType.IN_M_END_FEET: "models/in-m-end-feet.stl",
+    ElementType.ANGLE_F: "models/angle-f.stl",
+    ElementType.IN_F: "models/in-f.stl",
+    ElementType.THRU_F: "models/thru.stl",
+    ElementType.IN_F_END: "models/in-f-end.stl",
     ElementType.LINK: None,
 }
 
@@ -100,12 +89,12 @@ class BeamComponent:
     marker:Optional[int]
 
     def is_middle(self) -> bool:
-        if self.type.value in [5,6,7,8]:
+        if self.type.value in [3,4,5,6]:
             return True
         return False
 
     def is_male(self) -> bool:
-        if self.type.value in [1,2,5,9]:
+        if self.type.value in [1,7,3]:
             return True
         return False
     
@@ -115,7 +104,7 @@ class BeamComponent:
         return False
     
     def is_angle(self) -> bool:
-        if self.type.value in [2,6]:
+        if self.type.value in [1,4]:
             return True
         return False
 
@@ -231,7 +220,6 @@ class Beam:
         """returns offset pose data for each beam component as affine matrix
         """
         components = self.get_structure()
-        print(components)
         poses = []
         current_pose = np.eye(4)
         for c in components:
