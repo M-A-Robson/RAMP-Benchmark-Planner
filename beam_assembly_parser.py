@@ -39,36 +39,36 @@ class ElementType(Enum):
 
 # offsets for stacking up with other parts
 OFFSET_DATA = {
-    ElementType.THRU_M: 16.0,
+    ElementType.THRU_M: 17.6,
     ElementType.ANGLE_M_END: -8.0,
-    ElementType.IN_M_END: -0.25,
+    ElementType.IN_M_END: 8.6,
     ElementType.ANGLE_F: 33.0,
-    ElementType.IN_F: 16.0,
-    ElementType.THRU_F_END:5.0,
-    ElementType.THRU_F: 16.0,
-    ElementType.IN_F_END: 4.0,
+    ElementType.IN_F: 17.6,
+    ElementType.THRU_F_END: 5.0,
+    ElementType.THRU_F: 17.6,
+    ElementType.IN_F_END: 23.200,
     ElementType.LINK:0.0,
-    ElementType.IN_M_END_FEET: 0.0,
+    ElementType.IN_M_END_FEET: 8.6,
 }
 
 # offsets for specifying hole locations in parts (distance in z from object centre) - change to 
 PEG_OFFSET_DATA = {
     ElementType.THRU_M: 0.0,
-    ElementType.ANGLE_M_END: -19,
-    ElementType.IN_M_END: -12.25,
+    ElementType.ANGLE_M_END: 0.0,
+    ElementType.IN_M_END: 0.0,
     ElementType.ANGLE_F: 0.0,
     ElementType.IN_F: 0.0,
-    ElementType.THRU_F_END: -11.0,
+    ElementType.THRU_F_END: 0.0,
     ElementType.THRU_F: 0.0,
-    ElementType.IN_F_END: -12.0,
+    ElementType.IN_F_END: 0.0,
     ElementType.IN_M_END_FEET: 0.0,
 }
 
 # offsets in [x,y,z] to top right corner of the object tag from object center
 TAG_POSITION_DATA = { #TODO
-    ElementType.ANGLE_M_END:[8.5, 10.0, 11.8],
-    ElementType.IN_M_END:[5.0, 10.0, 12.0], 
-    ElementType.IN_F_END:[5.0,10.0,12.0],
+    ElementType.ANGLE_M_END:[],
+    ElementType.IN_M_END:[], 
+    ElementType.IN_F_END:[],
     ElementType.THRU_F_END: [],
     ElementType.IN_M_END_FEET: [],
 }
@@ -100,7 +100,7 @@ class BeamComponent:
     marker:Optional[int]
 
     def is_middle(self) -> bool:
-        if self.type.value >= 5:
+        if self.type.value in [5,6,7,8]:
             return True
         return False
 
@@ -115,7 +115,7 @@ class BeamComponent:
         return False
     
     def is_angle(self) -> bool:
-        if self.type.value in [1,6]:
+        if self.type.value in [2,6]:
             return True
         return False
 
@@ -148,19 +148,24 @@ class BeamComponent:
             m = trimesh.creation.box((0.02,0.02,self.length/1000.0)) # units in meters
         else:
             #scale to meters
-            scale_mat = np.eye(4)*0.001
+            scale_mat = np.eye(4)#*0.001
             m = trimesh.load_mesh(MODEL_DATA[self.type]).apply_transform(scale_mat)
             # adjust origin to centre of object bounds
             t = np.eye(4)
-            t[:3,3]=-m.bounds[1]/2.0
+            # if (self.type == ElementType.LINK):
+            t[2,3]=-m.bounds[1,2]/2.0
             m.apply_transform(t)
             # some designs are in a different orientation to the others - we want y upwards for simulator world
-            if (self.type == ElementType.ANGLE_M_END) | (self.type == ElementType.IN_M_END) | (self.type == ElementType.THRU_M):
-                m.apply_transform(np.asarray([[1,0,0,0],[0,0,-1,0],[0,1,0,0],[0,0,0,1]]))# rotate 90 degrees about x
-                m.apply_transform(np.asarray([[-1,0,0,0],[0,-1,0,0],[0,0,1,0],[0,0,0,1]]))
-            else:
-                # rotate 90 degrees about z
-                m.apply_transform(np.asarray([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]]))
+            # m.apply_transform(np.asarray([[0,0,1,0],[0,1,0,0],[-1,0,0,0],[0,0,0,1]]))
+            m.apply_transform(np.asarray([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,0]])) #rotate 90 degrees about z
+            m.apply_transform(np.asarray([[0,0,-1,0],[0,1,0,0],[1,0,0,0],[0,0,0,0]])) #rotate 90 degrees about y
+            m.apply_transform(np.asarray([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,0]])) #rotate 90 degrees about z
+            if (self.type == ElementType.IN_F_END):
+                m.apply_transform(np.asarray([[-1,0,0,0],[0,-1,0,0],[0,0,1,0],[0,0,0,0]]))# rotate 180 degrees about x
+                # m.apply_transform(np.asarray([[-1,0,0,0],[0,-1,0,0],[0,0,1,0],[0,0,0,1]]))
+            # else:
+            #     # rotate 90 degrees about z
+            #     m.apply_transform(np.asarray([[0,-1,0,0],[-1,0,0,0],[0,0,1,0],[0,0,0,1]]))
         #print(m.bounds)
         return m
 
@@ -171,7 +176,7 @@ class BeamComponent:
         if not isinstance(self.child, type(None)):
             ret += f' child={self.child.name},'
         if not isinstance(self.length, type(None)):
-            ret += f' length={self.lenght},'
+            ret += f' length={self.length},'
         if not isinstance(self.marker, type(None)):
             ret += f' marker={self.marker},'
         return ret
@@ -226,6 +231,7 @@ class Beam:
         """returns offset pose data for each beam component as affine matrix
         """
         components = self.get_structure()
+        print(components)
         poses = []
         current_pose = np.eye(4)
         for c in components:
