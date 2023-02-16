@@ -11,8 +11,9 @@ link = BasicSort('link',['l1','l2','l3','l4'])
 #TODO define the other joint types (mid_joints)
 in_m_end = BasicSort('in_m_end',['j3','j4','j7','j8'])
 in_f_end = BasicSort('in_f_end',['j1','j2','j5','j6'])
-end_joint = SuperSort('end_joint', [in_m_end,in_f_end])
-beam_part = SuperSort('beam_part',[link,end_joint]) #mid_joint
+angle_m_end = BasicSort('angle_m_end',[])
+joint = SuperSort('joint', [in_m_end,in_f_end,angle_m_end])
+beam_part = SuperSort('beam_part',[link,joint]) #mid_joint
 pin = BasicSort('pin',['p1','p2','p3','p4'])
 thing = SuperSort('thing', [beam,pin])
 thing_part = SuperSort('thing_part', [beam_part, pin]) # graspable things
@@ -22,7 +23,8 @@ non_placement_loc = BasicSort('non_placement_location',['above_input_area','abov
 # approach locations from xml extraction
 approach_loc = BasicSort('approach_location', ['b1a','b2a','b3a','b4a','p1a','p2a','p3a','p4a'])
 #through and pre-rotate locations from beam xml extraction
-prerot_loc = BasicSort('prerot_location', []) #! no through or rotate beams in this set
+#! no through or rotate beams in this set
+prerot_loc = BasicSort('prerot_location', []) 
 through_loc = BasicSort('through_location', [])
 # insert locatons for beams and pins from xml extraction
 target_loc = BasicSort('target_location', ['b1t','b2t','b3t','b4t','p1t','p2t','p3t','p4t'])
@@ -65,8 +67,8 @@ assembly_loc = Func('assembly_loc', [thing,place_f],FuncType.STATIC)
 
 statics = [next_to_c,next_to_f,component,near_to,fits_into_c,
            fits_into_f,fits_through_c,fits_through_f,is_capped_by,
-           connected_to,between, assem_approach_loc, assem_target_loc, assembly_loc] 
-        # beam_through_loc, beam_prerotate_loc
+           connected_to,between, assem_approach_loc, assem_target_loc,
+           assembly_loc, beam_through_loc, beam_prerotate_loc]
 
 #!fluents
 in_hand_c = Func('in_hand_c', [robot,thing], FuncType.FLUENT)
@@ -282,6 +284,28 @@ state_constraints.append(
     conditions=[assem_target_loc],
     condition_values=[True],
     condition_object_instance_names=[['T','C']]
+    )
+)
+state_constraints.append(
+    StateConstraint(
+    object_instances={'B':beam, 'C':place_f},
+    head=assembly_loc,
+    head_object_instance_names=['B','C'],
+    head_value=True,
+    conditions=[beam_prerotate_loc],
+    condition_values=[True],
+    condition_object_instance_names=[['B','C']]
+    )
+)
+state_constraints.append(
+    StateConstraint(
+    object_instances={'B':beam, 'C':place_f},
+    head=assembly_loc,
+    head_object_instance_names=['B','C'],
+    head_value=True,
+    conditions=[beam_through_loc],
+    condition_values=[True],
+    condition_object_instance_names=[['B','C']]
     )
 )
 
@@ -525,7 +549,7 @@ state_constraints.append(StateConstraint(
 #removed on and clear as we can assume these for beam domain (no object stacking)
 #!pick_up_f action
 pick_up = ActionDefinition('pick_up_f', [robot, thing_part])
-##puts thing into robots hand
+##puts thing part into robots hand
 pu_c1 = CausalLaw(
     action=pick_up,
     object_instances={'R':robot,'T':thing_part},
@@ -537,11 +561,11 @@ pu_c1 = CausalLaw(
 ##cannot pick up unless in same location
 pu_ec2 = ExecutabilityCondition(
     action=pick_up,
-    object_instances={'R':robot,'T1':thing_part,'T':thing,'P1':place_f, 'P2':place_f},
+    object_instances={'R':robot,'T1':thing_part,'P1':place_f, 'P2':place_f},
     action_object_instance_names=['R','T1'],
-    conditions=[location, location, Property('P1','P2',Relation.NOT_EQUAL), component],
-    condition_object_instance_names=[['T','P1'],['R','P2'],['P1','P2'],['T','T1']],
-    condition_values=[True, True, True, True],
+    conditions=[location, location, Property('P1','P2',Relation.NOT_EQUAL)],
+    condition_object_instance_names=[['T1','P1'],['R','P2'],['P1','P2']],
+    condition_values=[True, True, True],
 )
 ##can only hold one item at once
 pu_ec3 = ExecutabilityCondition(
@@ -693,7 +717,7 @@ asem_sq_c2 = CausalLaw(
     object_instances={'R':robot,'B':beam,'BP':beam_part,'C1':place_f},
     action_object_instance_names=['R','BP'],
     fluent_object_instance_names=['R','C'],
-    conditions=[prerot_loc,component, Property('angle_m_end', 'BP', Relation.IS_OF_SORT)],
+    conditions=[beam_prerotate_loc,component, Property('angle_m_end', 'BP', Relation.IS_OF_SORT)],
     condition_object_instance_names=[['B','C'],['B','BP'],['BP']],
     condition_values=[True,True,True],
 )
@@ -900,13 +924,13 @@ for ac in assembly_actions:
 
 # refined fasten action to use beam_parts
 #!Fasten Action 
-fasten = ActionDefinition('fasten',[robot,beam_part,beam_part,pin])
+fasten = ActionDefinition('fasten',[robot,joint,joint,pin])
 ## causes beam parts to be fastened by pin
 f_c1 = CausalLaw(
     action=fasten,
     fluent_affected=fastened_f,
     fluent_value=True,
-    object_instances={'R':robot,'B1':beam_part,'B2':beam_part,'P1':pin},
+    object_instances={'R':robot,'B1':joint,'B2':joint,'P1':pin},
     action_object_instance_names=['R','B1','B2','P1'],
     fluent_object_instance_names=['B1','B2','P1']
 )
@@ -915,7 +939,7 @@ f_c2 = CausalLaw(
     action=fasten,
     fluent_affected=location,
     fluent_value=True,
-    object_instances={'R':robot,'B1':beam_part,'B2':beam_part,'P1':pin,'C':place_f},
+    object_instances={'R':robot,'B1':joint,'B2':joint,'P1':pin,'C':place_f},
     action_object_instance_names=['R','B1','B2','P1'],
     fluent_object_instance_names=['R','C1'],
     conditions=[assem_target_loc],
@@ -925,7 +949,7 @@ f_c2 = CausalLaw(
 ## both beams must be in assembly to fasten them
 f_ec1 = ExecutabilityCondition(
     action= fasten,
-    object_instances={'R':robot,'BP1':beam_part,'BP2':beam_part,'P1':pin},
+    object_instances={'R':robot,'BP1':joint,'BP2':joint,'P1':pin},
     action_object_instance_names=['R','BP1','BP2','P1'],
     conditions=[in_assembly_f],
     condition_values=[False],
@@ -933,7 +957,7 @@ f_ec1 = ExecutabilityCondition(
 )
 f_ec2 = ExecutabilityCondition(
     action= fasten,
-    object_instances={'R':robot,'BP1':beam_part,'BP2':beam_part,'P1':pin},
+    object_instances={'R':robot,'BP1':joint,'BP2':joint,'P1':pin},
     action_object_instance_names=['R','BP1','BP2','P1'],
     conditions=[in_assembly_f],
     condition_values=[False],
@@ -942,7 +966,7 @@ f_ec2 = ExecutabilityCondition(
 ## must hold pin to do fastening
 f_ec3 = ExecutabilityCondition(
     action= fasten,
-    object_instances={'R':robot,'B1':beam_part,'B2':beam_part,'P1':pin},
+    object_instances={'R':robot,'B1':joint,'B2':joint,'P1':pin},
     action_object_instance_names=['R','B1','B2','P1'],
     conditions=[in_hand_f],
     condition_values=[False],
@@ -951,7 +975,7 @@ f_ec3 = ExecutabilityCondition(
 #parts must be at target_locations
 f_ec4 = ExecutabilityCondition(
     action= fasten,
-    object_instances={'R':robot,'B1':beam,'BP1':beam_part,'BP2':beam_part,'P1':pin,'C1':place_f,'C2':place_f},
+    object_instances={'R':robot,'B1':beam,'BP1':joint,'BP2':joint,'P1':pin,'C1':place_f,'C2':place_f},
     action_object_instance_names=['R','BP1','BP2','P1'],
     conditions=[location,assem_target_loc,component,Property('C1','C2',Relation.NOT_EQUAL)],
     condition_values=[True,True,True,True],
@@ -959,7 +983,7 @@ f_ec4 = ExecutabilityCondition(
 )
 f_ec5 = ExecutabilityCondition(
     action= fasten,
-    object_instances={'R':robot,'B1':beam,'BP1':beam_part,'BP2':beam_part,'P1':pin,'C1':place_f,'C2':place_f},
+    object_instances={'R':robot,'B1':beam,'BP1':joint,'BP2':joint,'P1':pin,'C1':place_f,'C2':place_f},
     action_object_instance_names=['R','BP1','BP2','P1'],
     conditions=[location,assem_target_loc,component,Property('C1','C2',Relation.NOT_EQUAL)],
     condition_values=[True,True,True,True],
@@ -968,7 +992,7 @@ f_ec5 = ExecutabilityCondition(
 #can only be used at pin approach location
 f_ec6 = ExecutabilityCondition(
     action= fasten,
-    object_instances={'R':robot,'BP1':beam_part,'BP2':beam_part,'P1':pin,'C1':place_f,'C2':place_f},
+    object_instances={'R':robot,'BP1':joint,'BP2':joint,'P1':pin,'C1':place_f,'C2':place_f},
     action_object_instance_names=['R','BP1','BP2','P1'],
     conditions=[location,assem_approach_loc,Property('C1','C2',Relation.NOT_EQUAL)],
     condition_values=[True,True,True],
@@ -977,16 +1001,16 @@ f_ec6 = ExecutabilityCondition(
 #can only fasten joints which fit together
 f_ec7 = ExecutabilityCondition(
     action = fasten,
-    object_instances={'R':robot,'BP1':beam_part,'BP2':beam_part,'P1':pin},
+    object_instances={'R':robot,'BP1':joint,'BP2':joint,'P1':pin},
     action_object_instance_names=['R','BP1','BP2','P1'],
     conditions=[fits_into_f],
-    condition_values=[True],
+    condition_values=[False],
     condition_object_instance_names=[['BP1','BP2']],
 )
 #can only fasten joints which dont already have a pin in
 f_ec8 = ExecutabilityCondition(
     action = fasten,
-    object_instances={'R':robot,'BP1':beam_part,'BP2':beam_part,'P1':pin,'P2':pin},
+    object_instances={'R':robot,'BP1':joint,'BP2':joint,'P1':pin,'P2':pin},
     action_object_instance_names=['R','BP1','BP2','P1'],
     conditions=[fastened_f],
     condition_values=[True],
@@ -1114,7 +1138,7 @@ move_local_action = Action(move_local,[ml_c1],[ml_ec1, ml_ec2, ml_ec3])
 # create fine res ALD
 #!ALD
 
-sorts = [robot,beam,link,in_m_end,in_f_end,end_joint,beam_part,pin,thing,thing_part,ob,place_c,non_placement_loc,
+sorts = [robot,beam,link,in_m_end,angle_m_end,in_f_end,joint,beam_part,pin,thing,thing_part,ob,place_c,non_placement_loc,
 approach_loc,prerot_loc,through_loc,target_loc,near_to_loc,input_locations,place_f,fine_res_sort,coarse_res_sort]
 
 
@@ -1228,6 +1252,15 @@ domain_setup = [
     'assem_target_loc(b2, b2t).',
     'assem_target_loc(b3, b3t).',
     'assem_target_loc(b4, b4t).',
+    r'% pin assembly location mapping',
+    'assem_approach_loc(p1, p1a).',
+    'assem_approach_loc(p2, p2a).',
+    'assem_approach_loc(p3, p3a).',
+    'assem_approach_loc(p4, p4a).',
+    'assem_target_loc(p1, p1t).',
+    'assem_target_loc(p2, p2t).',
+    'assem_target_loc(p3, p3t).',
+    'assem_target_loc(p4, p4t).',
     r'% near to mapping',
     'near_to(nt_b2t, b2t).',
     'near_to(nt_b3t, b3t).',

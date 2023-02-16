@@ -3,16 +3,17 @@
 %% Author: MARK ROBSON 2023
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#const numSteps = 5.
+#const numSteps = 7.
 
 sorts
 #robot = {rob0}.
 #beam = {b1,b2,b3,b4}.
 #link = {l1,l2,l3,l4}.
 #in_m_end = {j3,j4,j7,j8}.
+#angle_m_end = {dummy_angle_m_end}.
 #in_f_end = {j1,j2,j5,j6}.
-#end_joint = #in_m_end + #in_f_end.
-#beam_part = #link + #end_joint.
+#joint = #in_m_end + #in_f_end + #angle_m_end.
+#beam_part = #link + #joint.
 #pin = {p1,p2,p3,p4}.
 #thing = #beam + #pin.
 #thing_part = #beam_part + #pin.
@@ -20,15 +21,15 @@ sorts
 #place_c = {input_area,intermediate_area,assembly_area}.
 #non_placement_location = {above_input_area,above_intermediate_area,above_assembly_area}.
 #approach_location = {b1a,b2a,b3a,b4a,p1a,p2a,p3a,p4a}.
-#prerot_location = {}.
-#through_location = {}.
+#prerot_location = {dummy_prerot_location}.
+#through_location = {dummy_through_location}.
 #target_location = {b1t,b2t,b3t,b4t,p1t,p2t,p3t,p4t}.
 #near_to_location = {nt_b1a,nt_b2a,nt_b3a,nt_b4a,nt_p1a,nt_p2a,nt_p3a,nt_p4a,nt_b1t,nt_b2t,nt_b3t,nt_b4t,nt_p1t,nt_p2t,nt_p3t,nt_p4t,nt_above_input,nt_above_intermediate,nt_above_assembly}.
 #input_locations = {b2i,b3i,b4i,p1i,p2i,p3i,p4i}.
 #place_f = #approach_location + #target_location + #non_placement_location + #near_to_location + #input_locations.
 #fine_res_sort = #place_f + #thing_part.
 #coarse_res_sort = #place_c + #thing.
-#action = putdown_f(#robot,#thing_part) + move_f(#robot,#place_f) + pick_up_f(#robot,#thing_part) + assemble_f_cap(#robot,#beam_part) + assemble_f_square(#robot,#beam_part) + fasten(#robot,#beam_part,#beam_part,#pin) + push(#robot,#beam) + move_local(#robot,#place_f).
+#action = putdown_f(#robot,#thing_part) + move_f(#robot,#place_f) + pick_up_f(#robot,#thing_part) + assemble_f_cap(#robot,#beam_part) + assemble_f_square(#robot,#beam_part) + fasten(#robot,#joint,#joint,#pin) + push(#robot,#beam) + move_local(#robot,#place_f).
 #boolean = {true, false}.
 #outcome = {true, false, undet}.
 #inertial_fluent = in_hand_c(#robot, #thing)+ in_hand_f(#robot, #thing_part)+ loc_c(#object, #place_c)+ loc_f(#object, #place_f)+ in_assembly_c(#beam)+ in_assembly_f(#beam_part)+ supported_c(#beam)+ supported_f(#beam_part)+ fastened_c(#beam, #beam, #pin)+ fastened_f(#beam_part, #beam_part, #pin).
@@ -50,6 +51,8 @@ between(#beam_part, #beam_part, #beam_part).
 assem_approach_loc(#thing, #approach_location).
 assem_target_loc(#thing, #target_location).
 assembly_loc(#thing, #place_f).
+beam_through_loc(#beam, #through_location).
+beam_prerotate_loc(#beam, #prerot_location).
 holds(#fluent, #boolean, #step).
 occurs(#action, #step).
 success().
@@ -76,6 +79,8 @@ holds(in_assembly_c(B1), true, I) :- holds(in_assembly_f(P1), true, I), componen
 holds(in_assembly_f(P1), true, I) :- holds(in_assembly_c(B1), true, I), component(B1,P1).
 assembly_loc(T,C):- assem_approach_loc(T,C).
 assembly_loc(T,C):- assem_target_loc(T,C).
+assembly_loc(B,C):- beam_prerotate_loc(B,C).
+assembly_loc(B,C):- beam_through_loc(B,C).
 is_capped_by(B1,B2,B3):- fits_into_c(B1,B2), fits_into_c(B1,B3), B2!=B3.
 is_capped_by(B1,B2,B3):- is_capped_by(B1,B3,B2).
 -is_capped_by(B1,B2,B3):- not is_capped_by(B1,B2,B3).
@@ -112,7 +117,7 @@ holds(loc_f(R,P), true, I+1) :- occurs(move_f(R,P), I).
 -occurs(move_f(R,P1), I) :- holds(in_hand_c(R,T1), true, I), #target_location(P1).
 
 holds(in_hand_f(R,T), true, I+1) :- occurs(pick_up_f(R,T), I).
--occurs(pick_up_f(R,T1), I) :- holds(loc_f(T,P1), true, I), holds(loc_f(R,P2), true, I), P1!=P2, component(T,T1).
+-occurs(pick_up_f(R,T1), I) :- holds(loc_f(T1,P1), true, I), holds(loc_f(R,P2), true, I), P1!=P2.
 -occurs(pick_up_f(R,T1), I) :- holds(in_hand_f(rob0,T2), true, I), #thing_part(T2).
 -occurs(pick_up_f(R,T1), I) :- component(B,T1), not #link(T1), #beam(B).
 
@@ -131,7 +136,7 @@ holds(loc_f(B1,C1), true, I+1) :- occurs(assemble_f_cap(R,BP), I), holds(in_asse
 -occurs(assemble_f_cap(R,BP), I) :- holds(in_assembly_c(B2), true, I), #beam(B2), holds(loc_f(B2,C1), true, I), assem_target_loc(B2,C2), C1!=C2.
 
 holds(loc_f(R,C), true, I+1) :- occurs(assemble_f_square(R,BP), I), assem_target_loc(B,C), component(B,BP), not #angle_m_end(BP).
-holds(loc_f(R,C), true, I+1) :- occurs(assemble_f_square(R,BP), I), #prerot_location(B,C), component(B,BP), #angle_m_end(BP).
+holds(loc_f(R,C), true, I+1) :- occurs(assemble_f_square(R,BP), I), beam_prerotate_loc(B,C), component(B,BP), #angle_m_end(BP).
 holds(in_assembly_f(BP), true, I+1) :- occurs(assemble_f_square(R,BP), I), not #angle_m_end(BP).
 holds(loc_f(B1,C1), true, I+1) :- occurs(assemble_f_square(R,BP), I), holds(in_assembly_c(B1), true, I), near_to(C1,C2), holds(loc_f(B1,C2), true, I).
 -occurs(assemble_f_square(R,BP), I) :- is_capped_by(B1,B2,B3), component(B2,BP).
@@ -154,7 +159,7 @@ holds(loc_f(R,C1), true, I+1) :- occurs(fasten(R,B1,B2,P1), I), assem_target_loc
 -occurs(fasten(R,BP1,BP2,P1), I) :- holds(loc_f(B1,C1), true, I), assem_target_loc(B1,C2), component(B1,BP1), C1!=C2.
 -occurs(fasten(R,BP1,BP2,P1), I) :- holds(loc_f(B1,C1), true, I), assem_target_loc(B1,C2), component(B1,BP2), C1!=C2.
 -occurs(fasten(R,BP1,BP2,P1), I) :- holds(loc_f(R,C1), true, I), assem_approach_loc(P1,C2), C1!=C2.
--occurs(fasten(R,BP1,BP2,P1), I) :- fits_into_f(BP1,BP2).
+-occurs(fasten(R,BP1,BP2,P1), I) :- not fits_into_f(BP1,BP2).
 -occurs(fasten(R,BP1,BP2,P1), I) :- holds(fastened_f(BP1,BP2,P2), true, I).
 
 holds(loc_f(B,C), true, I+1) :- occurs(push(R,B), I), assem_target_loc(B,C).
@@ -284,6 +289,15 @@ assem_approach_loc(b4, b4a).
 assem_target_loc(b2, b2t).
 assem_target_loc(b3, b3t).
 assem_target_loc(b4, b4t).
+% pin assembly location mapping
+assem_approach_loc(p1, p1a).
+assem_approach_loc(p2, p2a).
+assem_approach_loc(p3, p3a).
+assem_approach_loc(p4, p4a).
+assem_target_loc(p1, p1t).
+assem_target_loc(p2, p2t).
+assem_target_loc(p3, p3t).
+assem_target_loc(p4, p4t).
 % near to mapping
 near_to(nt_b2t, b2t).
 near_to(nt_b3t, b3t).

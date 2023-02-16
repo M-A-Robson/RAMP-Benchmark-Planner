@@ -5,8 +5,8 @@ SAVE_DIR = '/home/local/MTC_ORI_Collab/sparc_planning/sparc_files/'
 #!sorts
 robot = BasicSort('robot', ['rob0'])
 #add beam and pin sorts
-beam = BasicSort('beam',['b1','b2','b3','b4','b5'])
-pin = BasicSort('pin',['p1','p2','p3','p4','p5','p6'])
+beam = BasicSort('beam',['b1','b2','b3','b4'])
+pin = BasicSort('pin',['p1','p2','p3','p4'])
 thing = SuperSort('thing', [beam,pin])
 ob = SuperSort('object', [robot, thing])
 place = BasicSort('place', ['input_area', 'intermediate_area', 'assembly_area'])
@@ -26,14 +26,14 @@ statics = [next_to,fits_into,fits_through,is_capped_by]
 in_hand = Func('in_hand', [robot,thing], FuncType.FLUENT)
 location = Func('location', [ob,place], FuncType.FLUENT)
 #current_grasp_mode = Func('current_grasp_mode', [robot, grasp_mode], FuncType.FLUENT)
-on = Func('on', [thing,thing], FuncType.FLUENT)
-clear = Func('clear', [thing], FuncType.FLUENT)
+# on = Func('on', [thing,thing], FuncType.FLUENT)
+# clear = Func('clear', [thing], FuncType.FLUENT)
 # add beam domain fluents
 in_assembly = Func('in_assembly',[beam],FuncType.FLUENT)
 supported = Func('supported',[beam], FuncType.FLUENT)
 fastened = Func('fastened',[beam,beam,pin], FuncType.FLUENT)
 
-fluents = [in_hand,location,on,clear,in_assembly,supported,fastened]
+fluents = [in_hand,location,in_assembly,supported,fastened]
 
 #!state constraints
 state_constraints=[]
@@ -78,25 +78,25 @@ state_constraints.append(StateConstraint(
 #     condition_values=[True,True]
 # ))
 #objects on-top of another object share a location
-state_constraints.append(StateConstraint(
-    object_instances={'T1':thing,'T2':thing,'P1':place},
-    head=location,
-    head_object_instance_names=['T1','P1'],
-    head_value=True,
-    conditions=[location, on],
-    condition_object_instance_names=[['T2','P1'],['T1','T2']],
-    condition_values=[True,True]
-))
+# state_constraints.append(StateConstraint(
+#     object_instances={'T1':thing,'T2':thing,'P1':place},
+#     head=location,
+#     head_object_instance_names=['T1','P1'],
+#     head_value=True,
+#     conditions=[location, on],
+#     condition_object_instance_names=[['T2','P1'],['T1','T2']],
+#     condition_values=[True,True]
+# ))
 # objects cannot be on top of themselves
-state_constraints.append(StateConstraint(
-    object_instances={'T1':thing,'T2':thing},
-    head=on,
-    head_object_instance_names=['T1','T2'],
-    head_value=False,
-    conditions=[Property('T1','T2',Relation.EQUAL)],
-    condition_object_instance_names=[['T1','T2']],
-    condition_values=[True]
-))
+# state_constraints.append(StateConstraint(
+#     object_instances={'T1':thing,'T2':thing},
+#     head=on,
+#     head_object_instance_names=['T1','T2'],
+#     head_value=False,
+#     conditions=[Property('T1','T2',Relation.EQUAL)],
+#     condition_object_instance_names=[['T1','T2']],
+#     condition_values=[True]
+# ))
 #if the robot is holding an object the object will move with it
 #this could alternatively be defined as a state constraint
 state_constraints.append(StateConstraint(
@@ -109,15 +109,15 @@ state_constraints.append(StateConstraint(
     condition_values=[True, True, True]
 ))
 # objects are no longer clear if items put onto them
-state_constraints.append(StateConstraint(
-    object_instances={'T1':thing,'T2':thing},
-    head=clear,
-    head_object_instance_names=['T2'],
-    head_value=False,
-    conditions=[on],
-    condition_object_instance_names=[['T1','T2']],
-    condition_values=[True]
-))
+# state_constraints.append(StateConstraint(
+#     object_instances={'T1':thing,'T2':thing},
+#     head=clear,
+#     head_object_instance_names=['T2'],
+#     head_value=False,
+#     conditions=[on],
+#     condition_object_instance_names=[['T1','T2']],
+#     condition_values=[True]
+# ))
 
 #?beam domain state constraints
 capping_constraint = StateConstraint(
@@ -248,37 +248,37 @@ pu_c1 = CausalLaw(
     fluent_value=True
 )
 ##removes objects from on top of other objects
-pu_c2 = CausalLaw(
-    action=pick_up,
-    object_instances={'R':robot,'T1':thing, 'T2':thing},
-    action_object_instance_names=['R','T1'],
-    fluent_affected=on,
-    fluent_object_instance_names=['T1','T2'],
-    fluent_value=False,
-    conditions=[on],
-    condition_object_instance_names=[['T1','T2']],
-    condition_values=[True],
-)
-pu_c3 = CausalLaw(
-    action=pick_up,
-    object_instances={'R':robot,'T1':thing, 'T2':thing},
-    action_object_instance_names=['R','T1'],
-    conditions=[on],
-    condition_object_instance_names=[['T1','T2']],
-    condition_values=[True],
-    fluent_affected=clear,
-    fluent_object_instance_names=['T2'],
-    fluent_value=True,
-)
+# pu_c2 = CausalLaw(
+#     action=pick_up,
+#     object_instances={'R':robot,'T1':thing, 'T2':thing},
+#     action_object_instance_names=['R','T1'],
+#     fluent_affected=on,
+#     fluent_object_instance_names=['T1','T2'],
+#     fluent_value=False,
+#     conditions=[on],
+#     condition_object_instance_names=[['T1','T2']],
+#     condition_values=[True],
+# )
+# pu_c3 = CausalLaw(
+#     action=pick_up,
+#     object_instances={'R':robot,'T1':thing, 'T2':thing},
+#     action_object_instance_names=['R','T1'],
+#     conditions=[on],
+#     condition_object_instance_names=[['T1','T2']],
+#     condition_values=[True],
+#     fluent_affected=clear,
+#     fluent_object_instance_names=['T2'],
+#     fluent_value=True,
+# )
 ##cannot pick up unless clear
-pu_ec1 = ExecutabilityCondition(
-    action=pick_up,
-    object_instances={'R':robot,'T1':thing},
-    action_object_instance_names=['R','T1'],
-    conditions=[clear],
-    condition_object_instance_names=[['T1']],
-    condition_values=[False],
-)
+# pu_ec1 = ExecutabilityCondition(
+#     action=pick_up,
+#     object_instances={'R':robot,'T1':thing},
+#     action_object_instance_names=['R','T1'],
+#     conditions=[clear],
+#     condition_object_instance_names=[['T1']],
+#     condition_values=[False],
+# )
 ##cannot pick up unless in same location
 pu_ec2 = ExecutabilityCondition(
     action=pick_up,
@@ -297,7 +297,7 @@ pu_ec3 = ExecutabilityCondition(
     condition_object_instance_names=[['rob0','T2'],['T2']],
     condition_values=[True, True],
 )
-pick_up_action = Action(pick_up,[pu_c1,pu_c2,pu_c3],[pu_ec1, pu_ec2, pu_ec3])
+pick_up_action = Action(pick_up,[pu_c1],[pu_ec2, pu_ec3])
 
 #!move action
 move = ActionDefinition('move', [robot,place])
@@ -382,17 +382,17 @@ pd_c1 = CausalLaw(put_down,
     ['R','T'],['R','T'],
     )
 ##puts objects onto other objects
-pd_c2 = CausalLaw(put_down,
-    object_instances={'R':robot,'T1':thing,'T2':thing,'P1':place,},
-    action_object_instance_names=['R','T1'],
-    fluent_object_instance_names=['T1','T2'],
-    fluent_affected=on,
-    fluent_value=True,
-    conditions=[location,location,clear, Property('T1','T2', Relation.NOT_EQUAL)],
-    condition_object_instance_names=[['R','P1'],['T2','P1'],['T2'], ['T1','T2']],
-    condition_values=[True,True,True,True],
-    )
-put_down_action = Action(put_down,[pd_c1,pd_c2],[pd_ec1])
+# pd_c2 = CausalLaw(put_down,
+#     object_instances={'R':robot,'T1':thing,'T2':thing,'P1':place,},
+#     action_object_instance_names=['R','T1'],
+#     fluent_object_instance_names=['T1','T2'],
+#     fluent_affected=on,
+#     fluent_value=True,
+#     conditions=[location,location,clear, Property('T1','T2', Relation.NOT_EQUAL)],
+#     condition_object_instance_names=[['R','P1'],['T2','P1'],['T2'], ['T1','T2']],
+#     condition_values=[True,True,True,True],
+#     )
+put_down_action = Action(put_down,[pd_c1],[pd_ec1])
 
 #!change_grasp_mode action
 # cgm=ActionDefinition('change_grasp_mode',[robot,grasp_mode])
@@ -538,7 +538,25 @@ f_ec3 = ExecutabilityCondition(
     condition_values=[False],
     condition_object_instance_names=[['R','P1']],
 )
-fasten_action = Action(fasten,[f_c1],[f_ec1,f_ec2,f_ec3])
+#can only fasten beams which fit together
+f_ec4 = ExecutabilityCondition(
+    action = fasten,
+    object_instances={'R':robot,'B1':beam,'B2':beam,'P1':pin},
+    action_object_instance_names=['R','B1','B2','P1'],
+    conditions=[fits_into],
+    condition_values=[True],
+    condition_object_instance_names=[['B1','B2']],
+)
+#can only fasten beams which dont already have a pin in
+f_ec5 = ExecutabilityCondition(
+    action = fasten,
+    object_instances={'R':robot,'B1':beam,'BP2':beam,'P1':pin,'P2':pin},
+    action_object_instance_names=['R','B1','B2','P1'],
+    conditions=[fastened],
+    condition_values=[True],
+    condition_object_instance_names=[['B1','B2','P2']],
+)
+fasten_action = Action(fasten,[f_c1],[f_ec1,f_ec2,f_ec3,f_ec4,f_ec5])
 
 #!ALD
 # example with 5 beams
@@ -548,15 +566,22 @@ ALD = ActionLangSysDesc(
         state_constraints=state_constraints,
         inertial_fluents=fluents,
         actions=[put_down_action,move_action,pick_up_action,assemble_action,fasten_action],
-        domain_setup=['holds(in_assembly(b1),true,0).','holds(location(b1,assembly_area),true,0).','holds(location(b2,input_area),true,0).',
-                      'holds(location(b3,input_area),true,0).','holds(location(b4,input_area),true,0).','holds(location(rob0,input_area),true,0).',
-                      'next_to(input_area,intermediate_area).','holds(location(b5,input_area),true,0).',
-                      'next_to(assembly_area,intermediate_area).','fits_into(b2, b1).','fits_into(b3, b1).','fits_into(b3, b4).',
-                      'fits_into(b2, b4).', 'fits_into(b5,b2).', 'fits_into(b5,b3).'],
+        domain_setup=['holds(in_assembly(b1),true,0).',
+                      'holds(location(b1,assembly_area),true,0).',
+                      'holds(location(b2,input_area),true,0).',
+                      'holds(location(b3,input_area),true,0).',
+                      'holds(location(b4,input_area),true,0).',
+                      'holds(location(rob0,input_area),true,0).',
+                      'next_to(input_area,intermediate_area).',
+                      'next_to(assembly_area,intermediate_area).',
+                      'fits_into(b2, b1).',
+                      'fits_into(b3, b1).',
+                      'fits_into(b3, b4).',
+                      'fits_into(b2, b4).'],
         goal_description=[GoalDefinition(in_assembly,['b4'],True)],
-        display_hints=['occurs.'], planning_steps=25)
+        display_hints=['occurs.'], planning_steps=18)
 
 ALD.complete_domain_setup_fluent(in_hand,False) #assert robot hand is empty
-ALD.complete_domain_setup_fluent(clear,True) #assert objects are accessible
+# ALD.complete_domain_setup_fluent(clear,True) #assert objects are accessible
 
 ALD.to_sparc_program().save(SAVE_DIR+'beam_domain_coarse.sp')

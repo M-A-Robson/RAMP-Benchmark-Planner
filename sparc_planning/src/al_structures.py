@@ -38,9 +38,19 @@ class Sort:
         
     def to_sparc(self) -> str:
         if self.sort_type == SortType.BASIC:
+            if len(self.instances) == 0:
+                logging.warn(f'Adding dummy object to empty sort: {self.name}')
+                return f"#{self.name} = {{dummy_{self.name}}}."
             return f"#{self.name} = {{{','.join(self.instances)}}}."
         elif self.sort_type == SortType.SET:
             return f"#{self.name} = {' + '.join(self.instances)}."
+        
+    def remove_instance_by_name(self, name:str) -> None:
+        try:
+            self.instances.remove(name)
+        except ValueError:
+            logger.info(f'Instance: {name} not found in sort {self.name}.')
+
 
 class BasicSort(Sort):
     def __init__(self, name:str, instances:List[str]):

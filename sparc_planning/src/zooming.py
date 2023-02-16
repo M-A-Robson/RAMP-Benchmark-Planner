@@ -3,6 +3,23 @@ from typing import List, Tuple
 import re
 from al_structures import ActionLangSysDesc, SortType, BasicSort, SuperSort, Func, ActionInstance
 from sparc_io import SparcState
+import re
+import logging
+
+def remove_chars_from_last_number(original_string:str) -> str:
+    """helper function removes the end of a string after the last number.
+    This is useful for removing timestamps
+
+    e.g. if string is 'holds(in_asssmebly(b1), true, 20).'
+    result = 'holds(in_asssmebly(b1), true, '
+
+    Args:
+        original_string (str): input
+    Returns:
+        str: truncated string
+    """
+    n = re.search('\d+',original_string[::-1]).span()[1]
+    return original_string[:-n]
 
 def extract_state_transition(states:List[SparcState], occurs:List[str], DH:ActionLangSysDesc, step:int = 0) -> Tuple[SparcState, SparcState, ActionInstance]:
     """seperates state data for before and after action and creates ActionInstance object for transition aH.
@@ -39,7 +56,7 @@ def extract_state_transition(states:List[SparcState], occurs:List[str], DH:Actio
 
     return state0, state1, aH
 
-def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DLR:ActionLangSysDesc):
+def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DLR:ActionLangSysDesc, location_restriction:bool=False):
     """returns a zoomed system description for the transition aH
     Args:
         s1 (SparcState): coarse resolution state (answer set) before transition
@@ -47,6 +64,8 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DLR:ActionLangSysDesc)
         aH (ActionInstance): coarse resolution action instance causing the transition 
         DLR (ActionLangSysDesc): fine resolution domain description which
                 is a refinement of the coarse resolution domain DH.
+        location_restriction(bool): toggles additional scope reduction on location
+                objects specific to the robotic assembly domain system. default = False
     Returns:
         ActionLangSysDesc: DLR(T) zoomed fine resolution system desc.
     """
@@ -55,8 +74,8 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DLR:ActionLangSysDesc)
     relObConH = {*aH.object_constants}
     
     # states strings are timestamped so this needs to be fixed for comparison
-    s1flu = [f1[:-2] for f1 in s1.fluents]
-    s2flu = [f2[:-2] for f2 in s2.fluents]
+    s1flu = [remove_chars_from_last_number(f1) for f1 in s1.fluents]
+    s2flu = [remove_chars_from_last_number(f2) for f2 in s2.fluents]
     # statics dont change so can be ignored  
     # 13.2
     # functions in s1 or s2 but not both
@@ -101,7 +120,7 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DLR:ActionLangSysDesc)
             for f in re.split('\(|\)|\,', func)[1:-1]:
                 relObConH.add(f)
                 
-    print('Relevant objects (coarse resolution): ', relObConH)
+    logging.info('Relevant objects (coarse resolution): ', relObConH)
 
     # identify any relevant objects and components in fine resolution
     relevant_fine_objects = copy.deepcopy(relObConH)
@@ -113,12 +132,9 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DLR:ActionLangSysDesc)
             if obs[0] in relObConH:
                 # add fine res object to set
                 relevant_fine_objects.add(obs[1])
-                # #? remove the coarse object if it is still in our set
-                # if obs[0] in relevant_fine_objects:
-                #     relevant_fine_objects.remove(obs[0])
 
-    print('Relevant objects (fine resolution): ', relevant_fine_objects)
-    
+    logging.info('Relevant objects (fine resolution): ', relevant_fine_objects)
+
     # STEP 2: extract relevant fine system description DLRT
     sorts_DLRT = set()
     for sort in DLR.sorts:
@@ -150,7 +166,60 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DLR:ActionLangSysDesc)
         # otherwise add them to our search list and continue
         sorts_DLRT = sorts_DLRT.union(new_sorts)
     
-    print('Relevant Sorts: ', sorts_DLRT)
+    logging.info('Relevant Sorts: ', [s.name for s in sorts_DLRT])
+
+    if location_restriction:
+        refined_target_locs = []
+        refined_approach_locs = []
+        refined_prerot_locs = []
+        refined_through_locs = []
+        # grab instances of relevant sorts
+        relevant_things = []
+        for sort in sorts_DLRT:
+            # thing is a super sort with subsorts containing handlable objects
+            if sort.name == 'thing':
+                for subsort in sort:
+                    relevant_things += subsort.instances
+            if sort.name == 'target_locations':
+                target_locations = sort.instances
+            if sort.name == 'approach_locations':
+                approach_locations = sort.instances
+            if sort.name == 'prerot_location':
+                prerot_locations = sort.instances
+            if sort.name == 'through_location':
+                through_locations = sort.instances
+        # temporarily remove locations from relevant_fine_objects
+        assembly_locations = target_locations + approach_loc + prerot_locations + through_locations
+        relevant_fine_objects -= {*assembly_locations}
+        # for each thing
+        for thing in relevant_things:
+            # check for relevant locations
+            for target_loc in target_locations:
+                if f'assem_target_loc({thing}, {target_loc}).' in DLR.domain_setup:
+                    refined_target_locs.append(target_loc)
+            for approach_loc in approach_locations:
+                if f'assem_approach_loc({thing}, {approach_loc}).' in DLR.domain_setup:
+                    refined_approach_locs.append(approach_loc)
+            for pr_loc in prerot_locations:
+                if f'beam_prerotate_loc({thing}, {pr_loc}).' in DLR.domain_setup:
+                    refined_prerot_locs.append(pr_loc)
+            for th_loc in through_locations:
+                if f'beam_through_loc({thing}, {th_loc}).' in DLR.domain_setup:
+                    refined_through_locs.append(th_loc)
+        # update sort instances of DLRT
+        for sort in sorts_DLRT:
+            if sort.name == 'target_locations':
+                sort.instances = refined_target_locs
+            if sort.name == 'approach_locations':
+                sort.instances = refined_approach_locs
+            if sort.name == 'prerot_location':
+                sort.instances = refined_prerot_locs
+            if sort.name == 'through_location':
+                sort.instances = refined_through_locs
+        # update relevant_fine_objects to put back good locations
+        refined_assembly_locations = refined_target_locs + refined_approach_locs + refined_prerot_locs + refined_through_locs
+        relevant_fine_objects += {*refined_assembly_locations}
+        logging.info('Relevant objects (post location reduction): ', relevant_fine_objects)
     
     # The domain attributes and actions of ΣLR(T) are those of ΣLR restricted to the basic sorts of ΣLR(T)
     new_inertial_fluents = []

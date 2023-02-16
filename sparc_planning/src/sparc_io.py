@@ -190,20 +190,18 @@ def extract_states_from_answer_set(answer_set:List[str]) -> Tuple[List[SparcStat
         else: statics.append(l)
 
     # find the largest step value
-    max_time_step = max([int(f[-2]) for f in fluents])
+    # updated to use regex to provide more general solution for max_time_step greater than 10
+    max_time_step = max([int(re.findall('\d+', f)[-1]) for f in fluents])
     states = []
     actions = []
     for i in range(max_time_step):
         # find fluents and occurs statements for this time step
-        flu = [fluent for fluent in fluents if int(fluent[-2])==i]
-        occurs_t = [occ for occ in occurs if (int(occ[-2])==i) and (occ[0]!='-')]
+        flu = [fluent for fluent in fluents if int(re.findall('\d+', fluent)[-1])==i]
+        occurs_t = [occ for occ in occurs if (int(re.findall('\d+', occ)[-1])==i) and (occ[0]!='-')]
         actions += occurs_t
-        hpd_t = [h for h in hpd if int(h[-2])<=i]
-        if f'goal({i+1})' in goal:
-            state = SparcState(statics,flu,occurs_t,hpd_t,True,i)
-        else:
-            state = SparcState(statics,flu,occurs_t,hpd_t,False,i)
-        states.append(state)
+        hpd_t = [h for h in hpd if int(re.findall('\d+', h)[-1])<=i]
+        res = True if (f'goal({i+1})' in goal) else False
+        states.append(SparcState(statics,flu,occurs_t,hpd_t,res,i))
 
     return states, actions 
 
