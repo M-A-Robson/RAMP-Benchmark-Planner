@@ -68,7 +68,7 @@
             <parent joint="J4-1"/>
             <child joint="J4-2"/>
         </link>
-        <joint name="J4-2" part="thru-f">
+        <joint name="J4-2" part="in-f">
             <parent link="L4-1"/>
             <child link="L4-2"/>
         </joint>
@@ -88,7 +88,7 @@
             <parent joint="J5-1"/>
             <child joint="J5-2"/>
         </link>
-        <joint name="J5-2" part="thru-f">
+        <joint name="J5-2" part="in-f">
             <parent link="L5-1"/>
             <child link="L5-2"/>
         </joint>
@@ -136,7 +136,7 @@
             <parent joint="J7-2"/>
             <child joint="J7-3"/>
         </link>
-        <joint name="J7-3" part="in-f">
+        <joint name="J7-3" part="thru-f">
             <parent link="L7-2"/>
             <child link="L7-3"/>
         </joint>
@@ -172,7 +172,7 @@
             <parent joint="J8-2"/>
             <child joint="J8-3"/>
         </link>
-        <joint name="J8-3" part="in-f">
+        <joint name="J8-3" part="thru-f">
             <parent link="L8-2"/>
             <child link="L8-3"/>
         </joint>
