@@ -169,6 +169,10 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DLR:ActionLangSysDesc,
     logging.info('Relevant Sorts: ', [s.name for s in sorts_DLRT])
 
     if location_restriction:
+        # concept here is that we only care about relevant assembly locaitons, i.e. if we are inserting pin1,
+        # we dont care about the locations for assembling beam15 which would otherwise be identified as locations
+        # within the assembly area in the default zooming operation.
+        #todo test impact on plannin speed.
         refined_target_locs = []
         refined_approach_locs = []
         refined_prerot_locs = []
