@@ -66,11 +66,11 @@ PEG_OFFSET_DATA = {
 
 # offsets in [x,y,z] to top right corner of the object tag from object center
 TAG_POSITION_DATA = { #TODO
-    ElementType.ANGLE_M_END:[],
-    ElementType.IN_M_END:[], 
-    ElementType.IN_F_END:[],
+    # ElementType.ANGLE_M_END:[8.5, 10.0, 11.8],
+    ElementType.IN_M_END:[12.750, -29.600, 26.600], 
+    ElementType.IN_F_END:[12.750,-17.150,29.900],
     ElementType.THRU_F_END: [],
-    ElementType.IN_M_END_FEET: [],
+    ElementType.IN_M_END_FEET: [12.750, -29.600, 26.600],
 }
 
 MODEL_DATA = {ElementType.THRU_M: "models/jack/thru-m.stl",
