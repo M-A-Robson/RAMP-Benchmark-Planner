@@ -164,7 +164,8 @@ def parse_sparc_ouput(output_file:str='sparc.out') -> list[list[str]]:
         for a_s in a_sets:
             a_s[0] = a_s[0][1:]
             a_s[-1] = a_s[-1][:-2]
-    return a_sets
+        answer_sets = [a for a in a_sets if a != ['']]
+    return answer_sets
 
 def extract_states_from_answer_set(answer_set:List[str]) -> Tuple[List[SparcState], List[str]]:
     """extracts each state from answer set and planned actions

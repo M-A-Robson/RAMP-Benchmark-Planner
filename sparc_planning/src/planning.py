@@ -5,9 +5,6 @@ import re
 import asyncio
 import logging
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
-
 def edit_numSteps(source:str, new_value:int):
     """alters the numSteps constant in a sparc file
     Args:
@@ -32,7 +29,7 @@ async def plan(
         ) -> List[str]:
     start_time = time.perf_counter()
     logging.info('Planning started...')
-    for i in range(min_length,max_length,1):
+    for i in range(min_length,max_length+1,1):
         logging.info(f'Running sparc with numSteps = {i}')
         t1 = time.perf_counter()
         # increment planning horizon
@@ -48,10 +45,11 @@ async def plan(
         # crude timer
         t2 = time.perf_counter()
         logging.info(f'Cycle time: {t2-t1:10.4f} seconds')
-        if res[0] != ['']:
+        if len(res)>0:
             logging.info(f'Plan found in: {t2 - start_time:10.4f} seconds, with length {i} steps')
             return res
     logging.error(f'Failed to find solution in {max_length} steps')
     raise ValueError
 
-asyncio.run(plan('/home/local/MTC_ORI_Collab/sparc_planning/sparc_files/beam_domain_fine.sp', max_length=8, min_length=1))
+#?test
+#asyncio.run(plan('/home/local/MTC_ORI_Collab/sparc_planning/sparc_files/beam_domain_fine.sp', max_length=7, min_length=1))

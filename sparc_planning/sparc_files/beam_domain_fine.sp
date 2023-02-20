@@ -3,7 +3,7 @@
 %% Author: MARK ROBSON 2023
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#const numSteps = 7.
+#const numSteps = 3.
 
 sorts
 #robot = {rob0}.

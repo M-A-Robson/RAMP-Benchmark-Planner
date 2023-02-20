@@ -23,6 +23,9 @@ class Constant:
     def to_sparc(self) -> str:
         return f'#const {self.name} = {self.value}.'
     
+    def to_AL(self) -> str:
+        return f'constant: {self.name}.'
+    
     def __str__(self) -> str:
         return self.name
     
@@ -45,6 +48,12 @@ class Sort:
         elif self.sort_type == SortType.SET:
             return f"#{self.name} = {' + '.join(self.instances)}."
         
+    def to_AL(self) -> str:
+        if self.sort_type == SortType.BASIC:
+            return f"{self.name}"
+        elif self.sort_type == SortType.SET:
+            return f"{self.name}, with subsorts: {' , '.join([i[1:] for i in self.instances])}."
+        
     def remove_instance_by_name(self, name:str) -> None:
         try:
             self.instances.remove(name)
@@ -66,6 +75,7 @@ class RangeSort(Sort):
 
 class SuperSort(Sort):
     def __init__(self, name:str, subsorts:List[Sort]):
+        self.subsorts = subsorts
         instances = [f'#{s.name}' for s in subsorts]
         super().__init__(name, instances, SortType.SET)
 
@@ -80,10 +90,16 @@ class Func:
     name:str
     sorts:Optional[List[Sort]]
     func_type:FuncType
+    
     def to_sparc(self) -> str:
         if self.sorts:
             return f"{self.name}({', '.join([f'#{s.name}' for s in self.sorts])})."
-        return f'{self.name}().'   
+        return f'{self.name}().'
+    
+    def to_AL(self) -> str:
+        if self.sorts:
+            return f"{self.name}({', '.join([f'{s.name}' for s in self.sorts])})."
+        return f'{self.name}().'
 
 
 @dataclass
@@ -123,6 +139,9 @@ class ActionDefinition:
     
     def to_sparc(self):
         return f"{self.name}({','.join([f'#{s.name}' for s in self.sorts])})"
+    
+    def to_AL(self):
+        return f"{self.name}({','.join([f'{s.name}' for s in self.sorts])})"
 
 @dataclass
 class CausalLaw:
@@ -138,6 +157,12 @@ class CausalLaw:
  
     def to_AL(self) -> str:
         """returns AL string of form 'a causes l_in if p0,..pm' """
+        fluent_val = ''
+        if self.fluent_value == False: fluent_val = '¬'
+        ret = f"{self.action.name}({','.join(self.action_object_instance_names)}) " + \
+            "causes " +  f"{fluent_val}{self.fluent_affected.name}({','.join(self.fluent_object_instance_names)}) "
+        if not self.conditions:
+            return ret
         condition_strings = []
         for i in range(len(self.conditions)):
             s = ''
@@ -145,15 +170,15 @@ class CausalLaw:
                 s += '¬'
             cond = self.conditions[i]
             if isinstance(cond, Property):
-                s += cond.to_string()
+                c = cond.to_string()
+                if cond.relation.value == Relation.IS_OF_SORT.value:
+                    c = c[1:]
+                s += c
             else:
                 s += f"{cond.name}({','.join(self.condition_object_instance_names[i])})"
             condition_strings.append(s)
-        fluent_val = ''
-        if self.fluent_value == False: fluent_val = '¬'
-        ret = f"{self.action.name}({','.join(self.action_object_instance_names)}) " + \
-            "causes " +  f"{fluent_val}{self.fluent_affected.name}({','.join(self.fluent_object_instance_names)}) " + \
-            "if " + ', '.join(condition_strings)
+        ret += "if "
+        ret += ', '.join(condition_strings)
         return ret
 
     def to_sparc(self) -> str:
@@ -212,11 +237,14 @@ class StateConstraint:
                     s += '¬'
                 cond = self.conditions[i]
                 if isinstance(cond, Property):
-                    s += cond.to_string()
+                    c = cond.to_string()
+                    if cond.relation.value == Relation.IS_OF_SORT.value:
+                        c = c[1:]
+                    s += c
                 else:
                     s += f"{cond.name}({','.join(self.condition_object_instance_names[i])})"
                 condition_strings.append(s)
-            return head + "if " + ', '.join(condition_strings)
+            return head + " if " + ', '.join(condition_strings)
         return head
 
     def to_sparc(self) -> str:
@@ -273,7 +301,10 @@ class ExecutabilityCondition:
                 s += '¬'
             cond = self.conditions[i]
             if isinstance(cond, Property):
-                s += cond.to_string()
+                c = cond.to_string()
+                if cond.relation.value == Relation.IS_OF_SORT.value:
+                    c = c[1:]
+                s += c
             else:
                 s += f"{cond.name}({','.join(self.condition_object_instance_names[i])})"
             condition_strings.append(s)
@@ -306,12 +337,12 @@ class ExecutabilityCondition:
 
 @dataclass
 class GoalDefinition:
-    fluent:Func
+    fluent_name:str
     object_instances:List[str]
     value:bool
 
     def to_sparc(self) -> str:
-        return f"holds({self.fluent.name}({','.join(self.object_instances)}), {str(self.value).lower()}, I)"
+        return f"holds({self.fluent_name}({','.join(self.object_instances)}), {str(self.value).lower()}, I)"
 
 @dataclass
 class Action:
@@ -488,13 +519,13 @@ class ActionLangSysDesc:
 
     def to_sparc_program(self) -> SparcProg:
         # create constants
-        print('Parsing constants...')
+        logging.info('Parsing constants...')
         sparc_constants = [f'#const numSteps = {self.planning_steps}.']
         if self.constants:
             sparc_constants += [c.to_sparc() for c in self.constants]
         
         # create sorts
-        print('Parsing sorts...')
+        logging.info('Parsing sorts...')
         sparc_sorts = [s.to_sparc() for s in self.sorts]
         # add action sort
         sparc_sorts.append(f"#action = {' + '.join([a.action_def.to_sparc() for a in self.actions])}.")
@@ -513,7 +544,7 @@ class ActionLangSysDesc:
 
         # create predicates
         # add statics
-        print('Parsing predicates...')
+        logging.info('Parsing predicates...')
         sparc_predicates = []
         if self.statics:
             sparc_predicates += [stat.to_sparc() for stat in self.statics]
@@ -525,7 +556,7 @@ class ActionLangSysDesc:
                               ]
         
         # create rules
-        print('Parsing rules...')
+        logging.info('Parsing rules...')
         rules = []
         # state constraints
         if self.state_constraints:
@@ -533,16 +564,16 @@ class ActionLangSysDesc:
                 try:
                     rules.append(s.to_sparc())
                 except Exception as e:
-                    print(f'Error parsing state_constraint: {s}')
-                    print(e)
+                    logging.error(f'Error parsing state_constraint: {s}')
+                    logging.error(e)
         # causal laws and executability conditions
         for a in self.actions:
-            print(f'Parsing action: {a.action_def.name}...')
+            logging.info(f'Parsing action: {a.action_def.name}...')
             rules.append('')
             rules += [c.to_sparc() for c in a.causal_laws]
             rules += [e.to_sparc() for e in a.executability_conditions]
         # planning laws
-        print('Adding planning rules...')
+        logging.info('Adding planning rules...')
         rules += [ 
                 '',
                 r'% planning rules',
@@ -558,7 +589,7 @@ class ActionLangSysDesc:
                 ]
         
         # goal
-        print('Parsing goal...')
+        logging.info('Parsing goal...')
         goal = 'goal(I) :- '
         goal_items = [item.to_sparc() for item in self.goal_description]
         goal += f"{' , '.join(goal_items)}."
@@ -567,11 +598,86 @@ class ActionLangSysDesc:
         rules.append(goal)
 
         # domain setup
-        print('Parsing domain setup...')
+        logging.info('Parsing domain setup...')
         rules.append('')
         rules.append(r'% domain setup')
         rules += self.domain_setup
         return SparcProg(sparc_constants, sparc_sorts, sparc_predicates, rules, self.display_hints)
 
-
+    def to_action_language_description(self) -> List[str]:
+        # create constants
+        logging.info('Parsing constants...')
+        _constants = []
+        if self.constants:
+            _constants = [c.to_AL() for c in self.constants]
         
+        # create sorts
+        logging.info('Parsing sorts...')
+        _sorts = [s.to_AL() for s in self.sorts]
+        
+        # define actions
+        _actions = [a.action_def.to_AL() for a in self.actions]
+
+        # create special sorts for inertial fluents, fluent, boolean, step, and outcome
+        _inertial_fluents = [i.to_AL() for i in self.inertial_fluents]
+
+        # handle case of empty set for defined fluents
+        _defined_fluents = []
+        if self.defined_fluents:
+            _defined_fluents = [d.to_AL() for d in self.defined_fluents]
+
+        # create predicates
+        # add statics
+        logging.info('Parsing predicates...')
+        _statics = []
+        if self.statics:
+            _statics = [stat.to_AL() for stat in self.statics]
+        
+        # create rules
+        logging.info('Parsing rules...')
+        _state_constraints = []
+        # state constraints
+        if self.state_constraints:
+            for s in self.state_constraints:
+                try:
+                    _state_constraints.append(s.to_AL())
+                except Exception as e:
+                    logging.error(f'Error parsing state_constraint: {s}')
+                    logging.error(e)
+
+        # causal laws and executability conditions
+        _action_impl = []
+        for a in self.actions:
+            logging.info(f'Parsing action: {a.action_def.name}...')
+            _action_impl.append('')
+            _action_impl += [c.to_AL() for c in a.causal_laws]
+            _action_impl += [e.to_AL() for e in a.executability_conditions]
+
+        al_def = ['constants\n'] + _constants \
+                + ['\nsorts\n'] + _sorts \
+                + ['\nactions\n'] + _actions \
+                + ['\nintertial fluents\n'] + _inertial_fluents \
+                + ['\ndefined fluents\n'] + _defined_fluents \
+                + ['\nstatics\n'] + _statics \
+                + ['\nstate constraints\n'] + _state_constraints \
+                + ['\naction causal laws and executability conditions'] + _action_impl
+                
+        return al_def
+
+    def save_AL(self, save_location:str) -> None:
+        al = self.to_action_language_description()
+        header = [
+            r'%%%%%%%%%%%%%%%%%%%%%%%%%%%%%','\n',
+            r'%% AutoGenerated AL file','\n',
+            r'%% Author: MARK ROBSON 2023','\n',
+            r'%%%%%%%%%%%%%%%%%%%%%%%%%%%%%','\n','\n']
+        with open(save_location, 'w') as f:
+            f.writelines(header)
+            f.writelines(line + '\n' for line in al)
+        logging.info(f'Action language description written to {save_location}')
+
+    def get_action_by_name(self, action_name:str) -> Action:
+        for action in self.actions:
+            if action.action_def.name == action_name:
+                return action
+        return ValueError(f'Action: {action_name}, not found in system description')

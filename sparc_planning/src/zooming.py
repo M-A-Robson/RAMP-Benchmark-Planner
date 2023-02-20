@@ -1,7 +1,7 @@
 import copy
 from typing import List, Tuple
 import re
-from al_structures import ActionLangSysDesc, SortType, BasicSort, SuperSort, Func, ActionInstance
+from al_structures import ActionLangSysDesc, FuncType, GoalDefinition, Property, SortType, BasicSort, SuperSort, Func, ActionInstance
 from sparc_io import SparcState
 import re
 import logging
@@ -56,12 +56,13 @@ def extract_state_transition(states:List[SparcState], occurs:List[str], DH:Actio
 
     return state0, state1, aH
 
-def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DLR:ActionLangSysDesc, location_restriction:bool=False):
+def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DH:ActionLangSysDesc, DLR:ActionLangSysDesc, location_restriction:bool=False):
     """returns a zoomed system description for the transition aH
     Args:
         s1 (SparcState): coarse resolution state (answer set) before transition
         s2 (SparcState): coarse resolution state (answer set) after transition
-        aH (ActionInstance): coarse resolution action instance causing the transition 
+        aH (ActionInstance): coarse resolution action instance causing the transition
+        DH (ActionLangSysDesc): coarse resolution domain description
         DLR (ActionLangSysDesc): fine resolution domain description which
                 is a refinement of the coarse resolution domain DH.
         location_restriction(bool): toggles additional scope reduction on location
@@ -72,6 +73,7 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DLR:ActionLangSysDesc,
     # STEP 1: Define relevant object constants
     # 13.1 start with set of object constants from aH
     relObConH = {*aH.object_constants}
+    logging.debug(f'relObConH from action: {relObConH}')
     
     # states strings are timestamped so this needs to be fixed for comparison
     s1flu = [remove_chars_from_last_number(f1) for f1 in s1.fluents]
@@ -85,55 +87,74 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DLR:ActionLangSysDesc,
         ret = re.search('holds\(.+\(.+\),', func)
         if not ret:
             ret = re.search('val\(.+\(.+\),', func)
-        func = ret.group()[6:-1]
+        func = ret.group()[6:-1] #TODO this doesnt work for 'val' style
         # extract object_instances from funcs using string splitting
         # expects format 'foo(x1,x2,...xn)' with objects x1,x2,..xn
         for f in re.split('\(|\)|\,', func)[1:-1]:
             relObConH.add(f)
+    
+    logging.debug(f'relObConH + from differences between s1 and s2 fluents: {relObConH}')
         
-    #13.3
+    #13.3 (if body B of an executability condition of aH contains an occurrence
+    #  of a term f (x1, ... , xn) and f(x1, ... , xn) = y ∈ σ1
+    #  then x1, ..., xn, y are in relObConH(T))
     # relevant object_instances from executability conditions of aH
     # Example might be that course resolution is to pickup a book in kitchen,
     # ah = pickup(rob0,book). where state1 contains location(book, kitchen)
     # At the fine resolution we need to know about areas in the kitchen 
     # eg. grid cells refined versions of #place = kitchen.
     # Which we don't know about at high level.
-    aoin = aH.ActionDescription.action_object_instance_names
-    for e in aH.ActionDescription.excutability_conditions:
-        e_statements = []
-        for i in len(e.conditions):
-            cond = e.conditions[i]
-            if not isinstance(cond, Func):
-                continue
+    aoin = aH.object_constants
+    for e in aH.action.executability_conditions:
+        for i in range(len(e.conditions)):
             # want to check if state 1 contains func(objects including aH objects)
-            inst_names = copy.deepcopy(e.condition_object_instance_names[i])
-            # replace unknown object names with '\w+' to accept any word in regular expression serch
-            for j in len(inst_names):
-                if inst_names[j] not in aoin:
-                    inst_names[j] = '\w+'
-            # create search string and search state1 adding any results to e_statements
-            s = f"{cond.name}\({','.join(inst_names)}\)"
-            e_statements += re.findall(s, s1)
-        # extract object_instances from funcs using string splitting
-        # expects format 'foo(x1,x2,...xn)' with objects x1,x2,..xn
-        for func in e_statements:
-            for f in re.split('\(|\)|\,', func)[1:-1]:
-                relObConH.add(f)
-                
-    logging.info('Relevant objects (coarse resolution): ', relObConH)
+            # if state one domain setup contains any gound instance e.g. loc_c(rob0, \w+)
+            # then the other objects in that gound instance are relevant  
+            for i in range(len(e.conditions)):
+                cond = e.conditions[i]
+                if isinstance(cond,Property): continue # ignore properties
+                object_monikers = e.condition_object_instance_names[i]
+                y = e.condition_values[i]
+                object_sorts = [e.object_instances[o] for o in object_monikers]
+                for i in range(len(object_sorts)):
+                    s = object_sorts[i]
+                    sort_obs = DH.get_sort_objects(s)
+                    # look for instances with same name as our action objects from aH
+                    for act_ob in aoin:
+                        if act_ob in sort_obs: 
+                            query = ['\w+']*len(object_sorts)
+                            query[i] = act_ob
+                            if cond.func_type.value == FuncType.FLUENT.value:
+                                # find functions of the form holds(condition(x1,..,x2),bool
+                                res = re.findall("(?<!-)holds\("+cond.name+"\("+'\,'.join(query)+f"\)\,{str(y).lower()}", ' '.join(s1flu)) 
+                                res = [r[6:] for r in res] # remove "holds("
+                            if cond.func_type.value == FuncType.STATIC.value:
+                                term = '(?<!-)'
+                                if y == False: term = "-"
+                                res = re.findall(term+f"{cond.name}\("+'\,'.join(query)+')', ' '.join(s1.statics)) 
+                # parse relevant objects if found
+                if len(res) == 0 : continue
+                for func in res:
+                    for f in re.split('\(|\)|\,', func)[1:-1]:
+                        if f == '': continue
+                        relObConH.add(f)
+
+    logging.info(f'Relevant objects (coarse resolution): {relObConH}')
 
     # identify any relevant objects and components in fine resolution
     relevant_fine_objects = copy.deepcopy(relObConH)
     for s in DLR.domain_setup:
         # find component relations (expected format 'component(coarse, fine).')
         if 'component' in s:
+            if s[0] == '%': continue # skip comment lines
+            #logging.debug(s)
             obs = re.split('\(|\)|\,', s)[1:-1]
             # check that object is relevant at coarse level
             if obs[0] in relObConH:
                 # add fine res object to set
                 relevant_fine_objects.add(obs[1])
 
-    logging.info('Relevant objects (fine resolution): ', relevant_fine_objects)
+    logging.info(f'Relevant objects (fine resolution): {relevant_fine_objects}')
 
     # STEP 2: extract relevant fine system description DLRT
     sorts_DLRT = set()
@@ -141,14 +162,15 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DLR:ActionLangSysDesc,
         # check if this is a basic sort
         if sort.sort_type == SortType.BASIC:
             # finds objects which are in both relObConH and the sort from DLR
-            objects = set.intersection(relObConH,{*sort.instances})
+            objects = set.intersection(relevant_fine_objects,{*sort.instances})
             if len(objects)>0:
                 # defines new sort with the same name but only relevant objects
                 sorts_DLRT.add(BasicSort(sort.name,objects))
-    
+  
     # find relevant parent sorts (structure: #sort = #subsort + #subsort2.)
     # parent sorts do not have sort in function f(#sort) format so we remove any with brackets in
     # needs to loop incase new sort is also a subsort, unlikely to loop more than 3 times
+    logging.debug('Looping through sort heirarchy to find all relevant basic sorts')
     while True:
         new_sorts = set()
         # cycle through sorts of DLR
@@ -157,8 +179,8 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DLR:ActionLangSysDesc,
                 relevant_subsorts = set.intersection({*[f'#{s.name}' for s in sorts_DLRT]}, {*parent_sort.instances})
                 if len(relevant_subsorts) > 0:
                     # if this sort hasnt already been added then cache it
-                    if parent_sort not in sorts_DLRT:
-                        subsorts = [s for s in sorts_DLRT if (s.name in relevant_subsorts)]
+                    if parent_sort.name not in [s.name for s in sorts_DLRT]:
+                        subsorts = [s for s in sorts_DLRT if (f'#{s.name}' in relevant_subsorts)]
                         new_sorts.add(SuperSort(parent_sort.name,subsorts))
         # stop looping when no new subsorts are found
         if len(new_sorts) == 0:
@@ -166,23 +188,23 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DLR:ActionLangSysDesc,
         # otherwise add them to our search list and continue
         sorts_DLRT = sorts_DLRT.union(new_sorts)
     
-    logging.info('Relevant Sorts: ', [s.name for s in sorts_DLRT])
+    logging.info(f'Relevant Sorts (fine res): {[s.name for s in sorts_DLRT]}')
 
     if location_restriction:
         # concept here is that we only care about relevant assembly locaitons, i.e. if we are inserting pin1,
         # we dont care about the locations for assembling beam15 which would otherwise be identified as locations
         # within the assembly area in the default zooming operation.
-        #todo test impact on plannin speed.
-        refined_target_locs = []
-        refined_approach_locs = []
-        refined_prerot_locs = []
-        refined_through_locs = []
+        #todo test impact on planning speed.
+        target_locations,refined_target_locs = [],[]
+        approach_locations,refined_approach_locs = [],[]
+        prerot_locations,refined_prerot_locs = [],[]
+        through_locations,refined_through_locs = [],[]
         # grab instances of relevant sorts
         relevant_things = []
         for sort in sorts_DLRT:
             # thing is a super sort with subsorts containing handlable objects
             if sort.name == 'thing':
-                for subsort in sort:
+                for subsort in sort.subsorts:
                     relevant_things += subsort.instances
             if sort.name == 'target_locations':
                 target_locations = sort.instances
@@ -193,8 +215,8 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DLR:ActionLangSysDesc,
             if sort.name == 'through_location':
                 through_locations = sort.instances
         # temporarily remove locations from relevant_fine_objects
-        assembly_locations = target_locations + approach_loc + prerot_locations + through_locations
-        relevant_fine_objects -= {*assembly_locations}
+        assembly_locations = target_locations + approach_locations + prerot_locations + through_locations
+        relevant_fine_objects = relevant_fine_objects - {*assembly_locations}
         # for each thing
         for thing in relevant_things:
             # check for relevant locations
@@ -222,34 +244,36 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DLR:ActionLangSysDesc,
                 sort.instances = refined_through_locs
         # update relevant_fine_objects to put back good locations
         refined_assembly_locations = refined_target_locs + refined_approach_locs + refined_prerot_locs + refined_through_locs
-        relevant_fine_objects += {*refined_assembly_locations}
-        logging.info('Relevant objects (post location reduction): ', relevant_fine_objects)
+        relevant_fine_objects = relevant_fine_objects.union({*refined_assembly_locations})
+        logging.info(f'Relevant objects (post location reduction): {relevant_fine_objects}')
     
     # The domain attributes and actions of ΣLR(T) are those of ΣLR restricted to the basic sorts of ΣLR(T)
+    sorts_DLRT_names = [s.name for s in sorts_DLRT]
     new_inertial_fluents = []
     for ifluent in DLR.inertial_fluents:
-        if {*ifluent.sorts}.issubset(sorts_DLRT):
+        if {*[s.name for s in ifluent.sorts]}.issubset(sorts_DLRT_names):
             new_inertial_fluents.append(ifluent)
 
     new_defined_fluents = []
-    for dfluent in DLR.defined_fluents:
-        if {*dfluent.sorts}.issubset(sorts_DLRT):
-            new_defined_fluents.append(dfluent)
+    if DLR.defined_fluents:
+        for dfluent in DLR.defined_fluents:
+            if {*[s.name for s in dfluent.sorts]}.issubset(sorts_DLRT_names):
+                new_defined_fluents.append(dfluent)
 
     new_actions = []
-    for act in DLR.actions:
-        if {*act.sorts}.issubset(sorts_DLRT):
+    for act in DLR.actions: #TODO fix
+        if {*[s.name for s in act.sorts]}.issubset(sorts_DLRT_names):
             new_actions.append(act)
 
     # the axioms of DLR(T) are restrictions of axioms of DLR to ΣLR(T).
     new_state_contraints = []
     for stcon in DLR.state_constraints:
-        if {*stcon.object_instances.values()}.issubset(sorts_DLRT):
+        if {*[s.name for s in stcon.object_instances.values()]}.issubset(sorts_DLRT_names):
             new_state_contraints.append(stcon)
 
     new_statics = []
     for stat in DLR.statics:
-        if {*stat.sorts}.issubset(sorts_DLRT):
+        if {*[s.name for s in stat.sorts]}.issubset(sorts_DLRT_names):
             new_statics.append(stat)
 
     # we also need to refine goal and domain details as otherwise objects referenced
@@ -272,11 +296,21 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DLR:ActionLangSysDesc,
         if obs.issubset(relevant_fine_objects):
             new_domain_setup.append(s)
     
-    # goals
+    # goals - should be drawn from coarse state after desired transition (s2),
+    # i.e., goal should be to obtain the same state through one or more fine res transitions
+    # therefore fine res goal should be s2.fluents not in s1
+    new_goal_statements = {*s2flu}-{*s1flu}
     new_goals = []
-    for g in DLR.goal_description:
-        if {*g.object_instances}.issubset(relevant_fine_objects):
-            new_goals.append(g)
+    # s2flu are statments of the format: "holds(func(x1,x2..xn),bool,"
+    for statement in new_goal_statements:
+        b = False
+        if re.search('true', statement): b = True
+        ret = re.search('holds\(.+\(.+\),', statement)
+        func = ret.group()[6:-1]
+        # extract object_instances from funcs using string splitting
+        # expects format 'foo(x1,x2,...xn)' with objects x1,x2,..xn
+        data = re.split('\(|\)|\,', func)[:-1]
+        new_goals.append(GoalDefinition(data[0], data[1:], b))
 
     # create new fine resolution system description
     return ActionLangSysDesc(
