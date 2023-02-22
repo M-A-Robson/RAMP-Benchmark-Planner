@@ -72,7 +72,7 @@ impossible move(R,P1) if in_hand_c(R,P1), fastened_c(B1,B2,P)
 
 pick_up(R,T) causes in_hand_c(R,T) 
 impossible pick_up(R,T1) if loc_c(T1,P1), loc_c(R,P2), P1!=P2
-impossible pick_up(R,T1) if in_hand_c(rob0,T2), thing(T2)
+impossible pick_up(R,T1) if in_hand_c(R,T2), thing(T2)
 
 assemble(R,B) causes in_assembly_c(B) 
 impossible assemble(R,B) if ¬in_hand_c(R,B)

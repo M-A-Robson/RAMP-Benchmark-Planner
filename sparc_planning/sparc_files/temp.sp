@@ -4,6 +4,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 #const numSteps = 4.
+#const startStep = 0.
 
 sorts
 #robot = {rob0}.
@@ -16,7 +17,7 @@ sorts
 #boolean = {true, false}.
 #outcome = {true, false, undet}.
 #inertial_fluent = in_hand_c(#robot, #thing)+ loc_c(#object, #place_c)+ in_assembly_c(#beam)+ supported_c(#beam)+ fastened_c(#beam, #beam, #pin).
-#step = 0..numSteps.
+#step = startStep..numSteps.
 #fluent = #inertial_fluent.
 
 predicates
@@ -109,14 +110,6 @@ holds(loc_c(b4,input_area),true,0).
 % coarse fastening status
 holds(fastened_c(b1,b2,p1),true,0).
 holds(fastened_c(b1,b3,p2),true,0).
-% coarse next_to location mapping
-next_to_c(input_area,intermediate_area).
-next_to_c(assembly_area,intermediate_area).
-% coarse beam relations
-fits_into_c(b2,b1).
-fits_into_c(b3,b1).
-fits_into_c(b3,b4).
-fits_into_c(b2,b4).
 % assert robots hand is empty at timestep 0
 holds(in_hand_c(rob0,b1),false,0).
 holds(in_hand_c(rob0,b2),false,0).
@@ -126,3 +119,11 @@ holds(in_hand_c(rob0,p1),false,0).
 holds(in_hand_c(rob0,p2),false,0).
 holds(in_hand_c(rob0,p3),false,0).
 holds(in_hand_c(rob0,p4),false,0).
+% coarse next_to location mapping
+next_to_c(input_area,intermediate_area).
+next_to_c(assembly_area,intermediate_area).
+% coarse beam relations
+fits_into_c(b2,b1).
+fits_into_c(b3,b1).
+fits_into_c(b3,b4).
+fits_into_c(b2,b4).

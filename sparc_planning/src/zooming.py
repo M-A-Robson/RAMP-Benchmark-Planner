@@ -1,7 +1,7 @@
 import copy
 from typing import List, Tuple
 import re
-from al_structures import ActionLangSysDesc, FuncType, GoalDefinition, Property, SortType, BasicSort, SuperSort, Func, ActionInstance
+from al_structures import Action, ActionLangSysDesc, FuncType, GoalDefinition, Property, Relation, SortType, BasicSort, SuperSort, Func, ActionInstance
 from sparc_io import SparcState
 import re
 import logging
@@ -131,7 +131,7 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DH:ActionLangSysDesc, 
                             if cond.func_type.value == FuncType.STATIC.value:
                                 term = '(?<!-)'
                                 if y == False: term = "-"
-                                res = re.findall(term+f"{cond.name}\("+'\,'.join(query)+')', ' '.join(s1.statics)) 
+                                res = re.findall(term+f"{cond.name}\("+'\,'.join(query)+'\)', ' '.join(s1.statics)) 
                 # parse relevant objects if found
                 if len(res) == 0 : continue
                 for func in res:
@@ -139,7 +139,7 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DH:ActionLangSysDesc, 
                         if f == '': continue
                         relObConH.add(f)
 
-    logging.info(f'Relevant objects (coarse resolution): {relObConH}')
+    logging.debug(f'Relevant objects (coarse resolution): {relObConH}')
 
     # identify any relevant objects and components in fine resolution
     relevant_fine_objects = copy.deepcopy(relObConH)
@@ -154,7 +154,7 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DH:ActionLangSysDesc, 
                 # add fine res object to set
                 relevant_fine_objects.add(obs[1])
 
-    logging.info(f'Relevant objects (fine resolution): {relevant_fine_objects}')
+    logging.debug(f'Relevant objects (fine resolution): {relevant_fine_objects}')
 
     # STEP 2: extract relevant fine system description DLRT
     sorts_DLRT = set()
@@ -170,7 +170,7 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DH:ActionLangSysDesc, 
     # find relevant parent sorts (structure: #sort = #subsort + #subsort2.)
     # parent sorts do not have sort in function f(#sort) format so we remove any with brackets in
     # needs to loop incase new sort is also a subsort, unlikely to loop more than 3 times
-    logging.debug('Looping through sort heirarchy to find all relevant basic sorts')
+    logging.debug('Looping through sort heirarchy to find all relevant super sorts')
     while True:
         new_sorts = set()
         # cycle through sorts of DLR
@@ -178,17 +178,27 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DH:ActionLangSysDesc, 
             if parent_sort.sort_type == SortType.SET:
                 relevant_subsorts = set.intersection({*[f'#{s.name}' for s in sorts_DLRT]}, {*parent_sort.instances})
                 if len(relevant_subsorts) > 0:
+                    subsorts = [s for s in sorts_DLRT if (f'#{s.name}' in relevant_subsorts)]
                     # if this sort hasnt already been added then cache it
                     if parent_sort.name not in [s.name for s in sorts_DLRT]:
-                        subsorts = [s for s in sorts_DLRT if (f'#{s.name}' in relevant_subsorts)]
                         new_sorts.add(SuperSort(parent_sort.name,subsorts))
+                        #if this sort has been added check that all relevant sub sorts are caught, if not replace with new version
+                    else:
+                        for i in sorts_DLRT:
+                            if i.name == parent_sort.name: 
+                                dlrt_sort = i
+                        if not set([s.name for s in dlrt_sort.subsorts]) == set([s.name for s in subsorts]):
+                            sorts_DLRT.remove(dlrt_sort)
+                            new_sorts.add(SuperSort(parent_sort.name,subsorts))
+                            logging.debug(f'Updating sort: {parent_sort.name} with subsorts: {[s.name for s in subsorts]}')
+        # add new sorts to our search list and continue
+        sorts_DLRT = sorts_DLRT.union(new_sorts)
+        logging.debug(f'Added sorts: {[s.name for s in new_sorts]}')
         # stop looping when no new subsorts are found
         if len(new_sorts) == 0:
             break
-        # otherwise add them to our search list and continue
-        sorts_DLRT = sorts_DLRT.union(new_sorts)
-    
-    logging.info(f'Relevant Sorts (fine res): {[s.name for s in sorts_DLRT]}')
+        
+    logging.debug(f'Relevant Sorts (fine res): {[s.name for s in sorts_DLRT]}')
 
     if location_restriction:
         # concept here is that we only care about relevant assembly locaitons, i.e. if we are inserting pin1,
@@ -245,10 +255,93 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DH:ActionLangSysDesc, 
         # update relevant_fine_objects to put back good locations
         refined_assembly_locations = refined_target_locs + refined_approach_locs + refined_prerot_locs + refined_through_locs
         relevant_fine_objects = relevant_fine_objects.union({*refined_assembly_locations})
-        logging.info(f'Relevant objects (post location reduction): {relevant_fine_objects}')
+        logging.debug(f'Relevant objects (post location reduction): {relevant_fine_objects}')
     
     # The domain attributes and actions of ΣLR(T) are those of ΣLR restricted to the basic sorts of ΣLR(T)
     sorts_DLRT_names = [s.name for s in sorts_DLRT]
+
+    new_actions = []
+    for act in DLR.actions:
+        if {*[s.name for s in act.action_def.sorts]}.issubset(sorts_DLRT_names):
+            # remove executability conditions where cond = true #unknown_sort(A)
+            # remove actions where exec cond = false #unknown_sort(A) (not possible)
+            nes = set()
+            action_possible = True
+            exec_conditions = []
+            for execut in act.executability_conditions:
+                remove_exec_cond = False
+                if not execut.conditions: 
+                    exec_conditions.append(execut)
+                    continue
+                for _c in range(len(execut.conditions)):
+                    if not action_possible: continue # skip ahead if action will be removed anyway
+                    if remove_exec_cond: continue # skip ahead if this exec condition will be removed anyway
+                    if execut.condition_values[_c] == True:
+                        if isinstance(execut.conditions[_c],Property):
+                            #check if is a #sort(A) relation
+                            if execut.conditions[_c].relation.value == Relation.IS_OF_SORT.value:
+                                if execut.conditions[_c].object1 not in sorts_DLRT_names:
+                                    remove_exec_cond = True
+                        else:
+                            for sort_ in  execut.conditions[_c].sorts:
+                                if not sort_.name in sorts_DLRT_names:
+                                    remove_exec_cond = True
+                    else: # condition_value == False:
+                        if isinstance(execut.conditions[_c],Property):
+                            #check if is a #sort(A) relation
+                            if execut.conditions[_c].relation.value == Relation.IS_OF_SORT.value:
+                                if execut.conditions[_c].object1 not in sorts_DLRT_names:
+                                    action_possible = False
+                        else:
+                            for sort_ in  execut.conditions[_c].sorts:
+                                if not sort.name in sorts_DLRT_names:
+                                    action_possible = False
+                if not remove_exec_cond: 
+                    exec_conditions.append(execut)         
+            if not action_possible: 
+                continue
+            new_act_cls = []
+            # add empty basic sort where causal law always holds, cond if #unknown_sort(A) = False, 
+            # remove causal laws which cannot hold,  cond = #unknown_sort(A) = True,
+            for cl in act.causal_laws:
+                remove_casual_law = False
+                if not cl.conditions:
+                    new_act_cls.append(cl)
+                    continue
+                for _c in range(len(cl.conditions)):
+                    if cl.condition_values[_c] == True:
+                        if isinstance(cl.conditions[_c],Property):
+                            #check if is a #sort(A) relation
+                            if cl.conditions[_c].relation.value == Relation.IS_OF_SORT.value:
+                                if cl.conditions[_c].object1 not in sorts_DLRT_names:
+                                    remove_casual_law = True
+                        else:
+                            for sort_ in  cl.conditions[_c].sorts:
+                                if not sort_.name in sorts_DLRT_names:
+                                    remove_casual_law = True
+                    else: # condition_value == False:
+                        if isinstance(cl.conditions[_c],Property):
+                            #check if is a #sort(A) relation
+                            if cl.conditions[_c].relation.value == Relation.IS_OF_SORT.value:
+                                if cl.conditions[_c].object1 not in sorts_DLRT_names:
+                                    # add empty sort
+                                    nes.add(cl.conditions[_c].object1)
+                        else:
+                            for sort_ in  cl.conditions[_c].sorts:
+                                if not sort_.name in sorts_DLRT_names:
+                                    # add empty sort
+                                    nes.add(sort_.name)
+                if not remove_casual_law: 
+                    new_act_cls.append(cl)
+
+            new_actions.append(Action(action_def=act.action_def,
+                                        executability_conditions=exec_conditions,
+                                        causal_laws=new_act_cls))
+            new_empty_sorts = {*[BasicSort(nom, []) for nom in nes]}
+            sorts_DLRT = sorts_DLRT.union(new_empty_sorts)
+    #update sort names list
+    sorts_DLRT_names = [s.name for s in sorts_DLRT]
+
     new_inertial_fluents = []
     for ifluent in DLR.inertial_fluents:
         if {*[s.name for s in ifluent.sorts]}.issubset(sorts_DLRT_names):
@@ -259,11 +352,6 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DH:ActionLangSysDesc, 
         for dfluent in DLR.defined_fluents:
             if {*[s.name for s in dfluent.sorts]}.issubset(sorts_DLRT_names):
                 new_defined_fluents.append(dfluent)
-
-    new_actions = []
-    for act in DLR.actions: #TODO fix
-        if {*[s.name for s in act.sorts]}.issubset(sorts_DLRT_names):
-            new_actions.append(act)
 
     # the axioms of DLR(T) are restrictions of axioms of DLR to ΣLR(T).
     new_state_contraints = []
@@ -286,7 +374,7 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DH:ActionLangSysDesc, 
     # domain setup is made up of strings refering to specific objects (history) 
     for s in DLR.domain_setup:
         # check if all objects are relevant to this transistion
-        obs = {}
+        obs = set()
         func = s
         ret = re.search('holds\(.+\(.+\),', s)
         if ret:
@@ -301,20 +389,47 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DH:ActionLangSysDesc, 
     # therefore fine res goal should be s2.fluents not in s1
     new_goal_statements = {*s2flu}-{*s1flu}
     new_goals = []
-    # s2flu are statments of the format: "holds(func(x1,x2..xn),bool,"
+    # s2flu are statments of the format: "holds(func(x1,x2..xn),bool," or "-holds(...)"
     for statement in new_goal_statements:
         b = False
         if re.search('true', statement): b = True
-        ret = re.search('holds\(.+\(.+\),', statement)
-        func = ret.group()[6:-1]
-        # extract object_instances from funcs using string splitting
-        # expects format 'foo(x1,x2,...xn)' with objects x1,x2,..xn
-        data = re.split('\(|\)|\,', func)[:-1]
-        new_goals.append(GoalDefinition(data[0], data[1:], b))
+        ret = re.search('(?<!-)holds\(.+\(.+\),', statement)
+        if ret:
+            func = ret.group()[6:-1]
+            # extract object_instances from funcs using string splitting
+            # expects format 'foo(x1,x2,...xn)' with objects x1,x2,..xn
+            data = re.split('\(|\)|\,', func)[:-1]
+            new_goals.append(GoalDefinition(data[0], data[1:], b))
+
+    # sort ordering to prevent errors
+    basic_sorts = [s for s in sorts_DLRT if s.sort_type==SortType.BASIC]
+    super_sorts = [s for s in sorts_DLRT if s.sort_type==SortType.SET]
+
+    # super_sorts need to be ordered so that any sort in the subsorts list comes before the super_sort
+    spin = 0
+    while True:
+        for i in range(len(super_sorts)):
+            sort = super_sorts[i]
+            sub_sort_names = [s[1:] for s in sort.instances]
+            super_sort_names = [s.name for s in super_sorts]
+            sort_ind = super_sort_names.index(sort.name)
+            sub_sort_inds = []
+            for s in sub_sort_names:
+                if s in super_sort_names:
+                    sub_sort_inds.append(super_sort_names.index(s))
+            if any([s>sort_ind for s in sub_sort_inds]):
+                # move to end
+                super_sorts.remove(sort)
+                super_sorts.append(sort)
+                spin += 1
+        if spin == 0: break
+        spin = 0
+
+    ordered_sorts = basic_sorts+super_sorts
 
     # create new fine resolution system description
     return ActionLangSysDesc(
-            sorts = sorts_DLRT,
+            sorts = ordered_sorts,
             inertial_fluents = new_inertial_fluents,
             actions = new_actions, # List[Action]
             domain_setup = new_domain_setup , # List[str]
@@ -325,6 +440,7 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DH:ActionLangSysDesc, 
             constants = DLR.constants ,# constants remain the same  : Optional[List[Constant]]
             display_hints = None,
             planning_steps = 1,
+            start_step=DLR.start_step
         )
     
     

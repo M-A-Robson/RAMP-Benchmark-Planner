@@ -36,7 +36,8 @@ def generate_fine_beam_domain():
                                                 'nt_p1t','nt_p2t','nt_p3t','nt_p4t','nt_above_input',
                                                 'nt_above_intermediate','nt_above_assembly'])
     input_locations = BasicSort('input_locations', ['b2i','b3i','b4i','p1i','p2i','p3i','p4i'])
-    place_f = SuperSort('place_f', [approach_loc,target_loc,non_placement_loc, near_to_loc, input_locations]) # through_loc, pre_rotate_loc
+    assembly_loc = SuperSort('assembly_location', [approach_loc,target_loc,prerot_loc,through_loc])
+    place_f = SuperSort('place_f', [assembly_loc, near_to_loc, input_locations, non_placement_loc])
     # need sets to allow for more than one refined sort type using the component keyword
     fine_res_sort = SuperSort('fine_res_sort',[place_f, thing_part])
     coarse_res_sort = SuperSort('coarse_res_sort',[place_c,thing])
@@ -65,12 +66,11 @@ def generate_fine_beam_domain():
     #! no rotation or through beams in this set
     beam_prerotate_loc = Func('beam_prerotate_loc', [beam, prerot_loc],FuncType.STATIC)
     beam_through_loc = Func('beam_through_loc', [beam, through_loc],FuncType.STATIC)
-    assembly_loc = Func('assembly_loc', [thing,place_f],FuncType.STATIC)
 
     statics = [next_to_c,next_to_f,component,near_to,fits_into_c,
             fits_into_f,fits_through_c,fits_through_f,is_capped_by,
             connected_to,between, assem_approach_loc, assem_target_loc,
-            assembly_loc, beam_through_loc, beam_prerotate_loc]
+            beam_through_loc, beam_prerotate_loc]
 
     #!fluents
     in_hand_c = Func('in_hand_c', [robot,thing], FuncType.FLUENT)
@@ -172,6 +172,16 @@ def generate_fine_beam_domain():
         condition_object_instance_names=[['T','P2'],['P1','P2']],
         condition_values=[True,True]
     ))
+    #objects can only occuy one coarse location
+    state_constraints.append(StateConstraint(
+        object_instances={'P1':place_f,'P2':place_f, 'T':thing},
+        head=coarse_location,
+        head_object_instance_names=['T','P1'],
+        head_value=False,
+        conditions=[coarse_location, Property('P1','P2',Relation.NOT_EQUAL)],
+        condition_object_instance_names=[['T','P2'],['P1','P2']],
+        condition_values=[True,True]
+    ))
     ##next_to bridge axiom
     next_to_f_c = StateConstraint(
         object_instances={'C1':place_f,'C2':place_f,'P1':place_c,'P2':place_c},
@@ -214,7 +224,6 @@ def generate_fine_beam_domain():
         condition_values=[True,False],
         condition_object_instance_names=[['P1'],['C1']]
     ))
-
     #in_hand bridge axiom
     state_constraints.append(StateConstraint(
         object_instances={'T':thing,'R':robot,'TP':thing_part},
@@ -265,51 +274,6 @@ def generate_fine_beam_domain():
         condition_object_instance_names=[['B1'],['B1','P1']],
         condition_values=[True,True]
         ))
-    #assembly locations bundle
-    state_constraints.append(
-        StateConstraint(
-        object_instances={'T':thing, 'C':place_f},
-        head=assembly_loc,
-        head_object_instance_names=['T','C'],
-        head_value=True,
-        conditions=[assem_approach_loc],
-        condition_values=[True],
-        condition_object_instance_names=[['T','C']]
-        )
-    )
-    state_constraints.append(
-        StateConstraint(
-        object_instances={'T':thing, 'C':place_f},
-        head=assembly_loc,
-        head_object_instance_names=['T','C'],
-        head_value=True,
-        conditions=[assem_target_loc],
-        condition_values=[True],
-        condition_object_instance_names=[['T','C']]
-        )
-    )
-    state_constraints.append(
-        StateConstraint(
-        object_instances={'B':beam, 'C':place_f},
-        head=assembly_loc,
-        head_object_instance_names=['B','C'],
-        head_value=True,
-        conditions=[beam_prerotate_loc],
-        condition_values=[True],
-        condition_object_instance_names=[['B','C']]
-        )
-    )
-    state_constraints.append(
-        StateConstraint(
-        object_instances={'B':beam, 'C':place_f},
-        head=assembly_loc,
-        head_object_instance_names=['B','C'],
-        head_value=True,
-        conditions=[beam_through_loc],
-        condition_values=[True],
-        condition_object_instance_names=[['B','C']]
-        )
-    )
 
     #?beam domain state constraints
     capping_constraint = StateConstraint(
@@ -560,14 +524,23 @@ def generate_fine_beam_domain():
         fluent_object_instance_names=['R','T'],
         fluent_value=True
     )
+    ##cannot pick up unless in same location (for things without components i.e. pins are both things and thing_parts)
+    pu_ec1 = ExecutabilityCondition(
+        action=pick_up,
+        object_instances={'R':robot,'P':thing_part,'P1':place_f, 'P2':place_f},
+        action_object_instance_names=['R','P'],
+        conditions=[location, location, Property('P1','P2',Relation.NOT_EQUAL)],
+        condition_object_instance_names=[['P','P1'],['R','P2'],['P1','P2']],
+        condition_values=[True, True, True],
+    )
     ##cannot pick up unless in same location
     pu_ec2 = ExecutabilityCondition(
         action=pick_up,
-        object_instances={'R':robot,'T1':thing_part,'P1':place_f, 'P2':place_f},
-        action_object_instance_names=['R','T1'],
-        conditions=[location, location, Property('P1','P2',Relation.NOT_EQUAL)],
-        condition_object_instance_names=[['T1','P1'],['R','P2'],['P1','P2']],
-        condition_values=[True, True, True],
+        object_instances={'R':robot,'T1':thing,'TP':thing_part,'P1':place_f, 'P2':place_f},
+        action_object_instance_names=['R','TP'],
+        conditions=[location, location, Property('P1','P2',Relation.NOT_EQUAL), component],
+        condition_object_instance_names=[['T1','P1'],['R','P2'],['P1','P2'],['T1','TP']],
+        condition_values=[True, True, True, True],
     )
     ##can only hold one item at once
     pu_ec3 = ExecutabilityCondition(
@@ -587,7 +560,7 @@ def generate_fine_beam_domain():
         condition_object_instance_names=[['B','T1'],['T1'],['B']],
         condition_values=[True, False, True],
     )
-    pick_up_action = Action(pick_up,[pu_c1,],[pu_ec2, pu_ec3, pu_ec4])
+    pick_up_action = Action(pick_up,[pu_c1,],[pu_ec1, pu_ec2, pu_ec3, pu_ec4])
 
     #!move_f action
     move = ActionDefinition('move_f', [robot,place_f])
@@ -922,7 +895,17 @@ def generate_fine_beam_domain():
                 condition_values=[True,True,True,True,True],
             )   
         )
-        
+        # assembly actions are only possible from assembly locations
+        ac.executability_conditions.append(
+            ExecutabilityCondition(
+                action = ac.action_def,
+                object_instances={'R':robot,'P':place_f,'BP':beam_part},
+                action_object_instance_names=['R','BP'],
+                conditions=[location, Property('assembly_location','P',Relation.IS_OF_SORT)],
+                condition_values=[True,False],
+                condition_object_instance_names=[['R','P'], ['P']],
+            )
+        )        
 
     # refined fasten action to use beam_parts
     #!Fasten Action 
@@ -1141,7 +1124,7 @@ def generate_fine_beam_domain():
     #!ALD
 
     sorts = [robot,beam,link,in_m_end,angle_m_end,in_f_end,joint,beam_part,pin,thing,thing_part,ob,place_c,non_placement_loc,
-    approach_loc,prerot_loc,through_loc,target_loc,near_to_loc,input_locations,place_f,fine_res_sort,coarse_res_sort]
+    approach_loc,prerot_loc,through_loc,target_loc,assembly_loc,near_to_loc,input_locations,place_f,fine_res_sort,coarse_res_sort]
 
 
     actions = [put_down_action,

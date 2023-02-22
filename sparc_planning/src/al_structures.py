@@ -350,7 +350,21 @@ class Action:
     action_def:ActionDefinition
     causal_laws:List[CausalLaw]
     executability_conditions:List[ExecutabilityCondition]
-    
+
+    @property
+    def full_sort_signature(self):
+        sort_sig = set()
+        for cl in self.causal_laws:
+            if not cl.conditions:continue
+            for fun in cl.conditions:
+                if not isinstance(fun, Property):
+                    sort_sig = sort_sig.union({*[s.name for s in fun.sorts]})
+        for ec in self.executability_conditions:
+            if not ec.conditions:continue
+            for fun in ec.conditions:
+                if not isinstance(fun, Property):
+                    sort_sig = sort_sig.union({*[s.name for s in fun.sorts]})
+        return sort_sig
     
 @dataclass
 class ActionInstance:
@@ -377,6 +391,7 @@ class ActionLangSysDesc:
     constants : Optional[List[Constant]] = None
     display_hints: Optional[List[str]] = None
     planning_steps: int = 3
+    start_step: int = 0
 
     def add(self,prog:ActionLangSysDesc) -> None:
         """combine another ALSD into this object"""
@@ -520,7 +535,7 @@ class ActionLangSysDesc:
     def to_sparc_program(self) -> SparcProg:
         # create constants
         logging.info('Parsing constants...')
-        sparc_constants = [f'#const numSteps = {self.planning_steps}.']
+        sparc_constants = [f'#const numSteps = {self.planning_steps}.', f'#const startStep = {self.start_step}.']
         if self.constants:
             sparc_constants += [c.to_sparc() for c in self.constants]
         
@@ -532,7 +547,7 @@ class ActionLangSysDesc:
         # create special sorts for inertial fluents, fluent, boolean, step, and outcome
         sparc_sorts += ['#boolean = {true, false}.', '#outcome = {true, false, undet}.',
                         f"#inertial_fluent = {'+ '.join([i.to_sparc()[:-1] for i in self.inertial_fluents])}.",
-                        f'#step = 0..numSteps.'
+                        f'#step = startStep..numSteps.'
                         ]
         # handle case of empty set for defined fluents
         if self.defined_fluents:
