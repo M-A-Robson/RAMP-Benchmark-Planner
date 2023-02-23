@@ -1,3 +1,4 @@
+import copy
 from beam_domain_coarse import generate_coarse_beam_domain
 from beam_domain_fine import generate_fine_beam_domain
 from example_domains.example_1 import generate_domain_setup
@@ -6,11 +7,11 @@ import asyncio
 from al_structures import ActionInstance, GoalDefinition
 from planning import plan
 from sparc_io import extract_states_from_answer_set
-from zooming import zoom
+from zooming import remove_chars_from_last_number, zoom
 import re
 
 # set up logging
-logger = logging.basicConfig(level=logging.DEBUG, 
+logger = logging.basicConfig(level=logging.INFO, 
                              format='%(asctime)s - %(filename)s:%(lineno)s - %(levelname)s - %(message)s',
                              datefmt='%m-%d %H:%M',)
 
@@ -39,10 +40,10 @@ async def main():
     all_fine_actions = []
     fine_plan_length = 0
 
-    # TODO debug multiple step planning in fine resolution
+    fine_state_fluents = copy.deepcopy(fine_fluents)
     for i in range(len(coarse_actions)):
         _, course_action_name, *objs = re.split('\(|\)|\,', coarse_actions[i])[:-3]
-
+        
         #ZOOM
         logging.info(f'Coarse Action: {course_action_name}')
         logging.info(f'Action objects: {objs}')
@@ -61,9 +62,32 @@ async def main():
         fine_states, fine_actions = extract_states_from_answer_set(fine_plan[0])
         logging.info(fine_actions)
         fine_plan_length += len(fine_actions)
-        # update fine state
+        # update fine state history
+        # only recieve a partial state back from zoomed fine res system
+        # need to update full state, so un-used fluents need to be progressed in time (did not change)
+        updated_fluents = fine_states[-1].fluents
+        # state strings are timestamped so this needs to be fixed for comparison
+        s1flu = [remove_chars_from_last_number(f1) for f1 in fine_state_fluents if f1[0] != '%']
+        s2flu = [remove_chars_from_last_number(f2) for f2 in updated_fluents]
+        s1funcs, s1fun_vals = [], []
+        for func in s1flu:
+            split = re.split('\(|\)|\,',func)
+            s1funcs.append(split[0]+'('+split[1]+'('+','.join(split[2:-3])+')')
+            s1fun_vals.append(split[-2])
+        s2funcs = []
+        for func in s2flu:
+            split = re.split('\(|\)|\,',func)
+            s2funcs.append(split[0]+'('+split[1]+'('+','.join(split[2:-3])+')')
+        
+        # find fluents which havent been updated in zoomed description
+        # functions in s1 but not in s2
+        funcs = {*s1funcs}.difference({*s2funcs})
+        unchanged_fluents = [f'{f},{s1fun_vals[s1funcs.index(f)]},{fine_plan_length}).' for f in funcs]
+        # update fluents at this step
+        fine_state_fluents = unchanged_fluents + updated_fluents
+        # update fine domain for next planning step
+        fine.domain_setup = fine_statics + fine_state_fluents 
         fine.start_step = fine_plan_length
-        fine.domain_setup = fine_states[-1].fluents + fine_statics # todo only recieve a partial state back will this casue issues? hint -yes
         all_fine_actions += fine_actions
 
     logging.info(f'Coarse Actions: {coarse_actions}')

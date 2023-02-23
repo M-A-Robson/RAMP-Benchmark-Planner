@@ -83,7 +83,7 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DH:ActionLangSysDesc, 
     # functions in s1 or s2 but not both
     funcs = {*s1flu}.difference({*s2flu}).union({*s2flu}.difference({*s1flu}))
     for func in funcs:
-        # extract functions from holds(func(x1,x2..xn),step) statements
+        # extract functions from holds(func(x1,x2..xn),bool, statements
         ret = re.search('holds\(.+\(.+\),', func)
         if not ret:
             ret = re.search('val\(.+\(.+\),', func)

@@ -466,7 +466,7 @@ def generate_coarse_beam_domain():
     #cannot add a beam which would cap another beam if the beams to be capped are not yet in the assembly
     asem_ec5 = ExecutabilityCondition(
         action= assemble,
-        object_instances={'R':robot,'B1':beam},
+        object_instances={'R':robot,'B1':beam,'B2':beam,'B3':beam},
         action_object_instance_names=['R','B1'],
         conditions=[in_assembly,in_assembly,is_capped_by,
                     Property('B2','B3',Relation.NOT_EQUAL)],

@@ -68,6 +68,7 @@ next_to_f(C1,C2):- next_to_f(C2,C1).
 -near_to(P1,P2):- not near_to(P1,P2).
 component(P1,C1):- near_to(C1,C2), component(P1,C2).
 holds(loc_f(T,P1), false, I) :- holds(loc_f(T,P2), true, I), P1!=P2.
+holds(loc_c(T,P1), false, I) :- holds(loc_c(T,P2), true, I), P1!=P2.
 next_to_c(P1,P2):- next_to_f(C1,C2), component(P1,C1), component(P2,C2).
 holds(loc_c(T,P), true, I) :- holds(loc_f(T,C), true, I), component(P,C).
 holds(loc_f(T1,P1), true, I) :- holds(loc_f(R,P1), true, I), holds(in_hand_c(R,T2), true, I), T1=T2.
@@ -118,6 +119,7 @@ holds(loc_f(R,P), true, I+1) :- occurs(move_f(R,P), I).
 
 holds(in_hand_f(R,T), true, I+1) :- occurs(pick_up_f(R,T), I).
 -occurs(pick_up_f(R,T1), I) :- holds(loc_f(T1,P1), true, I), holds(loc_f(R,P2), true, I), P1!=P2.
+-occurs(pick_up_f(R,TP), I) :- holds(loc_f(T1,P1), true, I), holds(loc_f(R,P2), true, I), P1!=P2, component(T1,TP).
 -occurs(pick_up_f(R,T1), I) :- holds(in_hand_f(rob0,T2), true, I), #thing_part(T2).
 -occurs(pick_up_f(R,T1), I) :- component(B,T1), not #link(T1), #beam(B).
 
@@ -187,7 +189,7 @@ something_happened(I) :- occurs(A, I).
 :- not goal(I), not something_happened(I).
 
 % goal definition
-goal(I) :- holds(fastened_c(b1,b2,p1), true, I).
+goal(I) :- holds(in_assembly_c(b4), true, I).
 
 % domain setup
 % beam locations
@@ -198,8 +200,8 @@ holds(loc_f(b1,b1t),true,0).
 holds(loc_f(b2,b2t),true,0).
 holds(loc_f(b3,b3t),true,0).
 holds(loc_f(b4,b4i),true,0).
-holds(loc_f(p1,p1i),true,0).
-holds(loc_f(p2,p2i),true,0).
+holds(loc_f(p1,p1t),true,0).
+holds(loc_f(p2,p2t),true,0).
 holds(loc_f(p3,p3i),true,0).
 holds(loc_f(p4,p4i),true,0).
 % beam components and connections
@@ -321,6 +323,9 @@ holds(in_hand_f(rob0,p1),false,0).
 holds(in_hand_f(rob0,p2),false,0).
 holds(in_hand_f(rob0,p3),false,0).
 holds(in_hand_f(rob0,p4),false,0).
+
+holds(fastened_f(j3,j1,p1),true,0).
+holds(fastened_f(j5,j2,p1),true,0).
 
 display
 occurs.
