@@ -1,14 +1,15 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from email.mime import base
 from enum import Enum
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 import networkx as nx
 import logging
 import xml.etree.ElementTree as ET
 import numpy as np
 import trimesh
 from matplotlib import pyplot as plt
+
+from sparc_planning.src.al_structures import BasicSort, Sort
 
 class ElementType(Enum):
     LINK = 0
@@ -19,6 +20,7 @@ class ElementType(Enum):
     IN_F = 5
     THRU_F = 6
     IN_M_END_FEET = 7
+    ANGLE_M_END = 8
 
     @staticmethod
     def as_dict():
@@ -31,7 +33,8 @@ class ElementType(Enum):
             "in-f": 5,
             "thru-f": 6,
             "in-m-end-feet": 7,
-        }
+            "angle-m-end": 8,
+            }
 
 # offsets for stacking up with other parts
 OFFSET_DATA = {
@@ -43,6 +46,7 @@ OFFSET_DATA = {
     ElementType.IN_F_END: 23.200,
     ElementType.LINK:0.0,
     ElementType.IN_M_END_FEET: 8.6,
+    ElementType.ANGLE_M_END: 8.6,
 }
 
 # offsets for specifying hole locations in parts (distance in z from object centre) - change to 
@@ -54,6 +58,7 @@ PEG_OFFSET_DATA = {
     ElementType.THRU_F: 0.0,
     ElementType.IN_F_END: 0.0,
     ElementType.IN_M_END_FEET: 0.0,
+    ElementType.ANGLE_M_END: 0.0,
 }
 
 # offsets in [x,y,z] to top right corner of the object tag from object center
@@ -61,6 +66,7 @@ TAG_POSITION_DATA = { #TODO
     ElementType.IN_M_END:[12.750, -29.600, 26.600], 
     ElementType.IN_F_END:[12.750,-17.150,29.900],
     ElementType.IN_M_END_FEET: [12.750, -29.600, 26.600],
+    ElementType.ANGLE_M_END:[12.750, -29.600, 26.600], 
 }
 
 MODEL_DATA = {
@@ -72,6 +78,7 @@ MODEL_DATA = {
     ElementType.THRU_F: "models/thru.stl",
     ElementType.IN_F_END: "models/in-f-end.stl",
     ElementType.LINK: None,
+    ElementType.ANGLE_M_END: "models/in-m-end.stl",
 }
 
 def element_type_from_string(name:str) -> ElementType:
@@ -93,8 +100,8 @@ class BeamComponent:
             return True
         return False
 
-    def is_male(self) -> bool:
-        if self.type.value in [1,7,3]:
+    def is_male(self) -> bool: 
+        if self.type.value in [1,7,3,8]:
             return True
         return False
     
@@ -104,7 +111,7 @@ class BeamComponent:
         return False
     
     def is_angle(self) -> bool:
-        if self.type.value in [1,4]:
+        if self.type.value in [8,4]:
             return True
         return False
 
@@ -278,7 +285,7 @@ class Beam:
         for i in range(len(t)):
             key = [*d.keys()][t[i]]
             jd[key].append(parts_in_order[i])
-        component_relations = [f'component({comp},{self.name}).\n' for comp in parts_in_order]
+        component_relations = [f'component({self.name},{comp}).\n' for comp in parts_in_order]
         connection_relations = []
         for j in range(len(t)-1):
             connection_relations.append(f"connected_to({parts_in_order[j]},{parts_in_order[j+1]}).\n")
@@ -344,7 +351,31 @@ class Connection:
 
     def __repr__(self):
         return f"Connection: {self.element1.name}/{self.joint1.name} connects to {self.element2.name}/{self.joint2.name}\n"
-
+    
+    def to_sparc_coarse(self) -> str:
+        if self.joint1.is_male():
+            if self.joint1.type.value == 3:
+                return(f'fits_through_c({self.element1.name},{self.element2.name}).\n')
+            else:
+                return(f'fits_into_c({self.element1.name},{self.element2.name}).\n')
+        else:
+            if self.joint2.type.value == 3:
+                return(f'fits_through_c({self.element2.name},{self.element1.name}).\n')
+            else:
+                return(f'fits_into_c({self.element2.name},{self.element1.name}).\n')
+            
+    def to_sparc_fine(self) -> str:
+        if self.joint1.is_male():
+            if self.joint1.type.value == 3:
+                return(f'fits_through_f({self.joint1.name},{self.joint2.name}).\n')
+            else:
+                return(f'fits_into_f({self.joint1.name},{self.joint2.name}).\n')
+        else:
+            if self.joint2.type.value == 3:
+                return(f'fits_through_f({self.joint2.name},{self.joint1.name}).\n')
+            else:
+                return(f'fits_into_f({self.joint2.name},{self.joint1.name}).\n')
+        
 @dataclass
 class BeamAssembly:
     connections:list[Connection]
@@ -608,23 +639,6 @@ class BeamAssembly:
         return scene
 
 #!FUNCTIONS:
-
-def get_sparc_rep_of_component_data(data:dict)->str:
-    """turns dict output from Beam.get_sparc_representation()[1]
-    into sparc string. This is seperated out as you will need to collate
-    component data for all beams in the assembly before parsing to sparc.
-    Args:
-        data (dict): beam component data
-    Returns:
-        str: sparc representation
-    """
-    component_data = []
-    for key in data:
-        if len(data[key])>0:
-            d = ",".join(data[key])
-            cdstr = key + " = {" + d + "}.\n"
-            component_data.append(cdstr)
-    return ''.join(component_data)
     
 def load_assembly_xml(beams:list[Beam],assem_xml_file:str) -> BeamAssembly:
     """loads assembly from xml file
@@ -840,42 +854,6 @@ def load_beam_xml(beam_xml_file:str) -> list[Beam]:
     #print(beams)
     return beams
 
-def create_sparc_file(assem:BeamAssembly):
-    #!WORK IN PROGRESS
-    # at course resolution we want:
-    # - beam ids
-    # - beam to beam connections and type
-
-    # at fine resolution we want:
-    # for subset of beams to reason about:
-    # - beam id
-    # - beam component data
-    # - component relations (connections) internal
-    # - component relations (connections) external and relevant
-    beams = BeamAssembly.get_beams()
-    # create sparc file for beams
-    beam_names = []
-    data = []
-    components = {}
-    for b in beams:
-        # collate name, component_of and connected_to data
-        beamdata = b.get_sparc_representation()
-        beam_names.append(beamdata[0])
-        data.append(beamdata[2])
-        data.append(beamdata[3])
-        # collate components into a single dict
-        for k in beamdata[1]:
-            v = beamdata[1][k]
-            if k in components.keys():
-                components[k] = components[k]+(v) # join lists
-            else: components[k] = v
-    data.append(get_sparc_rep_of_component_data(components))
-    beam_def = "beam = {" + ",".join(beam_names) + "}.\n"
-    data.insert(0,beam_def) # put beam definition at start of file
-    #save to output file
-    with open('example_output.sp','w') as outfi:
-        outfi.write(''.join(data))
-
 
 def main():
     logger = logging.getLogger()
@@ -886,6 +864,9 @@ def main():
     
     scene = assem.create_display_scene(colorise=True)
     scene.show()
+
+
+
 
 
 

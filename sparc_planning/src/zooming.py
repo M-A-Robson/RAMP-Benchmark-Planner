@@ -297,7 +297,7 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DH:ActionLangSysDesc, 
                                 if not sort.name in sorts_DLRT_names:
                                     action_possible = False
                 if not remove_exec_cond: 
-                    exec_conditions.append(execut)         
+                    exec_conditions.append(execut)
             if not action_possible: 
                 continue
             new_act_cls = []

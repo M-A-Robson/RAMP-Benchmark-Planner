@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <data>
-    <beam name="beam1">
+    <beam name="b1">
         <joint name="J1" marker="1" part="in-f-end">
             <child link="L1"/>
         </joint>
@@ -12,7 +12,7 @@
             <parent link="L1"/>
 	</joint>
     </beam>
-    <beam name="beam2">
+    <beam name="b2">
         <joint name="J3" part="in-m-end">
             <child link="L2"/>
         </joint>
@@ -24,27 +24,27 @@
             <parent link="L2"/>
         </joint>
     </beam>
-    <beam name="beam3">
-        <joint name="J5" part="in-f-end">
+    <beam name="b3">
+        <joint name="J5" part="in-m-end">
             <child link="L3"/>
         </joint>
         <link name="L3" length="100">
             <parent joint="J5"/>
             <child joint="J6"/>
         </link>
-        <joint name="J6" part="in-f-end">
+        <joint name="J6" part="in-m-end">
             <parent link="L3"/>
         </joint>
     </beam>
-    <beam name="beam4">
-        <joint name="J7" part="in-m-end">
+    <beam name="b4">
+        <joint name="J7" part="in-f-end">
             <child link="L4"/>
         </joint>
         <link name="L4" length="100">
             <parent joint="J7"/>
             <child joint="J8"/>
         </link>
-        <joint name="J8" part="in-m-end">
+        <joint name="J8" part="in-f-end">
             <parent link="L4"/>
         </joint>
     </beam>

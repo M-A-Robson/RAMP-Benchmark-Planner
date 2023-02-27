@@ -1,2 +1,5 @@
 sortedcollections
 numpy
+trimesh[easy]
+networkx
+pyglet==1.5.27
