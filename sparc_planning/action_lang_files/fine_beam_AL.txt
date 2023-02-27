@@ -88,6 +88,7 @@ next_to_f(C1, C2) if next_to_f(C2,C1)
 ¬near_to(P1, P2) if ¬near_to(P1,P2)
 component(P1, C1) if near_to(C1,C2), component(P1,C2)
 ¬loc_f(T, P1) if loc_f(T,P2), P1!=P2
+¬loc_c(T, P1) if loc_c(T,P2), P1!=P2
 next_to_c(P1, P2) if next_to_f(C1,C2), component(P1,C1), component(P2,C2)
 loc_c(T, P) if loc_f(T,C), component(P,C)
 loc_f(T1, P1) if loc_f(R,P1), in_hand_c(R,T2), T1=T2

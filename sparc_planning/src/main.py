@@ -21,6 +21,7 @@ async def main():
 
     fine = generate_fine_beam_domain()
     #fine.save_AL('/home/local/MTC_ORI_Collab/sparc_planning/action_lang_files/fine_beam_AL.txt')
+
     coarse_fluents, coarse_statics, fine_fluents, fine_statics = generate_domain_setup()
     coarse.domain_setup = coarse_fluents + coarse_statics
     fine.domain_setup = fine_fluents + fine_statics
@@ -67,7 +68,7 @@ async def main():
         # need to update full state, so un-used fluents need to be progressed in time (did not change)
         updated_fluents = fine_states[-1].fluents
         # state strings are timestamped so this needs to be fixed for comparison
-        s1flu = [remove_chars_from_last_number(f1) for f1 in fine_state_fluents if f1[0] != '%']
+        s1flu = [remove_chars_from_last_number(f1) for f1 in fine_state_fluents if f1[0] != '%'] # if f1[0] != '%' ignores comment lines
         s2flu = [remove_chars_from_last_number(f2) for f2 in updated_fluents]
         s1funcs, s1fun_vals = [], []
         for func in s1flu:
