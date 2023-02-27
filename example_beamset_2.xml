@@ -4,7 +4,7 @@
         <joint name="J1-1" marker="1" part="in-m-end">
             <child link="L1-1"/>
         </joint>
-        <link name="L1-1" length="100">
+        <link name="L1-1" length="120">
             <parent joint="J1-1"/>
             <child joint="J1-2"/>
         </link>
@@ -12,7 +12,7 @@
             <parent link="L1-1"/>
             <child link="L1-2"/>
         </joint>
-        <link name="L1-2" length="100">
+        <link name="L1-2" length="120">
             <parent joint="J1-2"/>
             <child joint="J1-3"/>
         </link>
@@ -24,7 +24,7 @@
         <joint name="J2-1" marker="3" part="in-m-end">
             <child link="L2-1"/>
         </joint>
-        <link name="L2-1" length="100">
+        <link name="L2-1" length="120">
             <parent joint="J2-1"/>
             <child joint="J2-2"/>
         </link>
@@ -32,7 +32,7 @@
             <parent link="L2-1"/>
             <child link="L2-2"/>
         </joint>
-        <link name="L2-2" length="100">
+        <link name="L2-2" length="120">
             <parent joint="J2-2"/>
             <child joint="J2-3"/>
         </link>
@@ -44,7 +44,7 @@
         <joint name="J3-1" marker="5" part="in-m-end">
             <child link="L3-1"/>
         </joint>
-        <link name="L3-1" length="100">
+        <link name="L3-1" length="120">
             <parent joint="J3-1"/>
             <child joint="J3-2"/>
         </link>
@@ -52,7 +52,7 @@
             <parent link="L3-1"/>
             <child link="L3-2"/>
         </joint>
-        <link name="L3-2" length="100">
+        <link name="L3-2" length="120">
             <parent joint="J3-2"/>
             <child joint="J3-3"/>
         </link>
@@ -61,50 +61,50 @@
         </joint>
     </beam>
     <beam name="beam4">
-        <joint name="J4-1" marker="7" part="in-m-end">
+        <joint name="J4-1" marker="7" part="in-m-end-feet">
             <child link="L4-1"/>
         </joint>
-        <link name="L4-1" length="100">
+        <link name="L4-1" length="120">
             <parent joint="J4-1"/>
             <child joint="J4-2"/>
         </link>
-        <joint name="J4-2" part="thru-f">
+        <joint name="J4-2" part="in-f">
             <parent link="L4-1"/>
             <child link="L4-2"/>
         </joint>
-        <link name="L4-2" length="100">
+        <link name="L4-2" length="120">
             <parent joint="J4-2"/>
             <child joint="J4-3"/>
         </link>
-        <joint name="J4-3" marker="8" part="in-m-end">
+        <joint name="J4-3" marker="8" part="in-m-end-feet">
             <parent link="J4-2"/>
         </joint>
     </beam>
     <beam name="beam5">
-        <joint name="J5-1" marker="7" part="in-m-end">
+        <joint name="J5-1" marker="7" part="in-m-end-feet">
             <child link="L5-1"/>
         </joint>
-        <link name="L5-1" length="100">
+        <link name="L5-1" length="120">
             <parent joint="J5-1"/>
             <child joint="J5-2"/>
         </link>
-        <joint name="J5-2" part="thru-f">
+        <joint name="J5-2" part="in-f">
             <parent link="L5-1"/>
             <child link="L5-2"/>
         </joint>
-        <link name="L5-2" length="100">
+        <link name="L5-2" length="120">
             <parent joint="J5-2"/>
             <child joint="J5-3"/>
         </link>
-        <joint name="J5-3" marker="8" part="in-m-end">
+        <joint name="J5-3" marker="8" part="in-m-end-feet">
             <parent link="L5-2"/>
         </joint>
     </beam>
     <beam name="beam6">
-        <joint name="J6-1" marker="9" part="angle-m-end">
+        <joint name="J6-1" marker="9" part="in-m-end">
             <child link="L6-1"/>
         </joint>
-        <link name="L6-1" length="134">
+        <link name="L6-1" length="163.32">
             <parent joint="J6-1"/>
             <child joint="J6-2"/>
         </link>
@@ -112,11 +112,11 @@
             <parent link="L6-1"/>
             <child link="L6-2"/>
         </joint>
-        <link name="L6-2" length="134">
+        <link name="L6-2" length="163.32">
             <parent joint="J6-2"/>
             <child joint="J6-3"/>
         </link>
-        <joint name="J6-3" marker="10" part="angle-m-end">
+        <joint name="J6-3" marker="10" part="in-m-end">
             <parent link="L6-2"/>
         </joint>
     </beam>
@@ -124,7 +124,7 @@
         <joint name="J7-1" marker="11" part="in-f-end">
             <child link="L7-1"/>
         </joint>
-        <link name="L7-1" length="50">
+        <link name="L7-1" length="70">
             <parent joint="J7-1"/>
             <child joint="J7-2"/>
         </link>
@@ -132,15 +132,15 @@
             <parent link="L7-1"/>
             <child link="L7-2"/>
         </joint>
-        <link name="L7-2" length="50">
+        <link name="L7-2" length="70">
             <parent joint="J7-2"/>
             <child joint="J7-3"/>
         </link>
-        <joint name="J7-3" part="in-f">
+        <joint name="J7-3" part="thru-f">
             <parent link="L7-2"/>
             <child link="L7-3"/>
         </joint>
-        <link name="L7-3" length="50">
+        <link name="L7-3" length="70">
             <parent joint="J7-3"/>
             <child joint="J7-4"/>
         </link>
@@ -148,7 +148,7 @@
             <parent link="L7-3"/>
             <child link="L7-4"/>
         </joint>
-        <link name="L7-4" length="50">
+        <link name="L7-4" length="70">
             <parent joint="J7-4"/>
             <child joint="J7-5"/>
         </link>
@@ -160,7 +160,7 @@
         <joint name="J8-1" marker="13" part="in-f-end">
             <child link="L8-1"/>
         </joint>
-        <link name="L8-1" length="50">
+        <link name="L8-1" length="70">
             <parent joint="J8-1"/>
             <child joint="J8-2"/>
         </link>
@@ -168,15 +168,15 @@
             <parent link="L8-1"/>
             <child link="L8-2"/>
         </joint>
-        <link name="L8-2" length="50">
+        <link name="L8-2" length="70">
             <parent joint="J8-2"/>
             <child joint="J8-3"/>
         </link>
-        <joint name="J8-3" part="in-f">
+        <joint name="J8-3" part="thru-f">
             <parent link="L8-2"/>
             <child link="L8-3"/>
         </joint>
-        <link name="L8-3" length="50">
+        <link name="L8-3" length="70">
             <parent joint="J8-3"/>
             <child joint="J8-4"/>
         </link>
@@ -184,7 +184,7 @@
             <parent link="L8-3"/>
             <child link="L8-4"/>
         </joint>
-        <link name="L8-4" length="50">
+        <link name="L8-4" length="70">
             <parent joint="J8-4"/>
             <child joint="J8-5"/>
         </link>
@@ -196,7 +196,7 @@
         <joint name="J9-1" marker="13" part="in-m-end">
             <child link="L9-1"/>
         </joint>
-        <link name="L9-1" length="71">
+        <link name="L9-1" length="100">
             <parent joint="J9-1"/>
             <child joint="J9-2"/>
         </link>
@@ -204,7 +204,7 @@
             <parent link="L9-1"/>
             <child link="L9-2"/>
         </joint>
-        <link name="L9-2" length="50">
+        <link name="L9-2" length="70">
             <parent joint="J9-2"/>
             <child joint="J9-3"/>
         </link>
@@ -212,7 +212,7 @@
             <parent link="L9-2"/>
             <child link="L9-3"/>
         </joint>
-        <link name="L9-3" length="50">
+        <link name="L9-3" length="70">
             <parent joint="J9-3"/>
             <child joint="J9-4"/>
         </link>
@@ -220,7 +220,7 @@
             <parent link="L9-3"/>
             <child link="L9-4"/>
         </joint>
-        <link name="L9-4" length="71">
+        <link name="L9-4" length="100">
             <parent joint="J9-4"/>
             <child joint="J9-5"/>
         </link>
