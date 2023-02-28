@@ -617,7 +617,7 @@ def generate_fine_beam_domain():
         condition_values=[True,True],
         condition_object_instance_names=[['R','P1'],['P1','P2']]
     )
-    #cannot move to target locaitons whilst holding objects
+    #cannot move to target locations whilst holding objects
     m_ec6 = ExecutabilityCondition(
         action=move,
         object_instances={'R':robot,'P1':place_f,'T1':thing},
@@ -626,7 +626,25 @@ def generate_fine_beam_domain():
         condition_object_instance_names=[['R','T1'],['P1']],
         condition_values=[True,True],
     )
-    move_action = Action(move, [m_c1], [m_ec1,m_ec2, m_ec3, m_ec4, m_ec5, m_ec6])
+    #cannot move to pre-rotate locations whilst holding objects
+    m_ec7 = ExecutabilityCondition(
+        action=move,
+        object_instances={'R':robot,'P1':place_f,'T1':thing},
+        action_object_instance_names=['R','P1'],
+        conditions=[in_hand_c,Property('through_location','P1',Relation.IS_OF_SORT)],
+        condition_object_instance_names=[['R','T1'],['P1']],
+        condition_values=[True,True],
+    )
+    #cannot move to through locations whilst holding objects
+    m_ec8 = ExecutabilityCondition(
+        action=move,
+        object_instances={'R':robot,'P1':place_f,'T1':thing},
+        action_object_instance_names=['R','P1'],
+        conditions=[in_hand_c,Property('prerot_location','P1',Relation.IS_OF_SORT)],
+        condition_object_instance_names=[['R','T1'],['P1']],
+        condition_values=[True,True],
+    )
+    move_action = Action(move, [m_c1], [m_ec1,m_ec2, m_ec3, m_ec4, m_ec5, m_ec6, m_ec7, m_ec8])
 
     #!put_down_f action
     put_down = ActionDefinition('putdown_f',[robot, thing_part])
@@ -717,14 +735,14 @@ def generate_fine_beam_domain():
         condition_values=[True,True],
         condition_object_instance_names=[['B1','B2','B3'],['B2','BP']],
     )
-    # must be at approach location
+    # must be at approach location (or through_location)
     asem_sq_e2 = ExecutabilityCondition(
         action = assemble_square,
         object_instances={'R':robot,'B1':beam,'C':place_f,'BP':beam_part},
         action_object_instance_names=['R','BP'],
-        conditions=[component,location,assem_approach_loc,Property('C1','C2',Relation.NOT_EQUAL)],
-        condition_values=[True,True,True,True],
-        condition_object_instance_names=[['B1','BP'],['R','C1'],['B1','C2'],['C1','C2']],
+        conditions=[component,location,assem_approach_loc,Property('C1','C2',Relation.NOT_EQUAL), beam_through_loc],
+        condition_values=[True,True,True,True,False],
+        condition_object_instance_names=[['B1','BP'],['R','C1'],['B1','C2'],['C1','C2'],['B1','C2']],
     )
     # cannot assemble unless the part into which this part fits is already in the assembly
     asem_sq_e3 = ExecutabilityCondition(
@@ -781,10 +799,80 @@ def generate_fine_beam_domain():
     )
     assemble_cap_action = Action(assemble_cap,[asem_cap_c1,asem_cap_c2],[asem_cap_e1, asem_cap_e2])
 
-    #TODO
     #! assem_f_rotate
+    assemble_rot = ActionDefinition('assemble_f_rotate',[robot,beam_part])
+    # puts beam into target position
+    asem_rot_c1 = CausalLaw(
+        action=assemble_rot,
+        fluent_affected=location,
+        fluent_value=True,
+        object_instances={'R':robot,'B':beam,'BP':beam_part,'C1':place_f},
+        action_object_instance_names=['R','BP'],
+        fluent_object_instance_names=['R','C'],
+        conditions=[assem_target_loc,component],
+        condition_object_instance_names=[['B','C'],['B','BP']],
+        condition_values=[True,True],
+    )
+    # adds beam to assembly
+    asem_rot_c2 = CausalLaw(
+        action=assemble_rot,
+        fluent_affected=in_assembly_f,
+        fluent_value=True,
+        object_instances={'R':robot,'BP':beam_part},
+        action_object_instance_names=['R','BP'],
+        fluent_object_instance_names=['BP'],
+    )
+    # cannot assemble unless the part into which this part fits is already in the assembly
+    asem_rot_e1 = ExecutabilityCondition(
+        action = assemble_rot,
+        object_instances={'R':robot,'BP1':beam_part, 'BP2':beam_part},
+        action_object_instance_names=['R','BP1'],
+        conditions=[fits_into_f, in_assembly_f],
+        condition_values=[True, False],
+        condition_object_instance_names=[['BP1','BP2'],['BP2']],
+    )
+    # must be at pre-rotate location
+    asem_rot_e2 = ExecutabilityCondition(
+        action = assemble_rot,
+        object_instances={'R':robot,'B1':beam,'C':place_f,'BP':beam_part},
+        action_object_instance_names=['R','BP'],
+        conditions=[component,location,beam_prerotate_loc,Property('C1','C2',Relation.NOT_EQUAL)],
+        condition_values=[True,True,True,True],
+        condition_object_instance_names=[['B1','BP'],['R','C1'],['B1','C2'],['C1','C2']],
+    )
+    assemble_rot_action = Action(assemble_rot,[asem_rot_c1,asem_rot_c2],[asem_rot_e1, asem_rot_e2])
+
     #! assem_f_through
-    assembly_actions = [assemble_square_action, assemble_cap_action] 
+    assemble_through = ActionDefinition('assemble_f_through',[robot,beam_part])
+    # puts beam into 'through' position
+    asem_th_c1 = CausalLaw(
+        action=assemble_through,
+        fluent_affected=location,
+        fluent_value=True,
+        object_instances={'R':robot,'B':beam,'BP':beam_part,'C1':place_f},
+        action_object_instance_names=['R','BP'],
+        fluent_object_instance_names=['R','C'],
+        conditions=[beam_through_loc,component],
+        condition_object_instance_names=[['B','C'],['B','BP']],
+        condition_values=[True,True],
+    )
+    # must be at approach location
+    asem_th_e1 = ExecutabilityCondition(
+        action = assemble_through,
+        object_instances={'R':robot,'B1':beam,'C':place_f,'BP':beam_part},
+        action_object_instance_names=['R','BP'],
+        conditions=[component,location,assem_approach_loc,Property('C1','C2',Relation.NOT_EQUAL)],
+        condition_values=[True,True,True,True],
+        condition_object_instance_names=[['B1','BP'],['R','C1'],['B1','C2'],['C1','C2']],
+    )
+    assemble_through_action = Action(assemble_through,[asem_th_c1],[asem_th_e1])
+
+
+    # collect new assembly actions
+    assembly_actions = [assemble_square_action,
+                        assemble_cap_action,
+                        assemble_through_action,
+                        assemble_rot_action] 
 
     #! these rules hold for all assemble_f actions (refinements of high level assembly action conditions)
     for ac in assembly_actions:

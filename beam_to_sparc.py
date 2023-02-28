@@ -77,21 +77,26 @@ def create_sparc_data(assem:BeamAssembly) -> Tuple[List[Sort],List[str],List[Sor
     input_locations = BasicSort('input_location',[f'{o}i' for o in object_names])
     target_locations = BasicSort('target_location',[f'{o}t' for o in object_names])
     approach_locations = BasicSort('approach_location',[f'{o}a' for o in object_names])
+    fine_statics += [f'assem_target_loc({thing}, {thing}t).\n' for thing in object_names]
+    fine_statics += [f'assem_approach_loc({thing}, {thing}a).\n' for thing in object_names]
     
     # through and pre-rotation locations
     tl_instances = []
     prl_instances = []
+    through_and_prerotate_location_statics = []
     for beam in beams:
         beam_component_types = beam.get_component_type_list()
         if ElementType.THRU_M.value in beam_component_types:
             # add through location
             tl_instances.append(f'{beam.name}_th')
+            through_and_prerotate_location_statics.append(f'beam_through_loc({beam.name},{beam.name}_th).\n')
         if ElementType.ANGLE_M_END.value in beam_component_types:
             # add pre_rotation location
             prl_instances.append(f'{beam.name}_pr')
+            through_and_prerotate_location_statics.append(f'beam_prerotate_loc({beam.name},{beam.name}_pr).\n')
     through_locations = BasicSort('through_location',tl_instances)
     prerotate_locations = BasicSort('prerot_location',prl_instances)
-
+    fine_statics += through_and_prerotate_location_statics
     # add near_to locations for each target locatiton (these atomatically get assigned component relations)
     # TODO may need to revise when better control is added for actions and more near_to relations are neded
     location_names = tl_instances + prl_instances + input_locations.instances + target_locations.instances + approach_locations.instances
