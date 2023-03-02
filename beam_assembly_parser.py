@@ -218,6 +218,7 @@ class Beam:
         return len(self.get_structure())
 
     def get_component_by_name(self, name:str) ->BeamComponent:
+        """finds component by name else raises a ValueError if component not in beam"""
         l = self.get_structure()
         for comp in l:
             if comp.name == name: return comp
@@ -452,6 +453,17 @@ class BeamAssembly:
                 return beam
         logging.info(f"No beam named {name} found in this assembly")
         return None
+    
+    def get_beam_by_component_name(self, component_name:str) -> Beam|None:
+        """finds beam by component part, returns None if component
+        is not in any beam in the assembly """
+        for beam in self.beams:
+            try: 
+                _ = beam.get_component_by_name(component_name)
+                return beam
+            except ValueError:
+                continue
+        return None
 
     def get_beam_rotation_state(self) -> dict[str:str]:
         """labels beams as 'horizontal', 'vertical', or 'angled'"""
@@ -513,14 +525,10 @@ class BeamAssembly:
                     # calculate target position from connection offset and beam origin
                     logging.info(f"searching {b1.name} for component {c1}")
                     c1_offset = b1.get_connection_offsets()[c1]
-                    """if not base_beam_updated:
-                        self.base.translate(-c1_offset[:3,3])
-                        base_beam_updated = True"""
                     q = np.matmul(b1.origin,c1_offset)
                     # get connecting beam (b2) data
                     logging.info(f'Repositioning {conn} ({c2})')
                     connecting_beam = self.get_beam_by_name(conn)
-                    #p = np.matmul(connecting_beam.origin,connecting_beam.get_connection_offsets()[c2])
                     #connecting beam origin should be I by default
                     p = connecting_beam.get_connection_offsets()[c2]
                     logging.debug(f'initial connection position ({c2}):',p)
@@ -637,6 +645,7 @@ class BeamAssembly:
                 scene.add_geometry(mesh, transform=t)
             i+=1
         return scene
+    
 
 #!FUNCTIONS:
     
