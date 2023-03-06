@@ -1,0 +1,231 @@
+<?xml version="1.0"?>
+<data>
+    <beam name="b1">
+        <joint name="b1j1" marker="1" part="in-m-end">
+            <child link="b1l1"/>
+        </joint>
+        <link name="b1l1" length="120">
+            <parent joint="b1j1"/>
+            <child joint="b1j2"/>
+        </link>
+        <joint name="b1j2" part="thru-m">
+            <parent link="b1l1"/>
+            <child link="b1l2"/>
+        </joint>
+        <link name="b1l2" length="120">
+            <parent joint="b1j2"/>
+            <child joint="b1j3"/>
+        </link>
+        <joint name="b1j3" marker="2" part="in-m-end">
+            <parent link="b1l2"/>
+        </joint>
+    </beam>
+    <beam name="b2">
+        <joint name="b2j1" marker="3" part="in-m-end">
+            <child link="b2j1"/>
+        </joint>
+        <link name="b2j1" length="120">
+            <parent joint="b2j1"/>
+            <child joint="b2j2"/>
+        </link>
+        <joint name="b2j2" part="thru-m">
+            <parent link="b2l1"/>
+            <child link="b2l2"/>
+        </joint>
+        <link name="b2l2" length="120">
+            <parent joint="b2j2"/>
+            <child joint="b2j3"/>
+        </link>
+        <joint name="b2j3" marker="4" part="in-m-end">
+            <parent link="b2l2"/>
+        </joint>
+    </beam>
+    <beam name="b3">
+        <joint name="b3j1" marker="5" part="in-m-end">
+            <child link="b3l1"/>
+        </joint>
+        <link name="b3l1" length="120">
+            <parent joint="b3j1"/>
+            <child joint="b3j2"/>
+        </link>
+        <joint name="b3j2" part="thru-m">
+            <parent link="b3l1"/>
+            <child link="b3l2"/>
+        </joint>
+        <link name="b3l2" length="120">
+            <parent joint="b3j2"/>
+            <child joint="b3j3"/>
+        </link>
+        <joint name="b3j3" marker="6" part="in-m-end">
+            <parent link="b3l2"/>
+        </joint>
+    </beam>
+    <beam name="b4">
+        <joint name="b4j1" marker="7" part="in-m-end-feet">
+            <child link="b4l1"/>
+        </joint>
+        <link name="b4l1" length="120">
+            <parent joint="b4j1"/>
+            <child joint="b4j2"/>
+        </link>
+        <joint name="b4j2" part="in-f">
+            <parent link="b4l1"/>
+            <child link="b4l2"/>
+        </joint>
+        <link name="b4l2" length="120">
+            <parent joint="b4j2"/>
+            <child joint="b4j3"/>
+        </link>
+        <joint name="J4j3" marker="8" part="in-m-end-feet">
+            <parent link="b4l2"/>
+        </joint>
+    </beam>
+    <beam name="b5">
+        <joint name="b5j1" marker="7" part="in-m-end-feet">
+            <child link="b5l1"/>
+        </joint>
+        <link name="b5l1" length="120">
+            <parent joint="b5j1"/>
+            <child joint="b5j2"/>
+        </link>
+        <joint name="b5j2" part="in-f">
+            <parent link="b5l1"/>
+            <child link="b5l2"/>
+        </joint>
+        <link name="b5l2" length="120">
+            <parent joint="b5j2"/>
+            <child joint="b5j3"/>
+        </link>
+        <joint name="b5j3" marker="8" part="in-m-end-feet">
+            <parent link="b5j2"/>
+        </joint>
+    </beam>
+    <beam name="b6">
+        <joint name="b6j1" marker="9" part="in-m-end">
+            <child link="b6l1"/>
+        </joint>
+        <link name="b6l1" length="163.32">
+            <parent joint="b6j1"/>
+            <child joint="b6j2"/>
+        </link>
+        <joint name="b6j2" part="thru-m">
+            <parent link="b6l1"/>
+            <child link="b6l2"/>
+        </joint>
+        <link name="b6l2" length="163.32">
+            <parent joint="b6j2"/>
+            <child joint="b6j3"/>
+        </link>
+        <joint name="b6j3" marker="10" part="in-m-end">
+            <parent link="b6l2"/>
+        </joint>
+    </beam>
+    <beam name="b7">
+        <joint name="b7j1" marker="11" part="in-f-end">
+            <child link="b7l1"/>
+        </joint>
+        <link name="b7l1" length="70">
+            <parent joint="b7j1"/>
+            <child joint="b7j2"/>
+        </link>
+        <joint name="b7j2" part="angle-f">
+            <parent link="b7l1"/>
+            <child link="b7l2"/>
+        </joint>
+        <link name="b7l2" length="70">
+            <parent joint="b7j2"/>
+            <child joint="b7j3"/>
+        </link>
+        <joint name="b7j3" part="thru-f">
+            <parent link="b7l2"/>
+            <child link="b7l3"/>
+        </joint>
+        <link name="b7j3" length="70">
+            <parent joint="b7j3"/>
+            <child joint="b7j4"/>
+        </link>
+        <joint name="b7j4" part="angle-f">
+            <parent link="b7l3"/>
+            <child link="b7l4"/>
+        </joint>
+        <link name="b7l4" length="70">
+            <parent joint="b7j4"/>
+            <child joint="b7j5"/>
+        </link>
+        <joint name="b7j5" marker="12" part="in-f-end">
+            <parent link="b7l4"/>
+        </joint>
+    </beam>
+    <beam name="b8">
+        <joint name="b8j1" marker="13" part="in-f-end">
+            <child link="b8l1"/>
+        </joint>
+        <link name="b8l1" length="70">
+            <parent joint="b8j1"/>
+            <child joint="b8j2"/>
+        </link>
+        <joint name="b8j2" part="angle-f">
+            <parent link="b8l1"/>
+            <child link="b8l2"/>
+        </joint>
+        <link name="b8l2" length="70">
+            <parent joint="b8j2"/>
+            <child joint="b8j3"/>
+        </link>
+        <joint name="b8j3" part="thru-f">
+            <parent link="b8l2"/>
+            <child link="b8l3"/>
+        </joint>
+        <link name="b8l3" length="70">
+            <parent joint="b8j3"/>
+            <child joint="b8j4"/>
+        </link>
+        <joint name="b8j4" part="angle-f">
+            <parent link="b8l3"/>
+            <child link="b8l4"/>
+        </joint>
+        <link name="b8l4" length="70">
+            <parent joint="b8j4"/>
+            <child joint="b8j5"/>
+        </link>
+        <joint name="b8j5" marker="14" part="in-f-end">
+            <parent link="b8l4"/>
+        </joint>
+    </beam>
+    <beam name="b9">
+        <joint name="b9j1" marker="13" part="in-m-end">
+            <child link="b9l1"/>
+        </joint>
+        <link name="b9l1" length="100">
+            <parent joint="b9j1"/>
+            <child joint="b9j2"/>
+        </link>
+        <joint name="b9j2" part="thru-f">
+            <parent link="b9l1"/>
+            <child link="b9l2"/>
+        </joint>
+        <link name="b9l2" length="70">
+            <parent joint="b9j2"/>
+            <child joint="b9j3"/>
+        </link>
+        <joint name="b9j3" part="angle-f">
+            <parent link="b9l2"/>
+            <child link="b9l3"/>
+        </joint>
+        <link name="b9j3" length="70">
+            <parent joint="b9j3"/>
+            <child joint="b9j4"/>
+        </link>
+        <joint name="b9j4" part="thru-f">
+            <parent link="b9l3"/>
+            <child link="b9l4"/>
+        </joint>
+        <link name="b9l4" length="100">
+            <parent joint="b9j4"/>
+            <child joint="b9j5"/>
+        </link>
+        <joint name="b9j5" marker="14" part="in-m-end">
+            <parent link="b9l4"/>
+        </joint>
+    </beam>
+</data>

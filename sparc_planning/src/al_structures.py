@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Dict, List, Optional, Tuple, Union
 from dataclasses import dataclass
 from enum import Enum, auto
-from sparc_planning.src.sparc_io import SparcProg
+from planner.sparc_planning.src.sparc_io import SparcProg
 import logging
 import itertools
 

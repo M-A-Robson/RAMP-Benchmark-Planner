@@ -1,6 +1,7 @@
-from al_structures import *
+import os, sys
+from planner.sparc_planning.src.al_structures import *
 
-SAVE_DIR = '/home/local/MTC_ORI_Collab/sparc_planning/sparc_files/'
+SAVE_DIR = os.path.join(os.environ['PLANNER_PATH'], '/sparc_planning/sparc_files/')
 
 def generate_coarse_beam_domain():
 

@@ -1,3 +1,4 @@
+import os
 import copy
 from beam_domain_coarse import generate_coarse_beam_domain
 from beam_domain_fine import generate_fine_beam_domain
@@ -29,10 +30,10 @@ async def main():
     # set a goal and create coarse sparc prog.
     coarse.goal_description = [GoalDefinition('in_assembly_c',['b4'],True)]
     coarse_prog = coarse.to_sparc_program()
-    coarse_prog.save('/home/local/MTC_ORI_Collab/sparc_planning/sparc_files/temp.sp')
+    coarse_prog.save(os.path.join(os.environ['PLANNER_PATH'], 'sparc_planning/sparc_files/temp.sp'))
 
     #run coarse planner
-    coarse_plan = await plan('/home/local/MTC_ORI_Collab/sparc_planning/sparc_files/temp.sp', max_length=10, min_length=1)
+    coarse_plan = await plan(os.path.join(os.environ['PLANNER_PATH'], 'sparc_planning/sparc_files/temp.sp'), max_length=10, min_length=1)
 
     #collect results
     coarse_states, coarse_actions = extract_states_from_answer_set(coarse_plan[0]) #[0] just takes first answer set (valid plan), further work could explore which route to take
@@ -52,11 +53,11 @@ async def main():
         logging.info('Building zoomed system description...')
         zoomed_fine_res_description = zoom(coarse_states[i], coarse_states[i+1], actr, coarse, fine, True)
         fine_prog = zoomed_fine_res_description.to_sparc_program()
-        fine_prog.save('/home/local/MTC_ORI_Collab/sparc_planning/sparc_files/fine_temp.sp')
+        fine_prog.save(os.path.join(os.environ['PLANNER_PATH'], 'sparc_planning/sparc_files/fine_temp.sp'))
         logging.info('Zooming complete')
 
         #run fine planner
-        fine_plan = await plan('/home/local/MTC_ORI_Collab/sparc_planning/sparc_files/fine_temp.sp',
+        fine_plan = await plan(os.path.join(os.environ['PLANNER_PATH'], 'sparc_planning/sparc_files/fine_temp.sp'),
                                 max_length=fine_plan_length+10,
                                 min_length=fine_plan_length)
         #collect results

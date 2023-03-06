@@ -1,4 +1,4 @@
-from al_structures import *
+from planner.sparc_planning.src.al_structures import *
 
 SAVE_DIR = '/home/local/MTC_ORI_Collab/sparc_planning/sparc_files/'
 
@@ -740,9 +740,9 @@ def generate_fine_beam_domain():
         action = assemble_square,
         object_instances={'R':robot,'B1':beam,'C':place_f,'BP':beam_part},
         action_object_instance_names=['R','BP'],
-        conditions=[component,location,assem_approach_loc,Property('C1','C2',Relation.NOT_EQUAL), beam_through_loc],
-        condition_values=[True,True,True,True,False],
-        condition_object_instance_names=[['B1','BP'],['R','C1'],['B1','C2'],['C1','C2'],['B1','C2']],
+        conditions=[component,location,assem_approach_loc,Property('C1','C2',Relation.NOT_EQUAL)],
+        condition_values=[True,True,True,True],
+        condition_object_instance_names=[['B1','BP'],['R','C1'],['B1','C2'],['C1','C2']],
     )
     # cannot assemble unless the part into which this part fits is already in the assembly
     asem_sq_e3 = ExecutabilityCondition(
@@ -870,9 +870,9 @@ def generate_fine_beam_domain():
 
     # collect new assembly actions
     assembly_actions = [assemble_square_action,
-                        assemble_cap_action,
-                        assemble_through_action,
-                        assemble_rot_action] 
+                        assemble_cap_action,]
+                        #assemble_through_action,
+                        #assemble_rot_action] 
 
     #! these rules hold for all assemble_f actions (refinements of high level assembly action conditions)
     for ac in assembly_actions:

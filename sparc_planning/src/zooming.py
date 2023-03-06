@@ -1,8 +1,8 @@
 import copy
 from typing import List, Tuple
 import re
-from al_structures import Action, ActionLangSysDesc, FuncType, GoalDefinition, Property, Relation, SortType, BasicSort, SuperSort, Func, ActionInstance
-from sparc_io import SparcState
+from planner.sparc_planning.src.al_structures import Action, ActionLangSysDesc, FuncType, GoalDefinition, Property, Relation, SortType, BasicSort, SuperSort, Func, ActionInstance
+from planner.sparc_planning.src.sparc_io import SparcState
 import re
 import logging
 
