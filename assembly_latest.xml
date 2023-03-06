@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<assembly>
+    <component beam="b7" base="True"/>
+    <component beam="b4" />
+    <component beam="b5" />
+    <component beam="b8" flipped="True"/>
+    <connection name="C1">
+        <element component="b4" joint="b4j1" />
+        <element component="b7" joint="b7j1" />
+    </connection>
+    <connection name="C2">
+        <element component="b5" joint="b5j1" />
+        <element component="b7" joint="b7j5" />
+    </connection>
+    <connection name="C3">
+        <element component="b4" joint="b4j3" />
+        <element component="b8" joint="b8j1" />
+    </connection>
+    <connection name="C4">
+        <element component="b5" joint="b5j3" />
+        <element component="b8" joint="b8j5" />
+    </connection>
+</assembly>

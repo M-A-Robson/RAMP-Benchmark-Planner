@@ -9,7 +9,7 @@ import numpy as np
 import trimesh
 from matplotlib import pyplot as plt
 
-from sparc_planning.src.al_structures import BasicSort, Sort
+from planner.sparc_planning.src.al_structures import BasicSort, Sort
 
 class ElementType(Enum):
     LINK = 0
@@ -868,8 +868,8 @@ def main():
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 
-    beams = load_beam_xml("example_beamset_2.xml")
-    assem = load_assembly_xml(beams, "assembly_4.xml")
+    beams = load_beam_xml("example_beamset_latest.xml")
+    assem = load_assembly_xml(beams, "assembly_latest.xml")
     
     scene = assem.create_display_scene(colorise=True)
     scene.show()

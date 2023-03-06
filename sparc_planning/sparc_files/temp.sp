@@ -3,12 +3,12 @@
 %% Author: MARK ROBSON 2023
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#const numSteps = 4.
+#const numSteps = 20.
 #const startStep = 0.
 
 sorts
 #robot = {rob0}.
-#beam = {b1,b2,b3,b4}.
+#beam = {b7,b4,b5,b8}.
 #pin = {p1,p2,p3,p4}.
 #thing = #beam + #pin.
 #object = #robot + #thing.
@@ -33,6 +33,7 @@ something_happened(#step).
 
 rules
 next_to_c(P1,P2):- next_to_c(P2,P1).
+holds(fastened_c(B1,B2,P1), true, I) :- holds(fastened_c(B2,B1,P1), true, I).
 -next_to_c(P1,P2):- not next_to_c(P1,P2).
 holds(loc_c(T,P1), false, I) :- holds(loc_c(T,P2), true, I), P1!=P2.
 holds(loc_c(T1,P1), true, I) :- holds(loc_c(R,P1), true, I), holds(in_hand_c(R,T2), true, I), T1=T2.
@@ -76,6 +77,7 @@ holds(fastened_c(B1,B2,P1), true, I+1) :- occurs(fasten(R,B1,B2,P1), I).
 -occurs(fasten(R,B1,B2,P1), I) :- not holds(in_hand_c(R,P1), true, I).
 -occurs(fasten(R,B1,B2,P1), I) :- not fits_into_c(B1,B2).
 -occurs(fasten(R,B1,B2,P1), I) :- holds(fastened_c(B1,B2,P2), true, I).
+-occurs(fasten(R,B1,B2,P1), I) :- holds(loc_c(B1,L1), true, I), holds(loc_c(R,L2), true, I), L1!=L2.
 
 % planning rules
 -holds(F, V2, I) :- holds(F, V1, I), V1!=V2.
@@ -89,32 +91,27 @@ something_happened(I) :- occurs(A, I).
 :- not goal(I), not something_happened(I).
 
 % goal definition
-goal(I) :- holds(in_assembly_c(b4), true, I).
+goal(I) :- holds(in_assembly_c(b8), true, I).
 
 % domain setup
 % robot location coarse
-holds(loc_c(rob0,input_area),true,0).
+holds(loc_c(rob0,intermediate_area),true,0).
 % assembly relations
-holds(in_assembly_c(b1),true,0).
-holds(in_assembly_c(b2),true,0).
-holds(in_assembly_c(b3),true,0).
+holds(in_assembly_c(b7),true,0).
 % beam and pin locations coarse
-holds(loc_c(p1,assembly_area),true,0).
-holds(loc_c(p2,assembly_area),true,0).
+holds(loc_c(p1,input_area),true,0).
+holds(loc_c(p2,input_area),true,0).
 holds(loc_c(p3,input_area),true,0).
 holds(loc_c(p4,input_area),true,0).
-holds(loc_c(b1,assembly_area),true,0).
-holds(loc_c(b2,assembly_area),true,0).
-holds(loc_c(b3,assembly_area),true,0).
+holds(loc_c(b7,assembly_area),true,0).
 holds(loc_c(b4,input_area),true,0).
-% coarse fastening status
-holds(fastened_c(b1,b2,p1),true,0).
-holds(fastened_c(b1,b3,p2),true,0).
+holds(loc_c(b5,input_area),true,0).
+holds(loc_c(b8,input_area),true,0).
 % assert robots hand is empty at timestep 0
-holds(in_hand_c(rob0,b1),false,0).
-holds(in_hand_c(rob0,b2),false,0).
-holds(in_hand_c(rob0,b3),false,0).
+holds(in_hand_c(rob0,b7),false,0).
 holds(in_hand_c(rob0,b4),false,0).
+holds(in_hand_c(rob0,b5),false,0).
+holds(in_hand_c(rob0,b8),false,0).
 holds(in_hand_c(rob0,p1),false,0).
 holds(in_hand_c(rob0,p2),false,0).
 holds(in_hand_c(rob0,p3),false,0).
@@ -122,8 +119,11 @@ holds(in_hand_c(rob0,p4),false,0).
 % coarse next_to location mapping
 next_to_c(input_area,intermediate_area).
 next_to_c(assembly_area,intermediate_area).
-% coarse beam relations
-fits_into_c(b2,b1).
-fits_into_c(b3,b1).
-fits_into_c(b3,b4).
-fits_into_c(b2,b4).
+fits_into_c(b4,b7).
+
+fits_into_c(b5,b7).
+
+fits_into_c(b4,b8).
+
+fits_into_c(b5,b8).
+

@@ -1,5 +1,5 @@
-from sparc_planning.src.al_structures import Sort, BasicSort
-from beam_assembly_parser import BeamAssembly, ElementType, load_assembly_xml, load_beam_xml
+from planner.sparc_planning.src.al_structures import Sort, BasicSort
+from planner.beam_assembly_parser import BeamAssembly, ElementType, load_assembly_xml, load_beam_xml
 from typing import List, Tuple
 import logging
 

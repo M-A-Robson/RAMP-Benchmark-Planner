@@ -24,7 +24,7 @@
         <joint name="b2j1" marker="3" part="in-m-end">
             <child link="b2j1"/>
         </joint>
-        <link name="b2j1" length="120">
+        <link name="b2l1" length="120">
             <parent joint="b2j1"/>
             <child joint="b2j2"/>
         </link>
@@ -76,7 +76,7 @@
             <parent joint="b4j2"/>
             <child joint="b4j3"/>
         </link>
-        <joint name="J4j3" marker="8" part="in-m-end-feet">
+        <joint name="b4j3" marker="8" part="in-m-end-feet">
             <parent link="b4l2"/>
         </joint>
     </beam>
@@ -140,7 +140,7 @@
             <parent link="b7l2"/>
             <child link="b7l3"/>
         </joint>
-        <link name="b7j3" length="70">
+        <link name="b7l3" length="70">
             <parent joint="b7j3"/>
             <child joint="b7j4"/>
         </link>
@@ -212,7 +212,7 @@
             <parent link="b9l2"/>
             <child link="b9l3"/>
         </joint>
-        <link name="b9j3" length="70">
+        <link name="b9l3" length="70">
             <parent joint="b9j3"/>
             <child joint="b9j4"/>
         </link>

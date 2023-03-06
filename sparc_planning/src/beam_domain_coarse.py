@@ -50,6 +50,16 @@ def generate_coarse_beam_domain():
         condition_object_instance_names=[['P2','P1']],
         condition_values=[True]
     ))
+    # fastened_transivity
+    state_constraints.append(StateConstraint(
+        object_instances={'B1':beam,'B2':beam, 'P1':pin},
+        head=fastened,
+        head_value=True,
+        head_object_instance_names=['B1','B2', 'P1'],
+        conditions=[fastened],
+        condition_object_instance_names=[['B2','B1','P1']],
+        condition_values=[True]
+    ))
     #CWA_next_to
     state_constraints.append(StateConstraint(
         object_instances={'P1':place,'P2':place},
@@ -238,7 +248,7 @@ def generate_coarse_beam_domain():
                         thru_not_in,
                         inception,
                         thru_ception]
-
+    
     #!pick_up action
     pick_up = ActionDefinition('pick_up', [robot, thing])
     ##puts thing into robots hand
@@ -501,7 +511,17 @@ def generate_coarse_beam_domain():
         conditions=[supported],
         condition_object_instance_names=[['B']],
         condition_values=[False],
-    )   
+    )
+    #heuristic for assembling pins before other beams
+    asem_ec9 = ExecutabilityCondition(
+        action = assemble,
+        object_instances={'R':robot, 'B1':beam, 'P':pin, 'B2':beam, 'B3':beam},
+        action_object_instance_names = ['R','B1'],
+        conditions = [in_assembly, in_assembly, fits_into, fastened],
+        condition_object_instance_names=[['B2'],['B3'],['B2','B3'],['B2','B3','P']],
+        condition_values = [True,True,True,False],
+    )
+    # assemble_action = Action(assemble,[asem_c1],[asem_ec1,asem_ec2,asem_ec3,asem_ec5,asem_ec6,asem_ec7,asem_ec8,asem_ec9])
     assemble_action = Action(assemble,[asem_c1],[asem_ec1,asem_ec2,asem_ec3,asem_ec5,asem_ec6,asem_ec7,asem_ec8])
 
     #!Fasten Action
@@ -559,7 +579,15 @@ def generate_coarse_beam_domain():
         condition_values=[True],
         condition_object_instance_names=[['B1','B2','P2']],
     )
-    fasten_action = Action(fasten,[f_c1],[f_ec1,f_ec2,f_ec3,f_ec4,f_ec5])
+    f_ec6 = ExecutabilityCondition(
+        action = fasten,
+        object_instances={'R':robot,'B1':beam,'B2':beam,'P1':pin,'L1':place,'L2':place},
+        action_object_instance_names=['R','B1','B2','P1'],
+        conditions=[location,location,Property('L1','L2',Relation.NOT_EQUAL)],
+        condition_values=[True,True,True],
+        condition_object_instance_names=[['B1','L1'],['R','L2'],['L1','L2']]
+    )
+    fasten_action = Action(fasten,[f_c1],[f_ec1,f_ec2,f_ec3,f_ec4,f_ec5,f_ec6])
 
     # domain_setup=['holds(in_assembly_c(b1),true,0).',
     #                     'holds(loc_c(b1,assembly_area),true,0).',
