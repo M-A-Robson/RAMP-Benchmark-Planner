@@ -7,23 +7,23 @@
 #const startStep = 5.
 
 sorts
-#approach_location = {b2a,p1a,b4a,p2a,p3a,p4a,b3a}.
-#place_c = {assembly_area}.
-#non_placement_location = {above_assembly_area}.
-#in_m_end = {j7,j3,j8,j4}.
-#beam = {b3,b2,b1,b4}.
-#in_f_end = {j5,j1,j6,j2}.
+#approach_location = {p4a,p1a,b4a,p2a,p3a,b3a,b2a}.
 #robot = {rob0}.
-#target_location = {p4t,b2t,p2t,p3t,p1t,b3t,b4t}.
-#link = {l2,l4,l3,l1}.
+#non_placement_location = {above_assembly_area}.
 #angle_m_end = {dummy_angle_m_end}.
-#joint = #in_f_end + #in_m_end.
-#thing = #beam.
-#coarse_res_sort = #thing + #place_c.
+#beam = {b1,b4,b3,b2}.
+#in_f_end = {j2,j1,j5,j6}.
+#in_m_end = {j3,j4,j8,j7}.
+#link = {l1,l3,l2,l4}.
+#target_location = {b4t,p1t,p4t,p3t,p2t,b2t,b3t}.
+#place_c = {assembly_area}.
 #assembly_location = #approach_location + #target_location.
-#object = #thing + #robot.
-#place_f = #non_placement_location + #assembly_location.
+#thing = #beam.
+#joint = #in_f_end + #in_m_end.
+#coarse_res_sort = #thing + #place_c.
 #beam_part = #link + #joint.
+#object = #robot + #thing.
+#place_f = #non_placement_location + #assembly_location.
 #thing_part = #beam_part.
 #fine_res_sort = #thing_part + #place_f.
 #action = putdown_f(#robot,#thing_part) + move_f(#robot,#place_f) + pick_up_f(#robot,#thing_part) + assemble_f_cap(#robot,#beam_part) + assemble_f_square(#robot,#beam_part).
@@ -240,10 +240,10 @@ assem_target_loc(b4,b4t).
 -holds(in_assembly_c(b1),false,5).
 -holds(in_hand_c(rob0,b4),false,5).
 -holds(loc_c(b1,assembly_area),false,5).
--holds(loc_c(b2,assembly_area),false,5).
 -holds(loc_f(b3,b3t),false,5).
--holds(loc_f(b2,b2t),false,5).
 -holds(loc_c(b3,assembly_area),false,5).
+-holds(loc_c(b2,assembly_area),false,5).
+-holds(loc_f(b2,b2t),false,5).
 -holds(supported_c(b3),false,5).
 -holds(supported_c(b2),false,5).
 -holds(supported_c(b4),false,5).
@@ -373,10 +373,10 @@ holds(loc_f(rob0,p4t),false,5).
 holds(loc_f(rob0,p3t),false,5).
 holds(in_hand_c(rob0,b4),true,5).
 holds(loc_c(b1,assembly_area),true,5).
-holds(loc_c(b2,assembly_area),true,5).
 holds(loc_f(b3,b3t),true,5).
-holds(loc_f(b2,b2t),true,5).
 holds(loc_c(b3,assembly_area),true,5).
+holds(loc_c(b2,assembly_area),true,5).
+holds(loc_f(b2,b2t),true,5).
 holds(loc_f(b2,p2a),false,5).
 holds(loc_f(b2,p3a),false,5).
 holds(loc_f(b2,b4t),false,5).

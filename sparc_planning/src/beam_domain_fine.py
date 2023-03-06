@@ -14,7 +14,10 @@ def generate_fine_beam_domain():
     in_m_end = BasicSort('in_m_end',['j3','j4','j7','j8'])
     in_f_end = BasicSort('in_f_end',['j1','j2','j5','j6'])
     angle_m_end = BasicSort('angle_m_end',[])
-    joint = SuperSort('joint', [in_m_end,in_f_end,angle_m_end])
+    thru_m = BasicSort('thru_m', [])
+    angle_f = BasicSort('angle_f', [])
+    thru_f = BasicSort('thru_f', [])
+    joint = SuperSort('joint', [in_m_end,in_f_end,angle_m_end,thru_m,angle_f,thru_f])
     beam_part = SuperSort('beam_part',[link,joint]) #mid_joint
     pin = BasicSort('pin',['p1','p2','p3','p4'])
     thing = SuperSort('thing', [beam,pin])
@@ -35,7 +38,7 @@ def generate_fine_beam_domain():
                                                 'nt_p3a','nt_p4a','nt_b1t','nt_b2t','nt_b3t','nt_b4t',
                                                 'nt_p1t','nt_p2t','nt_p3t','nt_p4t','nt_above_input',
                                                 'nt_above_intermediate','nt_above_assembly'])
-    input_locations = BasicSort('input_locations', ['b2i','b3i','b4i','p1i','p2i','p3i','p4i'])
+    input_locations = BasicSort('input_location', ['b2i','b3i','b4i','p1i','p2i','p3i','p4i'])
     assembly_loc = SuperSort('assembly_location', [approach_loc,target_loc,prerot_loc,through_loc])
     place_f = SuperSort('place_f', [assembly_loc, near_to_loc, input_locations, non_placement_loc])
     # need sets to allow for more than one refined sort type using the component keyword
@@ -1212,7 +1215,8 @@ def generate_fine_beam_domain():
     #!ALD
 
     sorts = [robot,beam,link,in_m_end,angle_m_end,in_f_end,joint,beam_part,pin,thing,thing_part,ob,place_c,non_placement_loc,
-    approach_loc,prerot_loc,through_loc,target_loc,assembly_loc,near_to_loc,input_locations,place_f,fine_res_sort,coarse_res_sort]
+    approach_loc,prerot_loc,through_loc,target_loc,assembly_loc,near_to_loc,input_locations,place_f,fine_res_sort,coarse_res_sort,
+    thru_m, thru_f, angle_f]
 
 
     actions = [put_down_action,

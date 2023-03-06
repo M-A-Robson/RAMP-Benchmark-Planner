@@ -3,12 +3,12 @@
 %% Author: MARK ROBSON 2023
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#const numSteps = 20.
+#const numSteps = 10.
 #const startStep = 0.
 
 sorts
 #robot = {rob0}.
-#beam = {b7,b4,b5,b8}.
+#beam = {b1,b2,b3,b4}.
 #pin = {p1,p2,p3,p4}.
 #thing = #beam + #pin.
 #object = #robot + #thing.
@@ -91,7 +91,7 @@ something_happened(I) :- occurs(A, I).
 :- not goal(I), not something_happened(I).
 
 % goal definition
-goal(I) :- holds(in_assembly_c(b8), true, I).
+goal(I) :- holds(in_assembly_c(b4), true, I).
 
 % domain setup
 % robot location coarse
@@ -119,11 +119,3 @@ holds(in_hand_c(rob0,p4),false,0).
 % coarse next_to location mapping
 next_to_c(input_area,intermediate_area).
 next_to_c(assembly_area,intermediate_area).
-fits_into_c(b4,b7).
-
-fits_into_c(b5,b7).
-
-fits_into_c(b4,b8).
-
-fits_into_c(b5,b8).
-

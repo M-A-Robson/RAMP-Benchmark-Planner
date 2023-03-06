@@ -3,6 +3,7 @@ import copy
 from beam_domain_coarse import generate_coarse_beam_domain
 from beam_domain_fine import generate_fine_beam_domain
 from example_domains.example_1 import generate_domain_setup
+# from example_domains.example_latest import generate_domain_setup
 import logging
 import asyncio
 from al_structures import ActionInstance, GoalDefinition
