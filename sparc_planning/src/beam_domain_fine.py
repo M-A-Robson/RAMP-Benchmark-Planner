@@ -1,4 +1,4 @@
-from planner.sparc_planning.src.al_structures import *
+from al_structures import *
 
 SAVE_DIR = '/home/local/MTC_ORI_Collab/sparc_planning/sparc_files/'
 
@@ -9,15 +9,14 @@ def generate_fine_beam_domain():
     #add beam and pin sorts (simple 4 beam set)
     beam = BasicSort('beam',['b1','b2','b3','b4'])
     link = BasicSort('link',['l1','l2','l3','l4'])
-    #!only end joints in this simple example set
-    #TODO define the other joint types (mid_joints)
     in_m_end = BasicSort('in_m_end',['j3','j4','j7','j8'])
     in_f_end = BasicSort('in_f_end',['j1','j2','j5','j6'])
+    in_f = BasicSort('in_f',[])
     angle_m_end = BasicSort('angle_m_end',[])
     thru_m = BasicSort('thru_m', [])
     angle_f = BasicSort('angle_f', [])
     thru_f = BasicSort('thru_f', [])
-    joint = SuperSort('joint', [in_m_end,in_f_end,angle_m_end,thru_m,angle_f,thru_f])
+    joint = SuperSort('joint', [in_m_end,in_f_end,angle_m_end,in_f,thru_m,angle_f,thru_f])
     beam_part = SuperSort('beam_part',[link,joint]) #mid_joint
     pin = BasicSort('pin',['p1','p2','p3','p4'])
     thing = SuperSort('thing', [beam,pin])
@@ -167,7 +166,7 @@ def generate_fine_beam_domain():
     ))
     #objects can only occuy one location
     state_constraints.append(StateConstraint(
-        object_instances={'P1':place_f,'P2':place_f, 'T':thing},
+        object_instances={'P1':place_f,'P2':place_f, 'T':ob},
         head=location,
         head_object_instance_names=['T','P1'],
         head_value=False,
@@ -177,7 +176,7 @@ def generate_fine_beam_domain():
     ))
     #objects can only occuy one coarse location
     state_constraints.append(StateConstraint(
-        object_instances={'P1':place_f,'P2':place_f, 'T':thing},
+        object_instances={'P1':place_f,'P2':place_f, 'T':ob},
         head=coarse_location,
         head_object_instance_names=['T','P1'],
         head_value=False,
@@ -198,7 +197,7 @@ def generate_fine_beam_domain():
     state_constraints.append(next_to_f_c)
     #location bridge axiom
     loc_bridge_axiom = StateConstraint(
-        object_instances={'C':place_f,'P':place_c,'T':thing},
+        object_instances={'C':place_f,'P':place_c,'T':ob},
         head=coarse_location,
         head_value=True,
         head_object_instance_names=['T','P'],
@@ -327,7 +326,6 @@ def generate_fine_beam_domain():
     )
                         
     ## rules govenerning fit interactions
-    ##TODO do we need these static rules if fits must be defined by designer anyway?
     inception = StateConstraint(
         object_instances={'B1':beam,'B2':beam},
         head=fits_into_c,
@@ -396,7 +394,26 @@ def generate_fine_beam_domain():
                         thru_not_in,
                         inception,
                         thru_ception]
-
+    
+    #CWA on fits_into_f and c
+    state_constraints.append(StateConstraint(
+        object_instances={'BP1':beam_part,'BP2':beam_part},
+        head=fits_into_f,
+        head_value=False,
+        head_object_instance_names=['BP1','BP2'],
+        conditions=[fits_into_f],
+        condition_object_instance_names=[['BP1','BP2']],
+        condition_values=[False]
+    ))
+    state_constraints.append(StateConstraint(
+        object_instances={'B1':beam,'B2':beam},
+        head=fits_into_c,
+        head_value=False,
+        head_object_instance_names=['B1','B2'],
+        conditions=[fits_into_c],
+        condition_object_instance_names=[['B1','B2']],
+        condition_values=[False]
+    ))
     #fastened bridge axiom
     state_constraints.append(StateConstraint(
         object_instances={'B1':beam,'B2':beam,'P':pin,'BP1':beam_part,'BP2':beam_part},
@@ -559,9 +576,9 @@ def generate_fine_beam_domain():
         action=pick_up,
         object_instances={'R':robot,'T1':thing_part, 'B':beam},
         action_object_instance_names=['R','T1'],
-        conditions=[component, Property('link','T1',Relation.IS_OF_SORT),Property('beam','B',Relation.IS_OF_SORT)],
-        condition_object_instance_names=[['B','T1'],['T1'],['B']],
-        condition_values=[True, False, True],
+        conditions=[component,Property('beam','B',Relation.IS_OF_SORT), Property('link','T1',Relation.IS_OF_SORT)],
+        condition_object_instance_names=[['B','T1'],['B'],['T1']],
+        condition_values=[True, True, False],
     )
     pick_up_action = Action(pick_up,[pu_c1,],[pu_ec1, pu_ec2, pu_ec3, pu_ec4])
 
@@ -1215,8 +1232,8 @@ def generate_fine_beam_domain():
     #!ALD
 
     sorts = [robot,beam,link,in_m_end,angle_m_end,in_f_end,joint,beam_part,pin,thing,thing_part,ob,place_c,non_placement_loc,
-    approach_loc,prerot_loc,through_loc,target_loc,assembly_loc,near_to_loc,input_locations,place_f,fine_res_sort,coarse_res_sort,
-    thru_m, thru_f, angle_f]
+        approach_loc,prerot_loc,through_loc,target_loc,assembly_loc,near_to_loc,input_locations,place_f,fine_res_sort,coarse_res_sort,
+        thru_m, thru_f, angle_f, in_f]
 
 
     actions = [put_down_action,

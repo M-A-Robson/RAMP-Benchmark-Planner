@@ -9,7 +9,7 @@ import numpy as np
 import trimesh
 from matplotlib import pyplot as plt
 
-from planner.sparc_planning.src.al_structures import BasicSort, Sort
+from sparc_planning.src.al_structures import BasicSort, Sort
 
 class ElementType(Enum):
     LINK = 0
@@ -271,7 +271,7 @@ class Beam:
     def __repr__(self):
         return f"Beam: '{self.name}' --> {self.get_component_type_list()}"
 
-    def get_sparc_representation(self) -> Tuple[str,dict,str,str]:
+    def get_sparc_representation(self) -> Tuple[str,dict,List[str],List[str]]:
         """extract beam data for sparc program (needs to be put into correct places!)
         Returns:
             str: beam_name (add to list of sort:beam)
@@ -286,11 +286,11 @@ class Beam:
         for i in range(len(t)):
             key = [*d.keys()][t[i]]
             jd[key].append(parts_in_order[i])
-        component_relations = [f'component({self.name},{comp}).\n' for comp in parts_in_order]
+        component_relations = [f'component({self.name},{comp}).' for comp in parts_in_order]
         connection_relations = []
         for j in range(len(t)-1):
-            connection_relations.append(f"connected_to({parts_in_order[j]},{parts_in_order[j+1]}).\n")
-        return self.name, jd, ''.join(connection_relations), ''.join(component_relations)
+            connection_relations.append(f"connected_to({parts_in_order[j]},{parts_in_order[j+1]}).")
+        return self.name, jd, connection_relations, component_relations
     
     def get_connection_offsets(self)->dict[str:np.ndarray]:
         """hole offset positions by joint name for all joints in beam
@@ -356,26 +356,26 @@ class Connection:
     def to_sparc_coarse(self) -> str:
         if self.joint1.is_male():
             if self.joint1.type.value == 3:
-                return(f'fits_through_c({self.element1.name},{self.element2.name}).\n')
+                return(f'fits_through_c({self.element1.name},{self.element2.name}).')
             else:
-                return(f'fits_into_c({self.element1.name},{self.element2.name}).\n')
+                return(f'fits_into_c({self.element1.name},{self.element2.name}).')
         else:
             if self.joint2.type.value == 3:
-                return(f'fits_through_c({self.element2.name},{self.element1.name}).\n')
+                return(f'fits_through_c({self.element2.name},{self.element1.name}).')
             else:
-                return(f'fits_into_c({self.element2.name},{self.element1.name}).\n')
+                return(f'fits_into_c({self.element2.name},{self.element1.name}).')
             
     def to_sparc_fine(self) -> str:
         if self.joint1.is_male():
             if self.joint1.type.value == 3:
-                return(f'fits_through_f({self.joint1.name},{self.joint2.name}).\n')
+                return(f'fits_through_f({self.joint1.name},{self.joint2.name}).')
             else:
-                return(f'fits_into_f({self.joint1.name},{self.joint2.name}).\n')
+                return(f'fits_into_f({self.joint1.name},{self.joint2.name}).')
         else:
             if self.joint2.type.value == 3:
-                return(f'fits_through_f({self.joint2.name},{self.joint1.name}).\n')
+                return(f'fits_through_f({self.joint2.name},{self.joint1.name}).')
             else:
-                return(f'fits_into_f({self.joint2.name},{self.joint1.name}).\n')
+                return(f'fits_into_f({self.joint2.name},{self.joint1.name}).')
         
 @dataclass
 class BeamAssembly:
@@ -833,7 +833,7 @@ def load_beam_xml(beam_xml_file:str) -> list[Beam]:
                                     'parent': j_parent_n,
                                     'type':j_t,
                                     'marker':marker,})
-        logging.debug(beam_components)
+        #logging.debug(beam_components)
         # create beam components
         components = [BeamComponent(co["name"],co["type"], child = None, parent=None,length=co["length"], marker=co["marker"]) for co in beam_components]
 

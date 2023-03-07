@@ -1,4 +1,4 @@
-from planner.sparc_planning.src.sparc_io import run_sparc, parse_sparc_ouput
+from sparc_io import run_sparc, parse_sparc_ouput
 import time
 from typing import List
 import re

@@ -1,6 +1,6 @@
 import copy
 from typing import List, Dict, Tuple
-from beam_assembly_parser import Beam, BeamAssembly, BeamComponent
+from beam_assembly.beam_assembly_parser import Beam, BeamAssembly, BeamComponent
 import numpy as np
 import re
 import logging

@@ -2,7 +2,7 @@ import os
 import copy
 from beam_domain_coarse import generate_coarse_beam_domain
 from beam_domain_fine import generate_fine_beam_domain
-from example_domains.example_1 import generate_domain_setup
+from example_domains.example_latest import generate_domain_setup
 # from example_domains.example_latest import generate_domain_setup
 import logging
 import asyncio
@@ -11,6 +11,14 @@ from planning import plan
 from sparc_io import extract_states_from_answer_set
 from zooming import remove_chars_from_last_number, zoom
 import re
+
+from beam_assembly.beam_assembly_parser import load_beam_xml, load_assembly_xml
+from beam_assembly.beam_to_sparc import create_sparc_data
+
+
+MIN_COARSE_PLAN_LENGTH = 10
+MAX_COARSE_PLAN_LENGTH = 30
+
 
 # set up logging
 logger = logging.basicConfig(level=logging.INFO, 
@@ -24,17 +32,59 @@ async def main():
     fine = generate_fine_beam_domain()
     #fine.save_AL('/home/local/MTC_ORI_Collab/sparc_planning/action_lang_files/fine_beam_AL.txt')
 
-    coarse_fluents, coarse_statics, fine_fluents, fine_statics = generate_domain_setup()
+    beams = load_beam_xml(os.path.join(os.environ['PLANNER_PATH'], "example_beamset_latest.xml"))
+    assem = load_assembly_xml(beams, os.path.join(os.environ['PLANNER_PATH'], "assembly_latest.xml"))
+    
+    # scene = assem.create_display_scene()
+    # scene.show()
+
+    # generate sparc planner data from xml
+    coarse_sorts, xml_coarse_statics, fine_sorts, xml_fine_statics = create_sparc_data(assem)
+    coarse_sort_dict = dict(zip([s.name for s in coarse_sorts], coarse_sorts))
+    fine_sort_dict = dict(zip([s.name for s in fine_sorts], fine_sorts))
+
+    logging.debug(f'Fine sorts: {[s.name for s in fine_sorts]}')
+
+    # override coarse sorts with xml derived data
+    for sort in coarse.sorts:
+        if sort.name in coarse_sort_dict.keys():
+            sort.instances = coarse_sort_dict[sort.name].instances
+    # override fine sorts with xml derived data
+    for sort in fine.sorts:
+        if sort.name in fine_sort_dict.keys():
+            sort.instances = fine_sort_dict[sort.name].instances
+
+    # get domain setup data from python script
+    coarse_fluents, example_coarse_statics, fine_fluents, example_fine_statics = generate_domain_setup()
+    
+    # combine with xml derived data
+    coarse_statics = xml_coarse_statics + example_coarse_statics
+    fine_statics = xml_fine_statics + example_fine_statics
+
+    # update domain setup
     coarse.domain_setup = coarse_fluents + coarse_statics
     fine.domain_setup = fine_fluents + fine_statics
 
     # set a goal and create coarse sparc prog.
-    coarse.goal_description = [GoalDefinition('in_assembly_c',['b4'],True)]
+    coarse.goal_description = [
+        GoalDefinition('in_assembly_c',['b4'],True),
+        GoalDefinition('fastened_c',['b7','b4','p1'],True),
+        GoalDefinition('in_assembly_c',['b5'],True),
+        # GoalDefinition('fastened_c',['b7','b5','p2'],True),
+        # GoalDefinition('in_assembly_c',['b8'],True),
+        # GoalDefinition('fastened_c',['b5','b8','p3'],True),
+        # GoalDefinition('fastened_c',['b4','b8','p4'],True),
+        ]
     coarse_prog = coarse.to_sparc_program()
     coarse_prog.save(os.path.join(os.environ['PLANNER_PATH'], 'sparc_planning/sparc_files/temp.sp'))
 
+    # post full fine definition to file for debugging
+    fine_prog_test = fine.to_sparc_program()
+    fine_prog_test.save(os.path.join(os.environ['PLANNER_PATH'], 'sparc_planning/sparc_files/fine_unzoomed_temp.sp'))
+
     #run coarse planner
-    coarse_plan = await plan(os.path.join(os.environ['PLANNER_PATH'], 'sparc_planning/sparc_files/temp.sp'), max_length=10, min_length=1)
+    coarse_plan = await plan(os.path.join(os.environ['PLANNER_PATH'], 'sparc_planning/sparc_files/temp.sp'),
+                             max_length=MAX_COARSE_PLAN_LENGTH, min_length=MIN_COARSE_PLAN_LENGTH)
 
     #collect results
     coarse_states, coarse_actions = extract_states_from_answer_set(coarse_plan[0]) #[0] just takes first answer set (valid plan), further work could explore which route to take
@@ -69,6 +119,7 @@ async def main():
         # only recieve a partial state back from zoomed fine res system
         # need to update full state, so un-used fluents need to be progressed in time (did not change)
         updated_fluents = fine_states[-1].fluents
+
         # state strings are timestamped so this needs to be fixed for comparison
         s1flu = [remove_chars_from_last_number(f1) for f1 in fine_state_fluents if f1[0] != '%'] # if f1[0] != '%' ignores comment lines
         s2flu = [remove_chars_from_last_number(f2) for f2 in updated_fluents]
@@ -93,8 +144,21 @@ async def main():
         fine.start_step = fine_plan_length
         all_fine_actions += fine_actions
 
-    logging.info(f'Coarse Actions: {coarse_actions}')
-    logging.info(f'Fine Actions: {all_fine_actions}')
+        # check final locations of obejcts and assembly status
+        # fs8holds = [f for f in fine_state_fluents if not '-holds' in f]
+        # fs8holdstrue = [f for f in fs8holds if 'true' in f]
+        # fs8locations = [f for f in fs8holdstrue if 'loc_f' in f]
+        # fs8assm = [f for f in fs8holdstrue if 'in_assembly_c' in f]
+
+        # logging.debug(f'locations after fine plan: {fs8locations}')
+        # logging.debug(f'assembly status after fine plan: {fs8assm}')
+
+    
+    logging.info('\n=======RESULTS======\n')
+    logging.info(f'Coarse Actions: {coarse_actions}\n')
+    logging.info(f'Fine Actions: {all_fine_actions}\n')
+
+    
 
 if __name__ == "__main__":
     asyncio.run(main())

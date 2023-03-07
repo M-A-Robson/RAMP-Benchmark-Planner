@@ -1,5 +1,5 @@
 import os, sys
-from planner.sparc_planning.src.al_structures import *
+from al_structures import *
 
 SAVE_DIR = os.path.join(os.environ['PLANNER_PATH'], '/sparc_planning/sparc_files/')
 
@@ -248,6 +248,17 @@ def generate_coarse_beam_domain():
                         thru_not_in,
                         inception,
                         thru_ception]
+    
+    #CWA on fits_into_f and c
+    state_constraints.append(StateConstraint(
+        object_instances={'B1':beam,'B2':beam},
+        head=fits_into,
+        head_value=False,
+        head_object_instance_names=['B1','B2'],
+        conditions=[fits_into],
+        condition_object_instance_names=[['B1','B2']],
+        condition_values=[False]
+    ))
     
     #!pick_up action
     pick_up = ActionDefinition('pick_up', [robot, thing])
@@ -573,12 +584,13 @@ def generate_coarse_beam_domain():
     #can only fasten beams which dont already have a pin in
     f_ec5 = ExecutabilityCondition(
         action = fasten,
-        object_instances={'R':robot,'B1':beam,'BP2':beam,'P1':pin,'P2':pin},
+        object_instances={'R':robot,'B1':beam,'B2':beam,'P1':pin,'P2':pin},
         action_object_instance_names=['R','B1','B2','P1'],
         conditions=[fastened],
         condition_values=[True],
         condition_object_instance_names=[['B1','B2','P2']],
     )
+    # must be at beam location to perform fastening
     f_ec6 = ExecutabilityCondition(
         action = fasten,
         object_instances={'R':robot,'B1':beam,'B2':beam,'P1':pin,'L1':place,'L2':place},

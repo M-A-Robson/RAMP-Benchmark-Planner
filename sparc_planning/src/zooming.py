@@ -1,8 +1,8 @@
 import copy
 from typing import List, Tuple
 import re
-from planner.sparc_planning.src.al_structures import Action, ActionLangSysDesc, FuncType, GoalDefinition, Property, Relation, SortType, BasicSort, SuperSort, Func, ActionInstance
-from planner.sparc_planning.src.sparc_io import SparcState
+from al_structures import Action, ActionLangSysDesc, FuncType, GoalDefinition, Property, Relation, SortType, BasicSort, SuperSort, Func, ActionInstance
+from sparc_io import SparcState
 import re
 import logging
 
@@ -110,34 +110,41 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DH:ActionLangSysDesc, 
             # want to check if state 1 contains func(objects including aH objects)
             # if state one domain setup contains any gound instance e.g. loc_c(rob0, \w+)
             # then the other objects in that gound instance are relevant  
-            for i in range(len(e.conditions)):
-                cond = e.conditions[i]
-                if isinstance(cond,Property): continue # ignore properties
-                object_monikers = e.condition_object_instance_names[i]
-                y = e.condition_values[i]
+
+            cond = e.conditions[i]
+            if isinstance(cond,Property): continue # ignore properties
+            object_monikers = e.condition_object_instance_names[i]
+            y = e.condition_values[i]
+            try:
                 object_sorts = [e.object_instances[o] for o in object_monikers]
-                for i in range(len(object_sorts)):
-                    s = object_sorts[i]
-                    sort_obs = DH.get_sort_objects(s)
-                    # look for instances with same name as our action objects from aH
-                    for act_ob in aoin:
-                        if act_ob in sort_obs: 
-                            query = ['\w+']*len(object_sorts)
-                            query[i] = act_ob
-                            if cond.func_type.value == FuncType.FLUENT.value:
-                                # find functions of the form holds(condition(x1,..,x2),bool
-                                res = re.findall("(?<!-)holds\("+cond.name+"\("+'\,'.join(query)+f"\)\,{str(y).lower()}", ' '.join(s1flu)) 
-                                res = [r[6:] for r in res] # remove "holds("
-                            if cond.func_type.value == FuncType.STATIC.value:
-                                term = '(?<!-)'
-                                if y == False: term = "-"
-                                res = re.findall(term+f"{cond.name}\("+'\,'.join(query)+'\)', ' '.join(s1.statics)) 
-                # parse relevant objects if found
-                if len(res) == 0 : continue
-                for func in res:
-                    for f in re.split('\(|\)|\,', func)[1:-1]:
-                        if f == '': continue
-                        relObConH.add(f)
+            except KeyError as err:
+                # catch for debugging explanation!
+                logging.fatal(err)
+                logging.fatal(f'trying to parse coarse ec: {e.to_sparc()}')
+                logging.fatal('this may occur if the sorts of executatbility condition at the coarse level are not properly defined')
+                raise err
+            for i in range(len(object_sorts)):
+                s = object_sorts[i]
+                sort_obs = DH.get_sort_objects(s)
+                # look for instances with same name as our action objects from aH
+                for act_ob in aoin:
+                    if act_ob in sort_obs: 
+                        query = ['\w+']*len(object_sorts)
+                        query[i] = act_ob
+                        if cond.func_type.value == FuncType.FLUENT.value:
+                            # find functions of the form holds(condition(x1,..,x2),bool
+                            res = re.findall("(?<!-)holds\("+cond.name+"\("+'\,'.join(query)+f"\)\,{str(y).lower()}", ' '.join(s1flu)) 
+                            res = [r[6:] for r in res] # remove "holds("
+                        if cond.func_type.value == FuncType.STATIC.value:
+                            term = '(?<!-)'
+                            if y == False: term = "-"
+                            res = re.findall(term+f"{cond.name}\("+'\,'.join(query)+'\)', ' '.join(s1.statics)) 
+            # parse relevant objects if found
+            if len(res) == 0 : continue
+            for func in res:
+                for f in re.split('\(|\)|\,', func)[1:-1]:
+                    if f == '': continue
+                    relObConH.add(f)
 
     logging.debug(f'Relevant objects (coarse resolution): {relObConH}')
 
@@ -147,7 +154,7 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DH:ActionLangSysDesc, 
         # find component relations (expected format 'component(coarse, fine).')
         if 'component' in s:
             if s[0] == '%': continue # skip comment lines
-            #logging.debug(s)
+            logging.debug(s)
             obs = re.split('\(|\)|\,', s)[1:-1]
             # check that object is relevant at coarse level
             if obs[0] in relObConH:
@@ -292,6 +299,8 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DH:ActionLangSysDesc, 
                             if execut.conditions[_c].relation.value == Relation.IS_OF_SORT.value:
                                 if execut.conditions[_c].object1 not in sorts_DLRT_names:
                                     action_possible = False
+                                    logging.debug(f'Action: {act.action_def.name} Not possible as sort:{execut.conditions[_c].object1} not in scope')
+                                    logging.debug(f'Relevant Exec Cond: {execut.to_sparc()}')
                         else:
                             for sort_ in  execut.conditions[_c].sorts:
                                 if not sort.name in sorts_DLRT_names:

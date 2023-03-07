@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Dict, List, Optional, Tuple, Union
 from dataclasses import dataclass
 from enum import Enum, auto
-from planner.sparc_planning.src.sparc_io import SparcProg
+from sparc_planning.src.sparc_io import SparcProg
 import logging
 import itertools
 
@@ -58,7 +58,7 @@ class Sort:
         try:
             self.instances.remove(name)
         except ValueError:
-            logger.info(f'Instance: {name} not found in sort {self.name}.')
+            logger.warn(f'Instance: {name} not found in sort {self.name}.')
 
 
 class BasicSort(Sort):
@@ -285,6 +285,13 @@ class StateConstraint:
 
 @dataclass
 class ExecutabilityCondition:
+    """executability condition for action limits
+    
+    implementation detail: always put positive conditions before negetive
+    where possible. Otherwise, in zooming conditions are checked in order
+    so a #sort might eliminate the exec condition but a 'not #sort' might
+    cause the action to be removed prematurely.
+    """
     action:ActionDefinition
     object_instances: Dict[str,Sort]
     action_object_instance_names: List[str]
@@ -534,13 +541,13 @@ class ActionLangSysDesc:
 
     def to_sparc_program(self) -> SparcProg:
         # create constants
-        logging.info('Parsing constants...')
+        logging.debug('Parsing constants...')
         sparc_constants = [f'#const numSteps = {self.planning_steps}.', f'#const startStep = {self.start_step}.']
         if self.constants:
             sparc_constants += [c.to_sparc() for c in self.constants]
         
         # create sorts
-        logging.info('Parsing sorts...')
+        logging.debug('Parsing sorts...')
         sparc_sorts = [s.to_sparc() for s in self.sorts]
         # add action sort
         sparc_sorts.append(f"#action = {' + '.join([a.action_def.to_sparc() for a in self.actions])}.")
@@ -559,7 +566,7 @@ class ActionLangSysDesc:
 
         # create predicates
         # add statics
-        logging.info('Parsing predicates...')
+        logging.debug('Parsing predicates...')
         sparc_predicates = []
         if self.statics:
             sparc_predicates += [stat.to_sparc() for stat in self.statics]
@@ -571,7 +578,7 @@ class ActionLangSysDesc:
                               ]
         
         # create rules
-        logging.info('Parsing rules...')
+        logging.debug('Parsing rules...')
         rules = []
         # state constraints
         if self.state_constraints:
@@ -583,12 +590,12 @@ class ActionLangSysDesc:
                     logging.error(e)
         # causal laws and executability conditions
         for a in self.actions:
-            logging.info(f'Parsing action: {a.action_def.name}...')
+            logging.debug(f'Parsing action: {a.action_def.name}...')
             rules.append('')
             rules += [c.to_sparc() for c in a.causal_laws]
             rules += [e.to_sparc() for e in a.executability_conditions]
         # planning laws
-        logging.info('Adding planning rules...')
+        logging.debug('Adding planning rules...')
         rules += [ 
                 '',
                 r'% planning rules',
@@ -604,7 +611,7 @@ class ActionLangSysDesc:
                 ]
         
         # goal
-        logging.info('Parsing goal...')
+        logging.debug('Parsing goal...')
         goal = 'goal(I) :- '
         goal_items = [item.to_sparc() for item in self.goal_description]
         goal += f"{' , '.join(goal_items)}."
@@ -613,7 +620,7 @@ class ActionLangSysDesc:
         rules.append(goal)
 
         # domain setup
-        logging.info('Parsing domain setup...')
+        logging.debug('Parsing domain setup...')
         rules.append('')
         rules.append(r'% domain setup')
         rules += self.domain_setup
@@ -621,13 +628,13 @@ class ActionLangSysDesc:
 
     def to_action_language_description(self) -> List[str]:
         # create constants
-        logging.info('Parsing constants...')
+        logging.debug('Parsing constants...')
         _constants = []
         if self.constants:
             _constants = [c.to_AL() for c in self.constants]
         
         # create sorts
-        logging.info('Parsing sorts...')
+        logging.debug('Parsing sorts...')
         _sorts = [s.to_AL() for s in self.sorts]
         
         # define actions
@@ -643,13 +650,13 @@ class ActionLangSysDesc:
 
         # create predicates
         # add statics
-        logging.info('Parsing predicates...')
+        logging.debug('Parsing predicates...')
         _statics = []
         if self.statics:
             _statics = [stat.to_AL() for stat in self.statics]
         
         # create rules
-        logging.info('Parsing rules...')
+        logging.debug('Parsing rules...')
         _state_constraints = []
         # state constraints
         if self.state_constraints:
@@ -663,7 +670,7 @@ class ActionLangSysDesc:
         # causal laws and executability conditions
         _action_impl = []
         for a in self.actions:
-            logging.info(f'Parsing action: {a.action_def.name}...')
+            logging.debug(f'Parsing action: {a.action_def.name}...')
             _action_impl.append('')
             _action_impl += [c.to_AL() for c in a.causal_laws]
             _action_impl += [e.to_AL() for e in a.executability_conditions]

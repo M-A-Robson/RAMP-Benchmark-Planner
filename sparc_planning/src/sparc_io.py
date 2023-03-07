@@ -206,7 +206,7 @@ def extract_states_from_answer_set(answer_set:List[str]) -> Tuple[List[SparcStat
 
     return states, actions 
 
-def run_sparc(sparc_file:str = './sparc_files/program.sp', output_file:str='sparc.out', sparc_location='/home/jyamada/projects/sparc'):
+def run_sparc(sparc_file:str = './sparc_files/program.sp', output_file:str='sparc.out', sparc_location='/home/local/sparc'):
     """runs SPARC to generate answerset file with all answersets
     requires SPARC install (https://github.com/iensen/sparc)
     Args:
