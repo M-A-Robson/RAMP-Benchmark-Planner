@@ -5,6 +5,9 @@ import os
 from typing import List, Optional, Tuple
 from sortedcollections import OrderedSet
 import re
+import os
+
+SPARC_LOC = os.environ['SPARC_PATH']
 
 @dataclass(frozen=True)
 class SparcState:
@@ -206,12 +209,13 @@ def extract_states_from_answer_set(answer_set:List[str]) -> Tuple[List[SparcStat
 
     return states, actions 
 
-def run_sparc(sparc_file:str = './sparc_files/program.sp', output_file:str='sparc.out', sparc_location='/home/local/sparc'):
+def run_sparc(sparc_file:str = './sparc_files/program.sp', output_file:str='sparc.out', sparc_location=SPARC_LOC):
     """runs SPARC to generate answerset file with all answersets
     requires SPARC install (https://github.com/iensen/sparc)
     Args:
         sparc_file (str, optional): input sparc file. Defaults to './sparc_files/program.sp'.
         output_file (str, optional): saved output. Defaults to 'sparc.out'.
+        sparc_locaiton (str, optional): location of sparc.jar defaults to os.environ['SPARC_PATH']
     """
     command = f'java -jar {sparc_location}/sparc.jar {sparc_file} -A >{output_file}'
     process =  subprocess.run(command, 

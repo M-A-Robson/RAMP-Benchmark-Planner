@@ -1,5 +1,10 @@
 # Outstanding Issues
 
+## General TODOs
+
+- [ ] add config file for file location setup
+- [ ] add usage instructions to README
+
 ## Coarse planning
 
 - [x] Need to add pushing in coarse planner level
