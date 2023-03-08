@@ -14,7 +14,7 @@ link
 in_m_end
 angle_m_end
 in_f_end
-joint, with subsorts: in_m_end , in_f_end , angle_m_end.
+joint, with subsorts: in_m_end , in_f_end , angle_m_end , in_f , thru_m , angle_f , thru_f.
 beam_part, with subsorts: link , joint.
 pin
 thing, with subsorts: beam , pin.
@@ -28,10 +28,14 @@ through_location
 target_location
 assembly_location, with subsorts: approach_location , target_location , prerot_location , through_location.
 near_to_location
-input_locations
-place_f, with subsorts: assembly_location , near_to_location , input_locations , non_placement_location.
+input_location
+place_f, with subsorts: assembly_location , near_to_location , input_location , non_placement_location.
 fine_res_sort, with subsorts: place_f , thing_part.
 coarse_res_sort, with subsorts: place_c , thing.
+thru_m
+thru_f
+angle_f
+in_f
 
 actions
 
@@ -109,6 +113,8 @@ supported_c(B1) if in_assembly_c(B2), fits_into_c(B2,B1)
 ¬fits_into_c(B1, B2) if fits_through_c(B1,B2)
 ¬fits_into_c(B1, B2) if fits_into_c(B2,B1)
 ¬fits_through_c(B1, B2) if fits_through_c(B2,B1)
+¬fits_into_f(BP1, BP2) if ¬fits_into_f(BP1,BP2)
+¬fits_into_c(B1, B2) if ¬fits_into_c(B1,B2)
 fastened_c(B1, B2, P) if fastened_f(BP1,BP2,P), component(B1,BP1), component(B2,BP2)
 fastened_f(BP1, BP2, P) if fastened_f(BP2,BP1,P)
 connected_to(BP1, BP2) if connected_to(BP2,BP1)
@@ -134,12 +140,14 @@ impossible move_f(R,P1) if in_hand_f(R,BP), in_assembly_f(BP)
 impossible move_f(R,P1) if in_hand_f(R,P), fastened_c(B1,B2,P)
 impossible move_f(R,P2) if loc_f(R,P1), near_to(P1,P2)
 impossible move_f(R,P1) if in_hand_c(R,T1), target_location(P1)
+impossible move_f(R,P1) if in_hand_c(R,T1), through_location(P1)
+impossible move_f(R,P1) if in_hand_c(R,T1), prerot_location(P1)
 
 pick_up_f(R,T) causes in_hand_f(R,T) 
 impossible pick_up_f(R,P) if loc_f(P,P1), loc_f(R,P2), P1!=P2
 impossible pick_up_f(R,TP) if loc_f(T1,P1), loc_f(R,P2), P1!=P2, component(T1,TP)
 impossible pick_up_f(R,T1) if in_hand_f(rob0,T2), thing_part(T2)
-impossible pick_up_f(R,T1) if component(B,T1), ¬link(T1), beam(B)
+impossible pick_up_f(R,T1) if component(B,T1), beam(B), ¬link(T1)
 
 assemble_f_cap(R,BP) causes loc_f(R,C) if assem_target_loc(B,C), component(B,BP)
 assemble_f_cap(R,BP) causes in_assembly_f(BP) 

@@ -22,24 +22,35 @@ def generate_coarse_beam_domain():
     fits_into = Func('fits_into_c', [beam,beam], FuncType.STATIC)
     fits_through = Func('fits_through_c',[beam,beam],FuncType.STATIC)
     is_capped_by = Func('is_capped_by',[beam,beam,beam],FuncType.STATIC)
+    base = Func('base',[beam],FuncType.STATIC)
 
-    statics = [next_to,fits_into,fits_through,is_capped_by]
+    statics = [next_to,fits_into,fits_through,is_capped_by,base]
 
     #!fluents
     in_hand = Func('in_hand_c', [robot,thing], FuncType.FLUENT)
     location = Func('loc_c', [ob,place], FuncType.FLUENT)
-    #current_grasp_mode = Func('current_grasp_mode', [robot, grasp_mode], FuncType.FLUENT)
-    # on = Func('on', [thing,thing], FuncType.FLUENT)
-    # clear = Func('clear', [thing], FuncType.FLUENT)
     # add beam domain fluents
     in_assembly = Func('in_assembly_c',[beam],FuncType.FLUENT)
     supported = Func('supported_c',[beam], FuncType.FLUENT)
     fastened = Func('fastened_c',[beam,beam,pin], FuncType.FLUENT)
+    misaligned = Func('misaligned_c', [beam], FuncType.FLUENT)
+    can_fasten = Func('can_fasten_c', [beam,beam], FuncType.FLUENT)
 
-    fluents = [in_hand,location,in_assembly,supported,fastened]
+    fluents = [in_hand,location,in_assembly,supported,
+               fastened, misaligned, can_fasten]
 
     #!state constraints
     state_constraints=[]
+    #CWA on base
+    state_constraints.append(StateConstraint(
+        head= base,
+        head_value= False,
+        head_object_instance_names=['B2'],
+        object_instances={'B1':beam,'B2':beam},
+        conditions=[base, Property('B1','B2',Relation.NOT_EQUAL)],
+        condition_object_instance_names=[['B1'],['B1','B2']],
+        condition_values=[True,True]
+    ))
     #next_to_transivity
     state_constraints.append(StateConstraint(
         object_instances={'P1':place,'P2':place},
@@ -80,36 +91,6 @@ def generate_coarse_beam_domain():
         condition_object_instance_names=[['T','P2'],['P1','P2']],
         condition_values=[True,True]
     ))
-    #CWA_grasp_mode
-    # state_constraints.append(StateConstraint(
-    #     object_instances={'R':robot,'G1':grasp_mode,'G2':grasp_mode},
-    #     head=current_grasp_mode,
-    #     head_object_instance_names=['R','G1'],
-    #     head_value=False,
-    #     conditions=[current_grasp_mode, Property('G1','G2',Relation.NOT_EQUAL)],
-    #     condition_object_instance_names=[['R','G2'],['G1','G2']],
-    #     condition_values=[True,True]
-    # ))
-    #objects on-top of another object share a location
-    # state_constraints.append(StateConstraint(
-    #     object_instances={'T1':thing,'T2':thing,'P1':place},
-    #     head=location,
-    #     head_object_instance_names=['T1','P1'],
-    #     head_value=True,
-    #     conditions=[location, on],
-    #     condition_object_instance_names=[['T2','P1'],['T1','T2']],
-    #     condition_values=[True,True]
-    # ))
-    # objects cannot be on top of themselves
-    # state_constraints.append(StateConstraint(
-    #     object_instances={'T1':thing,'T2':thing},
-    #     head=on,
-    #     head_object_instance_names=['T1','T2'],
-    #     head_value=False,
-    #     conditions=[Property('T1','T2',Relation.EQUAL)],
-    #     condition_object_instance_names=[['T1','T2']],
-    #     condition_values=[True]
-    # ))
     #if the robot is holding an object the object will move with it
     #this could alternatively be defined as a state constraint
     state_constraints.append(StateConstraint(
@@ -121,16 +102,6 @@ def generate_coarse_beam_domain():
         condition_object_instance_names=[['R','P1'],['R','T2'],['T1','T2']],
         condition_values=[True, True, True]
     ))
-    # objects are no longer clear if items put onto them
-    # state_constraints.append(StateConstraint(
-    #     object_instances={'T1':thing,'T2':thing},
-    #     head=clear,
-    #     head_object_instance_names=['T2'],
-    #     head_value=False,
-    #     conditions=[on],
-    #     condition_object_instance_names=[['T1','T2']],
-    #     condition_values=[True]
-    # ))
 
     #?beam domain state constraints
     capping_constraint = StateConstraint(
@@ -249,7 +220,7 @@ def generate_coarse_beam_domain():
                         inception,
                         thru_ception]
     
-    #CWA on fits_into_f and c
+    #CWA on fits_into_c
     state_constraints.append(StateConstraint(
         object_instances={'B1':beam,'B2':beam},
         head=fits_into,
@@ -271,38 +242,6 @@ def generate_coarse_beam_domain():
         fluent_object_instance_names=['R','T'],
         fluent_value=True
     )
-    ##removes objects from on top of other objects
-    # pu_c2 = CausalLaw(
-    #     action=pick_up,
-    #     object_instances={'R':robot,'T1':thing, 'T2':thing},
-    #     action_object_instance_names=['R','T1'],
-    #     fluent_affected=on,
-    #     fluent_object_instance_names=['T1','T2'],
-    #     fluent_value=False,
-    #     conditions=[on],
-    #     condition_object_instance_names=[['T1','T2']],
-    #     condition_values=[True],
-    # )
-    # pu_c3 = CausalLaw(
-    #     action=pick_up,
-    #     object_instances={'R':robot,'T1':thing, 'T2':thing},
-    #     action_object_instance_names=['R','T1'],
-    #     conditions=[on],
-    #     condition_object_instance_names=[['T1','T2']],
-    #     condition_values=[True],
-    #     fluent_affected=clear,
-    #     fluent_object_instance_names=['T2'],
-    #     fluent_value=True,
-    # )
-    ##cannot pick up unless clear
-    # pu_ec1 = ExecutabilityCondition(
-    #     action=pick_up,
-    #     object_instances={'R':robot,'T1':thing},
-    #     action_object_instance_names=['R','T1'],
-    #     conditions=[clear],
-    #     condition_object_instance_names=[['T1']],
-    #     condition_values=[False],
-    # )
     ##cannot pick up unless in same location
     pu_ec2 = ExecutabilityCondition(
         action=pick_up,
@@ -333,8 +272,6 @@ def generate_coarse_beam_domain():
         fluent_affected=location,
         fluent_value=True
         )
-
-    ## TODO - think about fastenening 
     # beam domain specific --> moving without releasing the pin will cause the joint to no longer be fastened
     m_c3 = CausalLaw(
         action=move,
@@ -381,10 +318,9 @@ def generate_coarse_beam_domain():
         object_instances={'R':robot,'P1':place,'B1':beam,'B2':beam, 'P':pin},
         action_object_instance_names=['R','P1'],
         conditions=[in_hand,fastened],
-        condition_object_instance_names=[['R','P1'],['B1','B2','P']],
+        condition_object_instance_names=[['R','P'],['B1','B2','P']],
         condition_values=[True,True],
     )
-
     move_action = Action(move, [m_c1], [m_ec1,m_ec2, m_ec3, m_ec4])
 
     #!put_down action
@@ -405,50 +341,12 @@ def generate_coarse_beam_domain():
         {'R':robot,'T':thing},
         ['R','T'],['R','T'],
         )
-    ##puts objects onto other objects
-    # pd_c2 = CausalLaw(put_down,
-    #     object_instances={'R':robot,'T1':thing,'T2':thing,'P1':place,},
-    #     action_object_instance_names=['R','T1'],
-    #     fluent_object_instance_names=['T1','T2'],
-    #     fluent_affected=on,
-    #     fluent_value=True,
-    #     conditions=[location,location,clear, Property('T1','T2', Relation.NOT_EQUAL)],
-    #     condition_object_instance_names=[['R','P1'],['T2','P1'],['T2'], ['T1','T2']],
-    #     condition_values=[True,True,True,True],
-    #     )
     put_down_action = Action(put_down,[pd_c1],[pd_ec1])
 
-    #!change_grasp_mode action
-    # cgm=ActionDefinition('change_grasp_mode',[robot,grasp_mode])
-    # cgm_c1 = CausalLaw(cgm,
-    #         fluent_affected=current_grasp_mode,
-    #         fluent_value=True,
-    #         fluent_object_instance_names=['R','G'],
-    #         action_object_instance_names=['R','G'],
-    #         object_instances={'R':robot,'G':grasp_mode},
-    #         )
-    # ##cannot change to graspmode if already using it
-    # cgm_ec1 = ExecutabilityCondition(
-    #     cgm,
-    #     object_instances={'R':robot,'G1':grasp_mode,'G2':grasp_mode},
-    #     action_object_instance_names=['R','G1'],
-    #     conditions=[current_grasp_mode,Property('G1','G2',Relation.EQUAL)],
-    #     condition_values=[True,True],
-    #     condition_object_instance_names=[['R','G1'],['G1','G2']],
-    #     )
-    # ##cannot change grasp mode whilst holdiong an object
-    # cgm_ec2 = ExecutabilityCondition(
-    #     action= cgm,
-    #     object_instances={'R':robot,'G':grasp_mode,'T':thing},
-    #     action_object_instance_names=['R','G'],
-    #     conditions=[in_hand],
-    #     condition_values=[True],
-    #     condition_object_instance_names=[['R','T']],
-    #     )
-    # cgm_action=Action(cgm,[cgm_c1],[cgm_ec1,cgm_ec2])
 
     #!assemble action
     assemble = ActionDefinition('assemble',[robot,beam])
+    #causes in assembly
     asem_c1 = CausalLaw(
         action=assemble,
         fluent_affected=in_assembly,
@@ -456,6 +354,41 @@ def generate_coarse_beam_domain():
         object_instances={'R':robot,'B':beam},
         action_object_instance_names=['R','B'],
         fluent_object_instance_names=['B'],
+    )
+    #assembly causes misaligned of other assembled beams (apart from base beam which is fixed)
+    asem_c2 = CausalLaw(
+        action = assemble,
+        object_instances = {'R':robot, 'B1':beam, 'B2':beam},
+        fluent_affected = misaligned,
+        fluent_value=True,
+        fluent_object_instance_names=['B2'],
+        action_object_instance_names=['R','B1'],
+        conditions=[in_assembly,base,Property('B1','B2',Relation.NOT_EQUAL)],
+        condition_object_instance_names=[['B2'],['B2'],['B1','B2']],
+        condition_values=[True, False, True],
+    )
+    #assembled beams can be fastened together
+    asem_c3 = CausalLaw(
+        action = assemble,
+        object_instances = {'R':robot, 'B1':beam, 'B2':beam},
+        fluent_affected = can_fasten,
+        fluent_value=True,
+        fluent_object_instance_names=['B1','B2'],
+        action_object_instance_names=['R','B1'],
+        conditions=[in_assembly,fits_into,Property('B1','B2',Relation.NOT_EQUAL)],
+        condition_object_instance_names=[['B2'],['B1','B2'],['B1','B2']],
+        condition_values=[True, True, True],
+    )
+    asem_c4 = CausalLaw(
+        action = assemble,
+        object_instances = {'R':robot, 'B1':beam, 'B2':beam},
+        fluent_affected = can_fasten,
+        fluent_value=True,
+        fluent_object_instance_names=['B1','B2'],
+        action_object_instance_names=['R','B1'],
+        conditions=[in_assembly,fits_through,Property('B1','B2',Relation.NOT_EQUAL)],
+        condition_object_instance_names=[['B2'],['B1','B2'],['B1','B2']],
+        condition_values=[True, True, True],
     )
     #beam must be held to assemble
     asem_ec1 = ExecutabilityCondition(
@@ -523,20 +456,34 @@ def generate_coarse_beam_domain():
         condition_object_instance_names=[['B']],
         condition_values=[False],
     )
-    #heuristic for assembling pins before other beams
+    # cannot assemble if other beams are misaligned
     asem_ec9 = ExecutabilityCondition(
+        action = assemble,
+        object_instances={'R':robot, 'B1':beam, 'B2':beam},
+        action_object_instance_names = ['R','B1'],
+        conditions = [in_assembly,misaligned],
+        condition_object_instance_names=[['B2'],['B2']],
+        condition_values = [True,True],
+    )
+    #heuristic for assembling pins before other beams
+    asem_ec10 = ExecutabilityCondition(
         action = assemble,
         object_instances={'R':robot, 'B1':beam, 'P':pin, 'B2':beam, 'B3':beam},
         action_object_instance_names = ['R','B1'],
-        conditions = [in_assembly, in_assembly, fits_into, fastened],
-        condition_object_instance_names=[['B2'],['B3'],['B2','B3'],['B2','B3','P']],
-        condition_values = [True,True,True,False],
+        conditions = [can_fasten, Property('B1','B2',Relation.NOT_EQUAL), Property('B1','B3',Relation.NOT_EQUAL)],
+        condition_object_instance_names=[['B2','B3'],['B1','B2'],['B1','B3']],
+        condition_values = [True,True,True],
     )
     # assemble_action = Action(assemble,[asem_c1],[asem_ec1,asem_ec2,asem_ec3,asem_ec5,asem_ec6,asem_ec7,asem_ec8,asem_ec9])
-    assemble_action = Action(assemble,[asem_c1],[asem_ec1,asem_ec2,asem_ec3,asem_ec5,asem_ec6,asem_ec7,asem_ec8])
+    assemble_action = Action(assemble,
+                             [asem_c1,asem_c2, asem_c3, asem_c4],
+                             [asem_ec1,asem_ec2,asem_ec3,asem_ec5,
+                              asem_ec6,asem_ec7,asem_ec8,asem_ec9,
+                              asem_ec10])
 
     #!Fasten Action
     fasten = ActionDefinition('fasten',[robot,beam,beam,pin])
+    # causes fastened state
     f_c1 = CausalLaw(
         action=fasten,
         fluent_affected=fastened,
@@ -544,6 +491,15 @@ def generate_coarse_beam_domain():
         object_instances={'R':robot,'B1':beam,'B2':beam,'P1':pin},
         action_object_instance_names=['R','B1','B2','P1'],
         fluent_object_instance_names=['B1','B2','P1'],
+    )
+    # causes can_fasten = False state
+    f_c2 = CausalLaw(
+        action=fasten,
+        fluent_affected=can_fasten,
+        fluent_value=False,
+        object_instances={'R':robot,'B1':beam,'B2':beam,'P1':pin},
+        action_object_instance_names=['R','B1','B2','P1'],
+        fluent_object_instance_names=['B1','B2'],
     )
     ## parts must be assembled to be fastened
     f_ec1 = ExecutabilityCondition(
@@ -599,21 +555,48 @@ def generate_coarse_beam_domain():
         condition_values=[True,True,True],
         condition_object_instance_names=[['B1','L1'],['R','L2'],['L1','L2']]
     )
-    fasten_action = Action(fasten,[f_c1],[f_ec1,f_ec2,f_ec3,f_ec4,f_ec5,f_ec6])
+    fasten_action = Action(fasten,
+                           [f_c1,f_c2],
+                           [f_ec1,f_ec2,f_ec3,f_ec4,f_ec5,f_ec6])
 
-    # domain_setup=['holds(in_assembly_c(b1),true,0).',
-    #                     'holds(loc_c(b1,assembly_area),true,0).',
-    #                     'holds(loc_c(b2,input_area),true,0).',
-    #                     'holds(loc_c(b3,input_area),true,0).',
-    #                     'holds(loc_c(b4,input_area),true,0).',
-    #                     'holds(loc_c(rob0,input_area),true,0).',
-    #                     'next_to_c(input_area,intermediate_area).',
-    #                     'next_to_c(assembly_area,intermediate_area).',
-    #                     'fits_into_c(b2, b1).',
-    #                     'fits_into_c(b3, b1).',
-    #                     'fits_into_c(b3, b4).',
-    #                     'fits_into_c(b2, b4).']
-    # goal = GoalDefinition(in_assembly,['b4'],True)
+    push = ActionDefinition('push',[robot,beam])
+    # pushing causes beam to no longer be misaligned
+    push_c1 = CausalLaw(
+        action=push,
+        fluent_affected=misaligned,
+        fluent_value=False,
+        object_instances={'R':robot,'B1':beam},
+        action_object_instance_names=['R','B1'],
+        fluent_object_instance_names=['B1'],
+    )
+    # must be at beam location to push
+    push_ec1 = ExecutabilityCondition(
+        action = push,
+        object_instances={'R':robot,'B1':beam,'L1':place,'L2':place},
+        action_object_instance_names=['R','B1'],
+        conditions=[location,location,Property('L1','L2',Relation.NOT_EQUAL)],
+        condition_values=[True,True,True],
+        condition_object_instance_names=[['B1','L1'],['R','L2'],['L1','L2']]
+    )
+    # beam to push must be in assembly
+    push_ec2 = ExecutabilityCondition(
+        action = push,
+        object_instances={'R':robot,'B1':beam},
+        action_object_instance_names=['R','B1'],
+        conditions=[in_assembly],
+        condition_values=[False],
+        condition_object_instance_names=[['B1']]
+    )
+    # cannot push whilst holding object
+    push_ec3 = ExecutabilityCondition(
+        action = push,
+        object_instances={'R':robot,'B1':beam,'T':thing},
+        action_object_instance_names=['R','B1'],
+        conditions=[in_hand, Property('thing','T',Relation.IS_OF_SORT)],
+        condition_values=[True,True],
+        condition_object_instance_names=[['R','T'],['T']]
+    )
+    push_action = Action(push,[push_c1],[push_ec1,push_ec2, push_ec3])
 
     #!ALD
     # example with 5 beams
@@ -622,7 +605,7 @@ def generate_coarse_beam_domain():
             statics=statics,
             state_constraints=state_constraints,
             inertial_fluents=fluents,
-            actions=[put_down_action,move_action,pick_up_action,assemble_action,fasten_action],
+            actions=[put_down_action,move_action,pick_up_action,assemble_action,fasten_action,push_action],
             domain_setup=[],
             goal_description=[],
             planning_steps=10)

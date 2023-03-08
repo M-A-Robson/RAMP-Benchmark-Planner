@@ -225,10 +225,12 @@ class StateConstraint:
     def to_AL(self) -> str:
         """returns AL string of form 'l if p0,..pm' """
         head_val = ''
-        if self.head_value == False: head_val = '¬'
-        head = f"{head_val}{self.head.name}"
-        if self.head_object_instance_names:
-            head += f"({', '.join(self.head_object_instance_names)})"
+        head = ''
+        if self.head:
+            if self.head_value == False: head_val = '¬'
+            head = f"{head_val}{self.head.name}"
+            if self.head_object_instance_names:
+                head += f"({', '.join(self.head_object_instance_names)})"
         if self.conditions:
             condition_strings = []
             for i in range(len(self.conditions)):
@@ -250,14 +252,15 @@ class StateConstraint:
     def to_sparc(self) -> str:
         """returns SPARC Rule string of form 'l :- p0,..pm.' """
         # form main causal relationship 'holds(l_in, value, I+1) :- occurs(a,I).
-        if self.head.func_type == FuncType.FLUENT:
-            head = f"holds({self.head.name}({','.join(self.head_object_instance_names)}), {str(self.head_value).lower()}, I) "
-        else: 
-            head = ''
-            if self.head_value == False: head = '-'
-            head += f"{self.head.name}"
-            if self.head_object_instance_names:
-                head += f"({','.join(self.head_object_instance_names)})"
+        head = ''
+        if self.head:
+            if self.head.func_type == FuncType.FLUENT:
+                head = f"holds({self.head.name}({','.join(self.head_object_instance_names)}), {str(self.head_value).lower()}, I) "
+            else: 
+                if self.head_value == False: head = '-'
+                head += f"{self.head.name}"
+                if self.head_object_instance_names:
+                    head += f"({','.join(self.head_object_instance_names)})"
         if not self.conditions:
             head += '.'
             return head
