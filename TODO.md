@@ -2,8 +2,7 @@
 
 ## General TODOs
 
-- [ ] add config file for file location setup
-- [ ] add usage instructions to README
+- [x] add usage instructions to README
 
 ## Coarse planning
 
@@ -26,6 +25,11 @@
 
 - [ ] bug choosing wrong assembly actions e.g. choosing assemble_cap when should be assemble_square, likely caused by missing low level information in zooming. state constraints for fits_into may need rules for \_f versions
 
-- [ ] performing assembly actions on links, limit to joints.
+  - added new constraints need to test behaviours
 
-- [ ] update with new features inherited from coarse level changes.
+- [x] performing assembly actions on links, limit to joints.
+
+- [x] update with new features inherited from coarse level changes.
+- [ ] test changes
+
+- [x] add heuristic to grasp near to beam centre

@@ -42,8 +42,8 @@ actions
 putdown_f(robot,thing_part)
 move_f(robot,place_f)
 pick_up_f(robot,thing_part)
-assemble_f_cap(robot,beam_part)
-assemble_f_square(robot,beam_part)
+assemble_f_cap(robot,joint)
+assemble_f_square(robot,joint)
 fasten(robot,joint,joint,pin)
 push(robot,beam)
 move_local(robot,place_f)
@@ -59,7 +59,10 @@ in_assembly_f(beam_part).
 supported_c(beam).
 supported_f(beam_part).
 fastened_c(beam, beam, pin).
-fastened_f(beam_part, beam_part, pin).
+fastened_f(joint, joint, pin).
+misaligned_c(beam).
+can_fasten_c(beam, beam).
+can_fasten_f(joint, joint).
 
 defined fluents
 
@@ -71,9 +74,9 @@ next_to_f(place_f, place_f).
 component(coarse_res_sort, fine_res_sort).
 near_to(near_to_location, place_f).
 fits_into_c(beam, beam).
-fits_into_f(beam_part, beam_part).
+fits_into_f(joint, joint).
 fits_through_c(beam, beam).
-fits_through_f(beam_part, beam_part).
+fits_through_f(joint, joint).
 is_capped_by(beam, beam, beam).
 connected_to(beam_part, beam_part).
 between(beam_part, beam_part, beam_part).
@@ -81,9 +84,11 @@ assem_approach_loc(thing, approach_location).
 assem_target_loc(thing, target_location).
 beam_through_loc(beam, through_location).
 beam_prerotate_loc(beam, prerot_location).
+base(beam).
 
 state constraints
 
+¬base(B2) if base(B1), B1!=B2
 ¬component(C1, P1) if place_c(P1), ¬place_f(C1)
 ¬component(C1, P1) if beam(P1), ¬beam_part(C1)
 next_to_f(C1, C2) if next_to_f(C2,C1)
@@ -102,17 +107,20 @@ supported_c(B1) if supported_f(P1), component(B1,P1)
 supported_f(P1) if supported_c(B1), component(B1,P1)
 in_assembly_c(B1) if in_assembly_f(P1), component(B1,P1)
 in_assembly_f(P1) if in_assembly_c(B1), component(B1,P1)
+¬fits_through_f(BP1, BP2) if component(B,B1), component(B,B2)
+¬fits_into_f(BP1, BP2) if component(B,B1), component(B,B2)
 is_capped_by(B1, B2, B3) if fits_into_c(B1,B2), fits_into_c(B1,B3), B2!=B3
 is_capped_by(B1, B2, B3) if is_capped_by(B1,B3,B2)
 ¬is_capped_by(B1, B2, B3) if ¬is_capped_by(B1,B2,B3)
 supported_c(B1) if in_assembly_c(B2), fits_into_c(B1,B2)
 supported_c(B1) if in_assembly_c(B2), fits_into_c(B2,B1)
-¬fits_into_c(B1, B2) if B1=B2
-¬fits_through_c(B1, B2) if B1=B2
-¬fits_through_c(B1, B2) if fits_into_c(B1,B2)
-¬fits_into_c(B1, B2) if fits_through_c(B1,B2)
-¬fits_into_c(B1, B2) if fits_into_c(B2,B1)
-¬fits_through_c(B1, B2) if fits_through_c(B2,B1)
+supported_c(B1) if in_assembly_c(B2), fits_through_c(B1,B2)
+¬fits_into_f(B1, B2) if B1=B2
+¬fits_through_f(B1, B2) if B1=B2
+¬fits_through_f(B1, B2) if fits_into_f(B1,B2)
+¬fits_into_f(B1, B2) if fits_through_f(B1,B2)
+¬fits_into_f(B1, B2) if fits_into_f(B2,B1)
+¬fits_through_f(B1, B2) if fits_through_f(B2,B1)
 ¬fits_into_f(BP1, BP2) if ¬fits_into_f(BP1,BP2)
 ¬fits_into_c(B1, B2) if ¬fits_into_c(B1,B2)
 fastened_c(B1, B2, P) if fastened_f(BP1,BP2,P), component(B1,BP1), component(B2,BP2)
@@ -148,10 +156,13 @@ impossible pick_up_f(R,P) if loc_f(P,P1), loc_f(R,P2), P1!=P2
 impossible pick_up_f(R,TP) if loc_f(T1,P1), loc_f(R,P2), P1!=P2, component(T1,TP)
 impossible pick_up_f(R,T1) if in_hand_f(rob0,T2), thing_part(T2)
 impossible pick_up_f(R,T1) if component(B,T1), beam(B), ¬link(T1)
+impossible pick_up_f(R,L1) if component(B,L1), component(B,L2), component(B,L3), L1!=L2, L1!=L3, L2!=L3, link(L1), link(L2), link(L3), ¬between(L1,L2,L3)
 
 assemble_f_cap(R,BP) causes loc_f(R,C) if assem_target_loc(B,C), component(B,BP)
 assemble_f_cap(R,BP) causes in_assembly_f(BP) 
+assemble_f_cap(R,J1) causes can_fasten_f(J2,J3) if component(B1,J1), component(B1,J2), component(B2,J3), fits_into_f(J3,J2), in_assembly_f(J3)
 assemble_f_cap(R,BP) causes loc_f(B1,C1) if in_assembly_c(B1), near_to(C1,C2), loc_f(B1,C2)
+assemble_f_cap(R,J) causes misaligned_c(B2) if in_assembly_c(B2), ¬base(B2), B1!=B2, component(B1,J)
 impossible assemble_f_cap(R,BP) if is_capped_by(B1,B2,B3), component(B1,BP), ¬is_capped_by(B4,B1,B5)
 impossible assemble_f_cap(R,BP) if component(B1,BP), loc_f(R,C1), assem_approach_loc(B1,C2), C1!=C2
 impossible assemble_f_cap(R,BP) if ¬in_hand_c(R,B), component(B,BP)
@@ -161,13 +172,16 @@ impossible assemble_f_cap(R,BP) if in_assembly_f(BP2), fits_through_f(BP2,BP)
 impossible assemble_f_cap(R,BP) if ¬in_assembly_c(B2), in_assembly_c(B3), is_capped_by(B2,B1,B3), B2!=B3, component(B1,BP)
 impossible assemble_f_cap(R,BP) if in_assembly_f(BP)
 impossible assemble_f_cap(R,BP) if ¬supported_f(BP)
-impossible assemble_f_cap(R,BP) if in_assembly_c(B2), beam(B2), loc_f(B2,C1), assem_target_loc(B2,C2), C1!=C2
+impossible assemble_f_cap(R,J) if in_assembly_c(B2), misaligned_c(B2), component(B1,J)
 impossible assemble_f_cap(R,BP) if loc_f(R,P), ¬assembly_location(P)
+impossible assemble_f_cap(R,B1) if can_fasten_f(B2,B3), B1!=B2, B1!=B3
 
 assemble_f_square(R,BP) causes loc_f(R,C) if assem_target_loc(B,C), component(B,BP), ¬angle_m_end(BP)
 assemble_f_square(R,BP) causes loc_f(R,C) if beam_prerotate_loc(B,C), component(B,BP), angle_m_end(BP)
 assemble_f_square(R,BP) causes in_assembly_f(BP) if ¬angle_m_end(BP)
+assemble_f_square(R,J1) causes can_fasten_f(J1,J2) if fits_into_f(J1,J2)
 assemble_f_square(R,BP) causes loc_f(B1,C1) if in_assembly_c(B1), near_to(C1,C2), loc_f(B1,C2)
+assemble_f_square(R,J) causes misaligned_c(B2) if in_assembly_c(B2), ¬base(B2), B1!=B2, component(B1,J)
 impossible assemble_f_square(R,BP) if is_capped_by(B1,B2,B3), component(B2,BP)
 impossible assemble_f_square(R,BP) if component(B1,BP), loc_f(R,C1), assem_approach_loc(B1,C2), C1!=C2
 impossible assemble_f_square(R,BP1) if fits_into_f(BP1,BP2), ¬in_assembly_f(BP2)
@@ -178,11 +192,13 @@ impossible assemble_f_square(R,BP) if in_assembly_f(BP2), fits_through_f(BP2,BP)
 impossible assemble_f_square(R,BP) if ¬in_assembly_c(B2), in_assembly_c(B3), is_capped_by(B2,B1,B3), B2!=B3, component(B1,BP)
 impossible assemble_f_square(R,BP) if in_assembly_f(BP)
 impossible assemble_f_square(R,BP) if ¬supported_f(BP)
-impossible assemble_f_square(R,BP) if in_assembly_c(B2), beam(B2), loc_f(B2,C1), assem_target_loc(B2,C2), C1!=C2
+impossible assemble_f_square(R,J) if in_assembly_c(B2), misaligned_c(B2), component(B1,J)
 impossible assemble_f_square(R,BP) if loc_f(R,P), ¬assembly_location(P)
+impossible assemble_f_square(R,B1) if can_fasten_f(B2,B3), B1!=B2, B1!=B3
 
 fasten(R,B1,B2,P1) causes fastened_f(B1,B2,P1) 
 fasten(R,B1,B2,P1) causes loc_f(R,C1) if assem_target_loc(P1,C1)
+fasten(R,B1,B2,P1) causes ¬can_fasten_f(B1,B2) 
 impossible fasten(R,BP1,BP2,P1) if ¬in_assembly_f(BP1)
 impossible fasten(R,BP1,BP2,P1) if ¬in_assembly_f(BP2)
 impossible fasten(R,B1,B2,P1) if ¬in_hand_f(R,P1)
@@ -194,11 +210,10 @@ impossible fasten(R,BP1,BP2,P1) if fastened_f(BP1,BP2,P2)
 
 push(R,B) causes loc_f(B,C) if assem_target_loc(B,C)
 push(R,B) causes loc_f(R,C) if assem_target_loc(B,C)
+push(R,B1) causes ¬misaligned_c(B1) 
 impossible push(R,B) if ¬in_assembly_c(B)
 impossible push(R,B) if in_hand_c(R,T), thing(T)
-impossible push(R,B) if loc_f(R,C1), ¬near_to(C1,C2), assem_target_loc(B,C2)
 impossible push(R,B) if loc_f(R,C1), loc_f(B,C2), C1!=C2
-impossible push(R,B) if loc_f(R,C1), ¬near_to_location(C1)
 
 move_local(R,C1) causes loc_f(R,C1) 
 impossible move_local(R,C2) if loc_f(R,C1), ¬near_to(C1,C2)

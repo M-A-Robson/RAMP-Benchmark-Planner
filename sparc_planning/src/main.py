@@ -84,6 +84,7 @@ async def main():
     #fine_prog_test = fine.to_sparc_program()
     #fine_prog_test.save(os.path.join(os.environ['PLANNER_PATH'], 'sparc_planning/sparc_files/fine_unzoomed_temp.sp'))
 
+    logging.warn('Planning may take some time, plans over 45 steps may take >100 seconds')
     #run coarse planner
     coarse_plan = await plan(os.path.join(os.environ['PLANNER_PATH'], 'sparc_planning/sparc_files/temp.sp'),
                              max_length=MAX_COARSE_PLAN_LENGTH, min_length=MIN_COARSE_PLAN_LENGTH)

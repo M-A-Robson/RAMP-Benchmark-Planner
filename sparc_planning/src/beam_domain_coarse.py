@@ -83,7 +83,7 @@ def generate_coarse_beam_domain():
     ))
     #objects can only occuy one location
     state_constraints.append(StateConstraint(
-        object_instances={'P1':place,'P2':place, 'T':thing},
+        object_instances={'P1':place,'P2':place, 'T':ob},
         head=location,
         head_object_instance_names=['T','P1'],
         head_value=False,
