@@ -107,8 +107,8 @@ supported_c(B1) if supported_f(P1), component(B1,P1)
 supported_f(P1) if supported_c(B1), component(B1,P1)
 in_assembly_c(B1) if in_assembly_f(P1), component(B1,P1)
 in_assembly_f(P1) if in_assembly_c(B1), component(B1,P1)
-¬fits_through_f(BP1, BP2) if component(B,B1), component(B,B2)
-¬fits_into_f(BP1, BP2) if component(B,B1), component(B,B2)
+¬fits_through_f(BP1, BP2) if component(B,BP1), component(B,BP2)
+¬fits_into_f(BP1, BP2) if component(B,BP1), component(B,BP2)
 is_capped_by(B1, B2, B3) if fits_into_c(B1,B2), fits_into_c(B1,B3), B2!=B3
 is_capped_by(B1, B2, B3) if is_capped_by(B1,B3,B2)
 ¬is_capped_by(B1, B2, B3) if ¬is_capped_by(B1,B2,B3)
@@ -123,6 +123,8 @@ supported_c(B1) if in_assembly_c(B2), fits_through_c(B1,B2)
 ¬fits_through_f(B1, B2) if fits_through_f(B2,B1)
 ¬fits_into_f(BP1, BP2) if ¬fits_into_f(BP1,BP2)
 ¬fits_into_c(B1, B2) if ¬fits_into_c(B1,B2)
+¬fits_through_f(BP1, BP2) if ¬fits_through_f(BP1,BP2)
+¬fits_through_c(B1, B2) if ¬fits_through_c(B1,B2)
 fastened_c(B1, B2, P) if fastened_f(BP1,BP2,P), component(B1,BP1), component(B2,BP2)
 fastened_f(BP1, BP2, P) if fastened_f(BP2,BP1,P)
 connected_to(BP1, BP2) if connected_to(BP2,BP1)
@@ -133,6 +135,7 @@ between(BP1, BP2, BP3) if between(BP4,BP1,BP3), between(BP5,BP1,BP3)
 between(BP1, BP2, BP3) if between(BP1,BP3,BP2)
 fits_into_c(B1, B2) if fits_into_f(D1,D2), component(B1,D1), component(B2,D2)
 fits_through_c(B1, B2) if fits_through_f(D1,D2), component(B1,D1), component(B2,D2)
+can_fasten_c(B1, B2) if can_fasten_f(BP1,BP2), component(B1,BP1), component(B2,BP2)
 
 action causal laws and executability conditions
 
@@ -160,7 +163,7 @@ impossible pick_up_f(R,L1) if component(B,L1), component(B,L2), component(B,L3),
 
 assemble_f_cap(R,BP) causes loc_f(R,C) if assem_target_loc(B,C), component(B,BP)
 assemble_f_cap(R,BP) causes in_assembly_f(BP) 
-assemble_f_cap(R,J1) causes can_fasten_f(J2,J3) if component(B1,J1), component(B1,J2), component(B2,J3), fits_into_f(J3,J2), in_assembly_f(J3)
+assemble_f_cap(R,J1) causes can_fasten_f(J3,J2) if component(B1,J1), component(B1,J2), component(B2,J3), fits_into_f(J3,J2), in_assembly_f(J3)
 assemble_f_cap(R,BP) causes loc_f(B1,C1) if in_assembly_c(B1), near_to(C1,C2), loc_f(B1,C2)
 assemble_f_cap(R,J) causes misaligned_c(B2) if in_assembly_c(B2), ¬base(B2), B1!=B2, component(B1,J)
 impossible assemble_f_cap(R,BP) if is_capped_by(B1,B2,B3), component(B1,BP), ¬is_capped_by(B4,B1,B5)
@@ -199,11 +202,12 @@ impossible assemble_f_square(R,B1) if can_fasten_f(B2,B3), B1!=B2, B1!=B3
 fasten(R,B1,B2,P1) causes fastened_f(B1,B2,P1) 
 fasten(R,B1,B2,P1) causes loc_f(R,C1) if assem_target_loc(P1,C1)
 fasten(R,B1,B2,P1) causes ¬can_fasten_f(B1,B2) 
+fasten(R,BP1,BP2,P1) causes ¬can_fasten_c(B1,B2) if component(B1,BP1), component(B2,BP2)
 impossible fasten(R,BP1,BP2,P1) if ¬in_assembly_f(BP1)
 impossible fasten(R,BP1,BP2,P1) if ¬in_assembly_f(BP2)
 impossible fasten(R,B1,B2,P1) if ¬in_hand_f(R,P1)
-impossible fasten(R,BP1,BP2,P1) if loc_f(B1,C1), assem_target_loc(B1,C2), component(B1,BP1), C1!=C2
-impossible fasten(R,BP1,BP2,P1) if loc_f(B1,C1), assem_target_loc(B1,C2), component(B1,BP2), C1!=C2
+impossible fasten(R,BP1,BP2,P1) if misaligned_c(B1), component(B1,BP1)
+impossible fasten(R,BP1,BP2,P1) if misaligned_c(B1), component(B1,BP2)
 impossible fasten(R,BP1,BP2,P1) if loc_f(R,C1), assem_approach_loc(P1,C2), C1!=C2
 impossible fasten(R,BP1,BP2,P1) if ¬fits_into_f(BP1,BP2)
 impossible fasten(R,BP1,BP2,P1) if fastened_f(BP1,BP2,P2)

@@ -230,7 +230,7 @@ def generate_coarse_beam_domain():
         condition_object_instance_names=[['B1','B2']],
         condition_values=[False]
     ))
-    
+
     #!pick_up action
     pick_up = ActionDefinition('pick_up', [robot, thing])
     ##puts thing into robots hand
@@ -555,9 +555,26 @@ def generate_coarse_beam_domain():
         condition_values=[True,True,True],
         condition_object_instance_names=[['B1','L1'],['R','L2'],['L1','L2']]
     )
+    # cannot fasten misaligned beams
+    f_ec7 = ExecutabilityCondition(
+        action = fasten,
+        object_instances={'R':robot,'B1':beam,'B2':beam,'P1':pin},
+        action_object_instance_names=['R','B1','B2','P1'],
+        conditions=[misaligned],
+        condition_values=[True],
+        condition_object_instance_names=[['B1']]
+    )
+    f_ec8 = ExecutabilityCondition(
+        action = fasten,
+        object_instances={'R':robot,'B1':beam,'B2':beam,'P1':pin},
+        action_object_instance_names=['R','B1','B2','P1'],
+        conditions=[misaligned],
+        condition_values=[True],
+        condition_object_instance_names=[['B2']]
+    )
     fasten_action = Action(fasten,
                            [f_c1,f_c2],
-                           [f_ec1,f_ec2,f_ec3,f_ec4,f_ec5,f_ec6])
+                           [f_ec1,f_ec2,f_ec3,f_ec4,f_ec5,f_ec6, f_ec7, f_ec8])
 
     push = ActionDefinition('push',[robot,beam])
     # pushing causes beam to no longer be misaligned

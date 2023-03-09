@@ -3,7 +3,7 @@
 %% Author: MARK ROBSON 2023
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#const numSteps = 48.
+#const numSteps = 50.
 #const startStep = 0.
 
 sorts
@@ -87,6 +87,8 @@ holds(can_fasten_c(B1,B2), false, I+1) :- occurs(fasten(R,B1,B2,P1), I).
 -occurs(fasten(R,B1,B2,P1), I) :- not fits_into_c(B1,B2).
 -occurs(fasten(R,B1,B2,P1), I) :- holds(fastened_c(B1,B2,P2), true, I).
 -occurs(fasten(R,B1,B2,P1), I) :- holds(loc_c(B1,L1), true, I), holds(loc_c(R,L2), true, I), L1!=L2.
+-occurs(fasten(R,B1,B2,P1), I) :- holds(misaligned_c(B1), true, I).
+-occurs(fasten(R,B1,B2,P1), I) :- holds(misaligned_c(B2), true, I).
 
 holds(misaligned_c(B1), false, I+1) :- occurs(push(R,B1), I).
 -occurs(push(R,B1), I) :- holds(loc_c(B1,L1), true, I), holds(loc_c(R,L2), true, I), L1!=L2.
@@ -138,3 +140,4 @@ base(b7).
 % coarse next_to location mapping
 next_to_c(input_area,intermediate_area).
 next_to_c(assembly_area,intermediate_area).
+base(b7).

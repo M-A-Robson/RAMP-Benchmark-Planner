@@ -414,7 +414,7 @@ def generate_fine_beam_domain():
         head_object_instance_names=['BP1','BP2'],
         head_value=False,
         conditions=[component, component],
-        condition_object_instance_names=[['B','B1'],['B','B2']],
+        condition_object_instance_names=[['B','BP1'],['B','BP2']],
         condition_values=[True, True]
     ))
     state_constraints.append(
@@ -424,7 +424,7 @@ def generate_fine_beam_domain():
         head_object_instance_names=['BP1','BP2'],
         head_value=False,
         conditions=[component, component],
-        condition_object_instance_names=[['B','B1'],['B','B2']],
+        condition_object_instance_names=[['B','BP1'],['B','BP2']],
         condition_values=[True, True]
     ))
 
@@ -460,6 +460,27 @@ def generate_fine_beam_domain():
         condition_object_instance_names=[['B1','B2']],
         condition_values=[False]
     ))
+
+    #CWA on fits_through_f and c
+    state_constraints.append(StateConstraint(
+        object_instances={'BP1':joint,'BP2':joint},
+        head=fits_through_f,
+        head_value=False,
+        head_object_instance_names=['BP1','BP2'],
+        conditions=[fits_through_f],
+        condition_object_instance_names=[['BP1','BP2']],
+        condition_values=[False]
+    ))
+    state_constraints.append(StateConstraint(
+        object_instances={'B1':beam,'B2':beam},
+        head=fits_through_c,
+        head_value=False,
+        head_object_instance_names=['B1','B2'],
+        conditions=[fits_through_c],
+        condition_object_instance_names=[['B1','B2']],
+        condition_values=[False]
+    ))
+
     #fastened bridge axiom
     state_constraints.append(StateConstraint(
         object_instances={'B1':beam,'B2':beam,'P':pin,'BP1':joint,'BP2':joint},
@@ -572,6 +593,17 @@ def generate_fine_beam_domain():
         head_object_instance_names=['B1','B2'],
         conditions=[fits_through_f,component, component],
         condition_object_instance_names=[['D1','D2'],['B1','D1'],['B2','D2']],
+        condition_values=[True,True,True]
+    ))
+        
+    #bridge axiom on can_fasten
+    state_constraints.append(StateConstraint(
+        object_instances={'B1':beam,'B2':beam,'BP1':joint,'BP2':joint},
+        head=can_fasten_c,
+        head_value=True,
+        head_object_instance_names=['B1','B2'],
+        conditions=[can_fasten_f,component,component],
+        condition_object_instance_names=[['BP1','BP2'],['B1','BP1'],['B2','BP2']],
         condition_values=[True,True,True]
     ))
 
@@ -886,7 +918,7 @@ def generate_fine_beam_domain():
         fluent_value=True,
         object_instances={'R':robot,'J1':joint,'J2':joint,'J3':joint,'B1':beam,'B2':beam},
         action_object_instance_names=['R','J1'],
-        fluent_object_instance_names=['J2','J3'],
+        fluent_object_instance_names=['J3','J2'],
         conditions=[component,component,component,fits_into_f,in_assembly_f],
         condition_object_instance_names=[['B1','J1'],['B1','J2'],['B2','J3'],['J3','J2'],['J3']],
         condition_values=[True,True,True,True,True],
@@ -1177,6 +1209,17 @@ def generate_fine_beam_domain():
         action_object_instance_names=['R','B1','B2','P1'],
         fluent_object_instance_names=['B1','B2']
     )
+    f_c4 = CausalLaw(
+        action=fasten,
+        fluent_affected=can_fasten_c,
+        fluent_value=False,
+        object_instances={'R':robot,'BP1':joint,'BP2':joint,'P1':pin},
+        action_object_instance_names=['R','BP1','BP2','P1'],
+        fluent_object_instance_names=['B1','B2'],
+        conditions=[component,component],
+        condition_object_instance_names=[['B1','BP1'],['B2','BP2']],
+        condition_values=[True,True]
+    )
     ## both beams must be in assembly to fasten them
     f_ec1 = ExecutabilityCondition(
         action= fasten,
@@ -1203,22 +1246,22 @@ def generate_fine_beam_domain():
         condition_values=[False],
         condition_object_instance_names=[['R','P1']],
     )
-    #parts must be at target_locations
+    ## parts must be at target_locations (i.e. not misaligned beams)
     f_ec4 = ExecutabilityCondition(
         action= fasten,
-        object_instances={'R':robot,'B1':beam,'BP1':joint,'BP2':joint,'P1':pin,'C1':place_f,'C2':place_f},
+        object_instances={'R':robot,'B1':beam,'BP1':joint,'BP2':joint,'P1':pin},
         action_object_instance_names=['R','BP1','BP2','P1'],
-        conditions=[location,assem_target_loc,component,Property('C1','C2',Relation.NOT_EQUAL)],
-        condition_values=[True,True,True,True],
-        condition_object_instance_names=[['B1','C1'],['B1','C2'],['B1','BP1'],['C1','C2']],
+        conditions=[misaligned_c,component],
+        condition_values=[True,True],
+        condition_object_instance_names=[['B1'],['B1','BP1']],
     )
     f_ec5 = ExecutabilityCondition(
         action= fasten,
-        object_instances={'R':robot,'B1':beam,'BP1':joint,'BP2':joint,'P1':pin,'C1':place_f,'C2':place_f},
+        object_instances={'R':robot,'B1':beam,'BP1':joint,'BP2':joint,'P1':pin},
         action_object_instance_names=['R','BP1','BP2','P1'],
-        conditions=[location,assem_target_loc,component,Property('C1','C2',Relation.NOT_EQUAL)],
-        condition_values=[True,True,True,True],
-        condition_object_instance_names=[['B1','C1'],['B1','C2'],['B1','BP2'],['C1','C2']],
+        conditions=[misaligned_c,component],
+        condition_values=[True,True],
+        condition_object_instance_names=[['B1'],['B1','BP2']],
     )
     #can only be used at pin approach location
     f_ec6 = ExecutabilityCondition(
@@ -1247,7 +1290,7 @@ def generate_fine_beam_domain():
         condition_values=[True],
         condition_object_instance_names=[['BP1','BP2','P2']],
     )
-    fasten_action = Action(fasten,[f_c1,f_c2,f_c3],
+    fasten_action = Action(fasten,[f_c1,f_c2,f_c3,f_c4],
                         [f_ec1,f_ec2,f_ec3,f_ec4,f_ec5,f_ec6,f_ec7,f_ec8])
 
 

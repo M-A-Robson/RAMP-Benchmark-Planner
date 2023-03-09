@@ -1,6 +1,7 @@
 """
 Simple beam assmebly domain with 4 beams and 4 pins,
-Beams and pins in input area,
+3 beams and 2 pins are assembled to target poisitions,
+Remaining beam and pins in input area,
 Robot starts above_input_area
 """
 
@@ -21,14 +22,18 @@ def generate_domain_setup() -> Tuple[List[str], List[str], List[str],List[str]]:
         'holds(loc_c(rob0,intermediate_area),true,0).',
         r'% assembly relations',
         'holds(in_assembly_c(b7),true,0).',
+        'holds(in_assembly_c(b4),true,0).',
+        'holds(in_assembly_c(b5),true,0).',
+        'holds(fastened_c(b7,b4,p1),true,0).',
+        'holds(fastened_c(b7,b5,p2),true,0).',
         r'% beam and pin locations coarse',
-        'holds(loc_c(p1,input_area),true,0).',
-        'holds(loc_c(p2,input_area),true,0).',
+        'holds(loc_c(p1,assembly_area),true,0).',
+        'holds(loc_c(p2,assembly_area),true,0).',
         'holds(loc_c(p3,input_area),true,0).',
         'holds(loc_c(p4,input_area),true,0).',
         'holds(loc_c(b7,assembly_area),true,0).',
-        'holds(loc_c(b4,input_area),true,0).',
-        'holds(loc_c(b5,input_area),true,0).',
+        'holds(loc_c(b4,assembly_area),true,0).',
+        'holds(loc_c(b5,assembly_area),true,0).',
         'holds(loc_c(b8,input_area),true,0).',
         r'% assert robots hand is empty at timestep 0',
         'holds(in_hand_c(rob0,b7),false,0).',
@@ -45,18 +50,19 @@ def generate_domain_setup() -> Tuple[List[str], List[str], List[str],List[str]]:
         'next_to_c(input_area,intermediate_area).',
         'next_to_c(assembly_area,intermediate_area).',
         'base(b7).',
-            ]
+        ]
     fine_fluents = coarse_fluents + [
         r'% robot location fine',
         'holds(loc_f(rob0,above_intermediate_area),true,0).',
         r'% beam and pin locations fine',
         'holds(loc_f(b7,b7t),true,0).',
-        'holds(loc_f(b4,b4i),true,0).',
-        'holds(loc_f(b5,b5i),true,0).',
+        'holds(loc_f(b4,b4t),true,0).',
+        'holds(loc_f(b5,b5t),true,0).',
         'holds(loc_f(b8,b8i),true,0).',
-        'holds(loc_f(p1,p1i),true,0).',
-        'holds(loc_f(p2,p2i),true,0).',
+        'holds(loc_f(p1,p1t),true,0).',
+        'holds(loc_f(p2,p2t),true,0).',
         'holds(loc_f(p3,p3i),true,0).',
+        'holds(loc_f(p4,p4i),true,0).',
         'holds(in_hand_f(rob0,b4j1),false,0).',
         'holds(in_hand_f(rob0,b4j2),false,0).',
         'holds(in_hand_f(rob0,b4j3),false,0).',
@@ -89,7 +95,6 @@ def generate_domain_setup() -> Tuple[List[str], List[str], List[str],List[str]]:
         'holds(in_hand_f(rob0,p2),false,0).',
         'holds(in_hand_f(rob0,p3),false,0).',
         'holds(in_hand_f(rob0,p4),false,0).',
-        'holds(loc_f(p4,p4i),true,0).',
     ]
     fine_statics = coarse_statics + [
         r'% next_to_f location map',

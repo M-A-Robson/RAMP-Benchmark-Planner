@@ -42,7 +42,7 @@ class Sort:
     def to_sparc(self) -> str:
         if self.sort_type == SortType.BASIC:
             if len(self.instances) == 0:
-                logging.warn(f'Adding dummy object to empty sort: {self.name}')
+                logging.warning(f'Adding dummy object to empty sort: {self.name}')
                 return f"#{self.name} = {{dummy_{self.name}}}."
             return f"#{self.name} = {{{','.join(self.instances)}}}."
         elif self.sort_type == SortType.SET:
@@ -58,7 +58,7 @@ class Sort:
         try:
             self.instances.remove(name)
         except ValueError:
-            logger.warn(f'Instance: {name} not found in sort {self.name}.')
+            logger.warning(f'Instance: {name} not found in sort {self.name}.')
 
 
 class BasicSort(Sort):
@@ -423,7 +423,7 @@ class ActionLangSysDesc:
         i_names = [inertial_fluent.name for inertial_fluent in self.inertial_fluents]
         for iflu in prog.inertial_fluents:
             if iflu.name in i_names:
-                logger.warn("Ignoring fluent '{iflu.name}' --> fluent with this name is already defined")
+                logger.warning("Ignoring fluent '{iflu.name}' --> fluent with this name is already defined")
             else:
                 self.inertial_fluents.append(iflu)
 
@@ -434,7 +434,7 @@ class ActionLangSysDesc:
             d_names = [d_fluent.name for d_fluent in self.d_fluents]
             for dflu in prog.defined_fluents:
                 if dflu.name in d_names:
-                    logger.warn("Ignoring fluent '{dflu.name}' --> fluent with this name is already defined")
+                    logger.warning("Ignoring fluent '{dflu.name}' --> fluent with this name is already defined")
                 else:
                     self.defined_fluents.append(dflu)
 
@@ -445,7 +445,7 @@ class ActionLangSysDesc:
             c_names = [c.name for c in self.constants]
             for cons in prog.constants:
                 if cons.name in c_names:
-                    logger.warn("Ignoring constant '{cons.name}' --> constant with this name is already defined")
+                    logger.warning("Ignoring constant '{cons.name}' --> constant with this name is already defined")
                 else:
                     self.constants.append(cons)
 
@@ -456,7 +456,7 @@ class ActionLangSysDesc:
             s_names = [s.name for s in self.statics]
             for stat in prog.statics:
                 if stat.name in s_names:
-                    logger.warn("Ignoring static '{stat.name}' --> static with this name is already defined")
+                    logger.warning("Ignoring static '{stat.name}' --> static with this name is already defined")
                 else:
                     self.statics.append(stat)
         
@@ -467,7 +467,7 @@ class ActionLangSysDesc:
         for act in prog.actions:
             a_names = [a.action_def.name for a in self.actions]
             if act.action_def.name in a_names:
-                logger.warn("Ignoring action '{act.action_def.name}' --> action with this name is already defined")
+                logger.warning("Ignoring action '{act.action_def.name}' --> action with this name is already defined")
                 continue
             self.actions.append(act)
 
