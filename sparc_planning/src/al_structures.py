@@ -215,7 +215,7 @@ class CausalLaw:
 @dataclass 
 class StateConstraint:
     object_instances: Dict[str,Sort]
-    head:Optional[Func] = None
+    head:Optional[Func|str] = None
     head_object_instance_names: Optional[List[str]] = None
     conditions: Optional[List[Union[Func,Property]]] = None
     condition_object_instance_names: Optional[List[List[str]]] = None
@@ -228,9 +228,11 @@ class StateConstraint:
         head = ''
         if self.head:
             if self.head_value == False: head_val = '¬'
-            head = f"{head_val}{self.head.name}"
-            if self.head_object_instance_names:
-                head += f"({', '.join(self.head_object_instance_names)})"
+            if isinstance(self.head,Func):
+                head = f"{head_val}{self.head.name}"
+                if self.head_object_instance_names:
+                    head += f"({', '.join(self.head_object_instance_names)})"
+            else: head = head_val + self.head
         if self.conditions:
             condition_strings = []
             for i in range(len(self.conditions)):
@@ -254,13 +256,17 @@ class StateConstraint:
         # form main causal relationship 'holds(l_in, value, I+1) :- occurs(a,I).
         head = ''
         if self.head:
-            if self.head.func_type == FuncType.FLUENT:
-                head = f"holds({self.head.name}({','.join(self.head_object_instance_names)}), {str(self.head_value).lower()}, I) "
-            else: 
+            if isinstance(self.head,Func):
+                if self.head.func_type == FuncType.FLUENT:
+                    head = f"holds({self.head.name}({','.join(self.head_object_instance_names)}), {str(self.head_value).lower()}, I) "
+                else: 
+                    if self.head_value == False: head = '-'
+                    head += f"{self.head.name}"
+                    if self.head_object_instance_names:
+                        head += f"({','.join(self.head_object_instance_names)})"
+            else:
                 if self.head_value == False: head = '-'
-                head += f"{self.head.name}"
-                if self.head_object_instance_names:
-                    head += f"({','.join(self.head_object_instance_names)})"
+                head += self.head
         if not self.conditions:
             head += '.'
             return head

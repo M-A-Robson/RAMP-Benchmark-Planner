@@ -65,11 +65,11 @@ def create_sparc_data(assem:BeamAssembly) -> Tuple[List[Sort],List[str],List[Sor
     beams = assem.get_beams()
     # extract beam connections (coarse domain description)
     beam_connections = [conn.to_sparc_coarse() for conn in assem.connections]
-    base_statement = f'base({assem.base.name}).'
-    beam_connections.append(base_statement)
     fine_beam_connections = [conn.to_sparc_fine() for conn in assem.connections]
     # create a pin for each conneciton
     pin_sort = BasicSort('pin',[f'p{i}' for i in range(1,len(beam_connections)+1)])
+    base_statement = f'base({assem.base.name}).'
+    beam_connections.append(base_statement)
     fine_statics = [f'component({pin},{pin}).' for pin in pin_sort.instances]
     beam_names = []
     fine_statics += fine_beam_connections

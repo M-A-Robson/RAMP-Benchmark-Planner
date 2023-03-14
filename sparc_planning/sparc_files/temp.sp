@@ -4,12 +4,12 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 #const numSteps = 50.
-#const startStep = 0.
+#const startStep = 34.
 
 sorts
 #robot = {rob0}.
 #beam = {b7,b4,b5,b8}.
-#pin = {p1,p2,p3,p4,p5}.
+#pin = {p1,p2,p3,p4}.
 #thing = #beam + #pin.
 #object = #robot + #thing.
 #place_c = {input_area,intermediate_area,assembly_area}.
@@ -89,6 +89,7 @@ holds(can_fasten_c(B1,B2), false, I+1) :- occurs(fasten(R,B1,B2,P1), I).
 -occurs(fasten(R,B1,B2,P1), I) :- holds(loc_c(B1,L1), true, I), holds(loc_c(R,L2), true, I), L1!=L2.
 -occurs(fasten(R,B1,B2,P1), I) :- holds(misaligned_c(B1), true, I).
 -occurs(fasten(R,B1,B2,P1), I) :- holds(misaligned_c(B2), true, I).
+-occurs(fasten(R,B1,B2,P1), I) :- holds(fastened_c(B3,B4,P1), true, I).
 
 holds(misaligned_c(B1), false, I+1) :- occurs(push(R,B1), I).
 -occurs(push(R,B1), I) :- holds(loc_c(B1,L1), true, I), holds(loc_c(R,L2), true, I), L1!=L2.
@@ -107,31 +108,111 @@ something_happened(I) :- occurs(A, I).
 :- not goal(I), not something_happened(I).
 
 % goal definition
-goal(I) :- holds(in_assembly_c(b4), true, I) , holds(fastened_c(b7,b4,p1), true, I) , holds(in_assembly_c(b5), true, I) , holds(fastened_c(b7,b5,p2), true, I) , holds(in_assembly_c(b8), true, I) , holds(fastened_c(b5,b8,p3), true, I) , holds(fastened_c(b4,b8,p4), true, I).
+goal(I) :- holds(in_assembly_c(b5), true, I) , holds(in_assembly_c(b4), true, I) , holds(in_assembly_c(b8), true, I) , holds(fastened_c(b4,b7,P0), true, I) , holds(fastened_c(b5,b7,P1), true, I) , holds(fastened_c(b4,b8,P2), true, I) , holds(fastened_c(b5,b8,P3), true, I).
 
 % domain setup
-% robot location coarse
-holds(loc_c(rob0,intermediate_area),true,0).
-% assembly relations
-holds(in_assembly_c(b7),true,0).
-% beam and pin locations coarse
-holds(loc_c(p1,input_area),true,0).
-holds(loc_c(p2,input_area),true,0).
-holds(loc_c(p3,input_area),true,0).
-holds(loc_c(p4,input_area),true,0).
-holds(loc_c(b7,assembly_area),true,0).
-holds(loc_c(b4,input_area),true,0).
-holds(loc_c(b5,input_area),true,0).
-holds(loc_c(b8,input_area),true,0).
-% assert robots hand is empty at timestep 0
-holds(in_hand_c(rob0,b7),false,0).
-holds(in_hand_c(rob0,b4),false,0).
-holds(in_hand_c(rob0,b5),false,0).
-holds(in_hand_c(rob0,b8),false,0).
-holds(in_hand_c(rob0,p1),false,0).
-holds(in_hand_c(rob0,p2),false,0).
-holds(in_hand_c(rob0,p3),false,0).
-holds(in_hand_c(rob0,p4),false,0).
+-holds(in_assembly_c(b5),false,34).
+-holds(in_assembly_c(b4),false,34).
+-holds(in_assembly_c(b7),false,34).
+-holds(fastened_c(b7,b5,p1),false,34).
+-holds(fastened_c(b5,b7,p1),false,34).
+-holds(supported_c(b7),false,34).
+-holds(supported_c(b8),false,34).
+-holds(supported_c(b4),false,34).
+-holds(supported_c(b5),false,34).
+-holds(can_fasten_c(b5,b7),true,34).
+holds(in_assembly_c(b5),true,34).
+holds(in_assembly_c(b4),true,34).
+holds(in_assembly_c(b7),true,34).
+holds(fastened_c(b7,b5,p1),true,34).
+holds(fastened_c(b5,b7,p1),true,34).
+holds(can_fasten_c(b5,b7),false,34).
+holds(supported_c(b7),true,34).
+holds(supported_c(b8),true,34).
+holds(supported_c(b4),true,34).
+holds(supported_c(b5),true,34).
+-holds(in_assembly_c(b8),false,34).
+-holds(fastened_c(b4,b7,p4),false,34).
+-holds(fastened_c(b7,b4,p4),false,34).
+-holds(in_hand_c(rob0,b8),false,34).
+-holds(loc_c(rob0,assembly_area),false,34).
+-holds(misaligned_c(b4),false,34).
+-holds(misaligned_c(b5),false,34).
+-holds(loc_c(b5,assembly_area),false,34).
+-holds(loc_c(b4,assembly_area),false,34).
+-holds(loc_c(b7,assembly_area),false,34).
+-holds(loc_c(p2,input_area),false,34).
+-holds(loc_c(p1,assembly_area),false,34).
+-holds(loc_c(b8,assembly_area),false,34).
+-holds(loc_c(p3,input_area),false,34).
+-holds(loc_c(p4,assembly_area),false,34).
+-holds(in_hand_c(rob0,p4),true,34).
+-holds(in_hand_c(rob0,p3),true,34).
+-holds(in_hand_c(rob0,p1),true,34).
+-holds(in_hand_c(rob0,p2),true,34).
+-holds(in_hand_c(rob0,b7),true,34).
+-holds(in_hand_c(rob0,b4),true,34).
+-holds(in_hand_c(rob0,b5),true,34).
+-holds(can_fasten_c(b4,b7),true,34).
+-holds(loc_c(rob0,input_area),true,34).
+-holds(loc_c(rob0,intermediate_area),true,34).
+-holds(loc_c(p4,input_area),true,34).
+-holds(loc_c(p4,intermediate_area),true,34).
+-holds(loc_c(p3,assembly_area),true,34).
+-holds(loc_c(p3,intermediate_area),true,34).
+-holds(loc_c(b8,input_area),true,34).
+-holds(loc_c(b8,intermediate_area),true,34).
+-holds(loc_c(p1,input_area),true,34).
+-holds(loc_c(p1,intermediate_area),true,34).
+-holds(loc_c(p2,assembly_area),true,34).
+-holds(loc_c(p2,intermediate_area),true,34).
+-holds(loc_c(b7,input_area),true,34).
+-holds(loc_c(b7,intermediate_area),true,34).
+-holds(loc_c(b4,input_area),true,34).
+-holds(loc_c(b4,intermediate_area),true,34).
+-holds(loc_c(b5,input_area),true,34).
+-holds(loc_c(b5,intermediate_area),true,34).
+holds(in_assembly_c(b8),true,34).
+holds(fastened_c(b4,b7,p4),true,34).
+holds(fastened_c(b7,b4,p4),true,34).
+holds(in_hand_c(rob0,b8),true,34).
+holds(loc_c(rob0,assembly_area),true,34).
+holds(in_hand_c(rob0,p4),false,34).
+holds(in_hand_c(rob0,p3),false,34).
+holds(in_hand_c(rob0,p1),false,34).
+holds(in_hand_c(rob0,p2),false,34).
+holds(in_hand_c(rob0,b7),false,34).
+holds(in_hand_c(rob0,b4),false,34).
+holds(in_hand_c(rob0,b5),false,34).
+holds(can_fasten_c(b4,b7),false,34).
+holds(misaligned_c(b4),true,34).
+holds(misaligned_c(b5),true,34).
+holds(loc_c(b5,assembly_area),true,34).
+holds(loc_c(b4,assembly_area),true,34).
+holds(loc_c(b7,assembly_area),true,34).
+holds(loc_c(p2,input_area),true,34).
+holds(loc_c(p1,assembly_area),true,34).
+holds(loc_c(b8,assembly_area),true,34).
+holds(loc_c(p3,input_area),true,34).
+holds(loc_c(p4,assembly_area),true,34).
+holds(loc_c(rob0,input_area),false,34).
+holds(loc_c(rob0,intermediate_area),false,34).
+holds(loc_c(p4,input_area),false,34).
+holds(loc_c(p4,intermediate_area),false,34).
+holds(loc_c(p3,assembly_area),false,34).
+holds(loc_c(p3,intermediate_area),false,34).
+holds(loc_c(b8,input_area),false,34).
+holds(loc_c(b8,intermediate_area),false,34).
+holds(loc_c(p1,input_area),false,34).
+holds(loc_c(p1,intermediate_area),false,34).
+holds(loc_c(p2,assembly_area),false,34).
+holds(loc_c(p2,intermediate_area),false,34).
+holds(loc_c(b7,input_area),false,34).
+holds(loc_c(b7,intermediate_area),false,34).
+holds(loc_c(b4,input_area),false,34).
+holds(loc_c(b4,intermediate_area),false,34).
+holds(loc_c(b5,input_area),false,34).
+holds(loc_c(b5,intermediate_area),false,34).
 fits_into_c(b4,b7).
 fits_into_c(b5,b7).
 fits_into_c(b4,b8).

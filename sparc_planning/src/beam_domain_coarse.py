@@ -572,9 +572,18 @@ def generate_coarse_beam_domain():
         condition_values=[True],
         condition_object_instance_names=[['B2']]
     )
+    # cannot re-use pins
+    f_ec9 = ExecutabilityCondition(
+        action = fasten,
+        object_instances={'R':robot,'B1':beam,'B2':beam,'B3':beam,'B4':beam,'P1':pin},
+        action_object_instance_names=['R','B1','B2','P1'],
+        conditions=[fastened],
+        condition_values=[True],
+        condition_object_instance_names=[['B3','B4','P1']]
+    )
     fasten_action = Action(fasten,
                            [f_c1,f_c2],
-                           [f_ec1,f_ec2,f_ec3,f_ec4,f_ec5,f_ec6, f_ec7, f_ec8])
+                           [f_ec1,f_ec2,f_ec3,f_ec4,f_ec5,f_ec6, f_ec7, f_ec8, f_ec9])
 
     push = ActionDefinition('push',[robot,beam])
     # pushing causes beam to no longer be misaligned

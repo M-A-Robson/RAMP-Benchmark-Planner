@@ -105,6 +105,7 @@ impossible fasten(R,B1,B2,P1) if fastened_c(B1,B2,P2)
 impossible fasten(R,B1,B2,P1) if loc_c(B1,L1), loc_c(R,L2), L1!=L2
 impossible fasten(R,B1,B2,P1) if misaligned_c(B1)
 impossible fasten(R,B1,B2,P1) if misaligned_c(B2)
+impossible fasten(R,B1,B2,P1) if fastened_c(B3,B4,P1)
 
 push(R,B1) causes ¬misaligned_c(B1) 
 impossible push(R,B1) if loc_c(B1,L1), loc_c(R,L2), L1!=L2

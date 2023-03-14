@@ -170,7 +170,8 @@ def parse_sparc_ouput(output_file:str='sparc.out') -> list[list[str]]:
         answer_sets = [a for a in a_sets if a != ['']]
     return answer_sets
 
-def extract_states_from_answer_set(answer_set:List[str]) -> Tuple[List[SparcState], List[str]]:
+def extract_states_from_answer_set(answer_set:List[str],
+                                   min_time_step:int = 0,) -> Tuple[List[SparcState], List[str]]:
     """extracts each state from answer set and planned actions
     Args:
         answer_set (List[str]): answer set parsed from sparc output
@@ -198,7 +199,7 @@ def extract_states_from_answer_set(answer_set:List[str]) -> Tuple[List[SparcStat
     max_time_step = max([int(re.findall('\d+', f)[-1]) for f in fluents])
     states = []
     actions = []
-    for i in range(max_time_step+1):
+    for i in range(min_time_step,max_time_step+1):
         # find fluents and occurs statements for this time step
         flu = [fluent+'.' for fluent in fluents if int(re.findall('\d+', fluent)[-1])==i]
         occurs_t = [occ for occ in occurs if (int(re.findall('\d+', occ)[-1])==i) and (occ[0]!='-')]
