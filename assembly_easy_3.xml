@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!-- This is a square goal assembly -->
+<!-- This is an easy assembly with 3 connections - looks like a rectangle -->
 <assembly>
     <component beam="b7" base="True"/>
     <component beam="b4" />

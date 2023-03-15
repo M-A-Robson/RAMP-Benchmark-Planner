@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!-- This is an easy assembly with 3 connections -->
+<!-- This is an easy assembly with 3 connections - looks like a w -->
 <assembly>
     <component beam="b7" base="True"/>
     <component beam="b4" />
