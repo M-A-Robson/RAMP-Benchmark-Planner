@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<!-- This is an easy assembly with 3 connections - looks like a 3 -->
+<assembly>
+    <component beam="b7" base="True"/>
+    <component beam="b4" />
+    <component beam="b9" />
+    <component beam="b8" flipped="True"/>
+    <connection name="C1">
+        <element component="b4" joint="b4j1" />
+        <element component="b7" joint="b7j1" />
+    </connection>
+    <connection name="C2">
+        <element component="b9" joint="b9j1" />
+        <element component="b4" joint="b4j2" />
+    </connection>
+    <connection name="C3">
+        <element component="b4" joint="b4j3" />
+        <element component="b8" joint="b8j1" />
+    </connection>
+</assembly>
