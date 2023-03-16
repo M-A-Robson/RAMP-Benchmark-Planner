@@ -7,29 +7,29 @@
 #const startStep = 81.
 
 sorts
-#link = {b7l1,b7l2,b8l2,b8l1,b8l3,b4l2,b7l4,b8l4,b7l3,b4l1}.
-#beam = {b7,b4,b8}.
-#target_location = {p3t,p4t,b5t,p2t,b7t,p1t,b4t,b8t,p5t}.
-#thru_f = {b7j3,b8j3}.
-#in_f_end = {b7j5,b8j1,b8j5,b7j1}.
 #angle_f = {b7j2,b7j4,b8j2,b8j4}.
-#in_f = {b4j2}.
-#in_m_end = {b4j1,b4j3}.
-#non_placement_location = {above_assembly_area}.
-#approach_location = {b8a,p3a,p5a,p1a,b5a,b7a,b4a,p2a,p4a}.
+#in_m_end = {b4j3,b4j1}.
 #angle_m_end = {dummy_angle_m_end}.
-#place_c = {assembly_area}.
+#in_f_end = {b7j1,b8j1,b7j5,b8j5}.
 #robot = {rob0}.
 #pin = {p4}.
-#joint = #thru_f + #in_f_end + #angle_f + #in_f + #in_m_end.
-#thing = #beam + #pin.
+#target_location = {b7t,p3t,b5t,p4t,p2t,p5t,p1t,b4t,b8t}.
+#approach_location = {b7a,b5a,b8a,p4a,p1a,b4a,p2a,p3a,p5a}.
+#place_c = {assembly_area}.
+#beam = {b4,b8,b7}.
+#thru_f = {b7j3,b8j3}.
+#non_placement_location = {above_assembly_area}.
+#in_f = {b4j2}.
+#link = {b7l3,b7l4,b7l2,b8l1,b8l2,b7l1,b4l2,b8l4,b8l3,b4l1}.
+#joint = #angle_f + #in_m_end + #in_f_end + #thru_f + #in_f.
+#beam_part = #joint + #link.
 #assembly_location = #target_location + #approach_location.
-#beam_part = #link + #joint.
+#thing = #beam + #pin.
+#coarse_res_sort = #thing + #place_c.
 #thing_part = #beam_part + #pin.
 #object = #thing + #robot.
 #place_f = #non_placement_location + #assembly_location.
-#fine_res_sort = #thing_part + #place_f.
-#coarse_res_sort = #thing + #place_c.
+#fine_res_sort = #place_f + #thing_part.
 #action = putdown_f(#robot,#thing_part) + move_f(#robot,#place_f) + pick_up_f(#robot,#thing_part) + assemble_f_cap(#robot,#joint) + assemble_f_square(#robot,#joint) + fasten(#robot,#joint,#joint,#pin) + push(#robot,#beam).
 #boolean = {true, false}.
 #outcome = {true, false, undet}.
@@ -297,29 +297,91 @@ next_to_f(above_assembly_area,p5t).
 base(b7).
 % next_to_f location map
 component(assembly_area,above_assembly_area).
+-holds(in_hand_f(rob0,p4),false,81).
+-holds(loc_f(b7,b7t),false,81).
+-holds(loc_f(b4,b4t),false,81).
+-holds(loc_f(b8,b8t),false,81).
+-holds(in_assembly_f(b7j1),false,81).
+-holds(in_assembly_f(b7j2),false,81).
+-holds(in_assembly_f(b7j5),false,81).
+-holds(in_assembly_f(b7j3),false,81).
+-holds(in_assembly_f(b7j4),false,81).
+-holds(in_assembly_f(b4j2),false,81).
+-holds(in_assembly_f(b4j3),false,81).
+-holds(in_assembly_f(b4j1),false,81).
+-holds(in_assembly_f(b8j2),false,81).
+-holds(in_assembly_f(b8j3),false,81).
+-holds(in_assembly_f(b8j1),false,81).
+-holds(in_assembly_f(b8j4),false,81).
+-holds(in_assembly_f(b8j5),false,81).
+-holds(can_fasten_f(b4j3,b8j1),false,81).
+-holds(can_fasten_c(b4,b8),false,81).
+-holds(in_assembly_c(b8),false,81).
+-holds(in_assembly_c(b4),false,81).
+-holds(in_assembly_c(b7),false,81).
+-holds(in_hand_c(rob0,p4),false,81).
+-holds(supported_f(b4j3),false,81).
+-holds(supported_f(b7j5),false,81).
+-holds(supported_f(b7j4),false,81).
+-holds(supported_f(b8l2),false,81).
+-holds(in_assembly_f(b8l3),false,81).
+-holds(supported_f(b7l3),false,81).
+-holds(in_assembly_f(b8l1),false,81).
+-holds(supported_f(b7j3),false,81).
+-holds(supported_f(b8j2),false,81).
+-holds(supported_f(b8l1),false,81).
+-holds(supported_f(b7l4),false,81).
+-holds(in_assembly_f(b8l2),false,81).
+-holds(supported_f(b4l1),false,81).
+-holds(in_assembly_f(b4l1),false,81).
+-holds(supported_f(b8j5),false,81).
+-holds(supported_f(b7j1),false,81).
+-holds(in_assembly_f(b4l2),false,81).
+-holds(in_assembly_f(b7l1),false,81).
+-holds(supported_f(b8j1),false,81).
+-holds(supported_f(b7l2),false,81).
+-holds(in_assembly_f(b8l4),false,81).
+-holds(supported_f(b4j1),false,81).
+-holds(supported_f(b8j3),false,81).
+-holds(supported_f(b7l1),false,81).
+-holds(loc_c(b4,assembly_area),false,81).
+-holds(loc_c(b7,assembly_area),false,81).
+-holds(supported_f(b4j2),false,81).
+-holds(supported_c(b8),false,81).
+-holds(loc_c(b8,assembly_area),false,81).
+-holds(supported_c(b7),false,81).
+-holds(supported_f(b8l4),false,81).
+-holds(in_assembly_f(b7l2),false,81).
+-holds(supported_f(b8j4),false,81).
+-holds(supported_f(b8l3),false,81).
+-holds(supported_f(b7j2),false,81).
+-holds(supported_c(b4),false,81).
+-holds(in_assembly_f(b7l3),false,81).
+-holds(supported_f(b4l2),false,81).
+-holds(in_assembly_f(b7l4),false,81).
+-holds(in_hand_f(rob0,b7l1),true,81).
 -holds(in_hand_f(rob0,b7l3),true,81).
 -holds(in_hand_f(rob0,b7l2),true,81).
--holds(in_hand_f(rob0,b7l1),true,81).
+-holds(in_hand_f(rob0,b7j1),true,81).
 -holds(in_hand_f(rob0,b7l4),true,81).
--holds(in_hand_f(rob0,b4l2),true,81).
--holds(in_hand_f(rob0,b4l1),true,81).
--holds(in_hand_f(rob0,b8l4),true,81).
--holds(in_hand_f(rob0,b8l3),true,81).
--holds(in_hand_f(rob0,b8l2),true,81).
--holds(in_hand_f(rob0,b8l1),true,81).
 -holds(in_hand_f(rob0,b7j3),true,81).
 -holds(in_hand_f(rob0,b7j2),true,81).
--holds(in_hand_f(rob0,b7j1),true,81).
 -holds(in_hand_f(rob0,b7j5),true,81).
 -holds(in_hand_f(rob0,b7j4),true,81).
--holds(in_hand_f(rob0,b4j3),true,81).
+-holds(in_hand_f(rob0,b4l1),true,81).
+-holds(in_hand_f(rob0,b4l2),true,81).
 -holds(in_hand_f(rob0,b4j2),true,81).
 -holds(in_hand_f(rob0,b4j1),true,81).
--holds(in_hand_f(rob0,b8j4),true,81).
--holds(in_hand_f(rob0,b8j5),true,81).
--holds(in_hand_f(rob0,b8j3),true,81).
+-holds(in_hand_f(rob0,b4j3),true,81).
+-holds(in_hand_f(rob0,b8l2),true,81).
+-holds(in_hand_f(rob0,b8l1),true,81).
+-holds(in_hand_f(rob0,b8l4),true,81).
+-holds(in_hand_f(rob0,b8l3),true,81).
 -holds(in_hand_f(rob0,b8j2),true,81).
 -holds(in_hand_f(rob0,b8j1),true,81).
+-holds(in_hand_f(rob0,b8j4),true,81).
+-holds(in_hand_f(rob0,b8j3),true,81).
+-holds(in_hand_f(rob0,b8j5),true,81).
 -holds(in_hand_c(rob0,b7),true,81).
 -holds(in_hand_c(rob0,b4),true,81).
 -holds(in_hand_c(rob0,b8),true,81).
@@ -398,86 +460,24 @@ component(assembly_area,above_assembly_area).
 -holds(loc_f(rob0,b4a),true,81).
 -holds(loc_f(rob0,p4t),true,81).
 -holds(loc_f(rob0,b5t),true,81).
--holds(loc_f(p4,b8a),true,81).
 -holds(loc_f(p4,b8t),true,81).
--holds(loc_f(p4,p3t),true,81).
--holds(loc_f(p4,b4a),true,81).
+-holds(loc_f(p4,b5t),true,81).
+-holds(loc_f(p4,p3a),true,81).
 -holds(loc_f(p4,p2a),true,81).
--holds(loc_f(p4,p2t),true,81).
--holds(loc_f(p4,b5a),true,81).
+-holds(loc_f(p4,p4t),true,81).
 -holds(loc_f(p4,p1a),true,81).
--holds(loc_f(p4,b4t),true,81).
 -holds(loc_f(p4,p1t),true,81).
+-holds(loc_f(p4,b4a),true,81).
 -holds(loc_f(p4,p5a),true,81).
 -holds(loc_f(p4,p4a),true,81).
--holds(loc_f(p4,b7a),true,81).
--holds(loc_f(p4,p4t),true,81).
--holds(loc_f(p4,p3a),true,81).
+-holds(loc_f(p4,b4t),true,81).
+-holds(loc_f(p4,p2t),true,81).
+-holds(loc_f(p4,b8a),true,81).
 -holds(loc_f(p4,p5t),true,81).
--holds(loc_f(p4,b5t),true,81).
+-holds(loc_f(p4,b5a),true,81).
+-holds(loc_f(p4,p3t),true,81).
 -holds(loc_f(p4,b7t),true,81).
--holds(in_hand_f(rob0,p4),false,81).
--holds(loc_f(b7,b7t),false,81).
--holds(loc_f(b4,b4t),false,81).
--holds(loc_f(b8,b8t),false,81).
--holds(in_assembly_f(b7j1),false,81).
--holds(in_assembly_f(b7j2),false,81).
--holds(in_assembly_f(b7j5),false,81).
--holds(in_assembly_f(b7j3),false,81).
--holds(in_assembly_f(b7j4),false,81).
--holds(in_assembly_f(b4j2),false,81).
--holds(in_assembly_f(b4j3),false,81).
--holds(in_assembly_f(b4j1),false,81).
--holds(in_assembly_f(b8j2),false,81).
--holds(in_assembly_f(b8j3),false,81).
--holds(in_assembly_f(b8j1),false,81).
--holds(in_assembly_f(b8j4),false,81).
--holds(in_assembly_f(b8j5),false,81).
--holds(can_fasten_f(b4j3,b8j1),false,81).
--holds(can_fasten_c(b4,b8),false,81).
--holds(in_assembly_c(b8),false,81).
--holds(in_assembly_c(b4),false,81).
--holds(in_assembly_c(b7),false,81).
--holds(in_hand_c(rob0,p4),false,81).
--holds(in_assembly_f(b8l1),false,81).
--holds(in_assembly_f(b7l2),false,81).
--holds(loc_c(b7,assembly_area),false,81).
--holds(supported_f(b4l1),false,81).
--holds(supported_f(b7j2),false,81).
--holds(supported_f(b8l2),false,81).
--holds(supported_c(b7),false,81).
--holds(supported_f(b7l3),false,81).
--holds(supported_f(b7l2),false,81).
--holds(supported_f(b7j1),false,81).
--holds(supported_f(b7l4),false,81).
--holds(in_assembly_f(b4l2),false,81).
--holds(in_assembly_f(b8l4),false,81).
--holds(supported_f(b8j1),false,81).
--holds(supported_c(b4),false,81).
--holds(supported_f(b4l2),false,81).
--holds(supported_f(b8j2),false,81).
--holds(supported_f(b7j4),false,81).
--holds(supported_f(b7l1),false,81).
--holds(in_assembly_f(b8l3),false,81).
--holds(supported_f(b8j4),false,81).
--holds(supported_f(b4j3),false,81).
--holds(supported_f(b4j2),false,81).
--holds(in_assembly_f(b7l3),false,81).
--holds(loc_c(b4,assembly_area),false,81).
--holds(supported_f(b8j5),false,81).
--holds(loc_c(b8,assembly_area),false,81).
--holds(supported_f(b8j3),false,81).
--holds(supported_f(b8l1),false,81).
--holds(in_assembly_f(b4l1),false,81).
--holds(supported_f(b8l4),false,81).
--holds(supported_f(b7j3),false,81).
--holds(in_assembly_f(b7l4),false,81).
--holds(in_assembly_f(b8l2),false,81).
--holds(supported_f(b8l3),false,81).
--holds(in_assembly_f(b7l1),false,81).
--holds(supported_c(b8),false,81).
--holds(supported_f(b7j5),false,81).
--holds(supported_f(b4j1),false,81).
+-holds(loc_f(p4,b7a),true,81).
 holds(in_hand_f(rob0,p4),true,81).
 holds(loc_f(b7,b7t),true,81).
 holds(loc_f(b4,b4t),true,81).
@@ -496,29 +496,29 @@ holds(in_assembly_f(b8j1),true,81).
 holds(in_assembly_f(b8j4),true,81).
 holds(in_assembly_f(b8j5),true,81).
 holds(can_fasten_f(b4j3,b8j1),true,81).
+holds(in_hand_f(rob0,b7l1),false,81).
 holds(in_hand_f(rob0,b7l3),false,81).
 holds(in_hand_f(rob0,b7l2),false,81).
-holds(in_hand_f(rob0,b7l1),false,81).
+holds(in_hand_f(rob0,b7j1),false,81).
 holds(in_hand_f(rob0,b7l4),false,81).
-holds(in_hand_f(rob0,b4l2),false,81).
-holds(in_hand_f(rob0,b4l1),false,81).
-holds(in_hand_f(rob0,b8l4),false,81).
-holds(in_hand_f(rob0,b8l3),false,81).
-holds(in_hand_f(rob0,b8l2),false,81).
-holds(in_hand_f(rob0,b8l1),false,81).
 holds(in_hand_f(rob0,b7j3),false,81).
 holds(in_hand_f(rob0,b7j2),false,81).
-holds(in_hand_f(rob0,b7j1),false,81).
 holds(in_hand_f(rob0,b7j5),false,81).
 holds(in_hand_f(rob0,b7j4),false,81).
-holds(in_hand_f(rob0,b4j3),false,81).
+holds(in_hand_f(rob0,b4l1),false,81).
+holds(in_hand_f(rob0,b4l2),false,81).
 holds(in_hand_f(rob0,b4j2),false,81).
 holds(in_hand_f(rob0,b4j1),false,81).
-holds(in_hand_f(rob0,b8j4),false,81).
-holds(in_hand_f(rob0,b8j5),false,81).
-holds(in_hand_f(rob0,b8j3),false,81).
+holds(in_hand_f(rob0,b4j3),false,81).
+holds(in_hand_f(rob0,b8l2),false,81).
+holds(in_hand_f(rob0,b8l1),false,81).
+holds(in_hand_f(rob0,b8l4),false,81).
+holds(in_hand_f(rob0,b8l3),false,81).
 holds(in_hand_f(rob0,b8j2),false,81).
 holds(in_hand_f(rob0,b8j1),false,81).
+holds(in_hand_f(rob0,b8j4),false,81).
+holds(in_hand_f(rob0,b8j3),false,81).
+holds(in_hand_f(rob0,b8j5),false,81).
 holds(in_hand_c(rob0,b7),false,81).
 holds(in_hand_c(rob0,b4),false,81).
 holds(in_hand_c(rob0,b8),false,81).
@@ -602,63 +602,63 @@ holds(loc_f(rob0,b4a),false,81).
 holds(loc_f(rob0,p4t),false,81).
 holds(loc_f(rob0,b5t),false,81).
 holds(in_hand_c(rob0,p4),true,81).
-holds(in_assembly_f(b8l1),true,81).
-holds(in_assembly_f(b7l2),true,81).
-holds(loc_c(b7,assembly_area),true,81).
-holds(supported_f(b4l1),true,81).
-holds(loc_f(p4,b8a),false,81).
 holds(loc_f(p4,b8t),false,81).
-holds(supported_f(b7j2),true,81).
-holds(loc_f(p4,p3t),false,81).
-holds(loc_f(p4,b4a),false,81).
-holds(supported_f(b8l2),true,81).
-holds(supported_c(b7),true,81).
-holds(supported_f(b7l3),true,81).
-holds(supported_f(b7l2),true,81).
-holds(supported_f(b7j1),true,81).
-holds(supported_f(b7l4),true,81).
-holds(in_assembly_f(b4l2),true,81).
-holds(loc_f(p4,p2a),false,81).
-holds(in_assembly_f(b8l4),true,81).
-holds(supported_f(b8j1),true,81).
-holds(supported_c(b4),true,81).
-holds(loc_f(p4,p2t),false,81).
-holds(supported_f(b4l2),true,81).
-holds(loc_f(p4,b5a),false,81).
-holds(supported_f(b8j2),true,81).
-holds(supported_f(b7j4),true,81).
-holds(supported_f(b7l1),true,81).
-holds(in_assembly_f(b8l3),true,81).
-holds(supported_f(b8j4),true,81).
+holds(loc_f(p4,b5t),false,81).
 holds(supported_f(b4j3),true,81).
-holds(loc_f(p4,p1a),false,81).
-holds(supported_f(b4j2),true,81).
-holds(in_assembly_f(b7l3),true,81).
-holds(loc_c(b4,assembly_area),true,81).
-holds(supported_f(b8j5),true,81).
-holds(loc_f(p4,b4t),false,81).
-holds(loc_c(b8,assembly_area),true,81).
-holds(supported_f(b8j3),true,81).
-holds(loc_f(p4,p1t),false,81).
-holds(supported_f(b8l1),true,81).
-holds(in_assembly_f(b4l1),true,81).
-holds(supported_f(b8l4),true,81).
-holds(loc_f(p4,p5a),false,81).
-holds(loc_f(p4,p4a),false,81).
+holds(supported_f(b7j5),true,81).
+holds(supported_f(b7j4),true,81).
+holds(loc_f(p4,p3a),false,81).
+holds(supported_f(b8l2),true,81).
+holds(in_assembly_f(b8l3),true,81).
+holds(supported_f(b7l3),true,81).
+holds(in_assembly_f(b8l1),true,81).
+holds(loc_f(p4,p2a),false,81).
 holds(supported_f(b7j3),true,81).
+holds(loc_f(p4,p4t),false,81).
+holds(supported_f(b8j2),true,81).
+holds(supported_f(b8l1),true,81).
+holds(loc_f(p4,p1a),false,81).
+holds(supported_f(b7l4),true,81).
+holds(in_assembly_f(b8l2),true,81).
+holds(supported_f(b4l1),true,81).
+holds(in_assembly_f(b4l1),true,81).
+holds(supported_f(b8j5),true,81).
+holds(loc_f(p4,p1t),false,81).
+holds(supported_f(b7j1),true,81).
+holds(in_assembly_f(b4l2),true,81).
+holds(in_assembly_f(b7l1),true,81).
+holds(loc_f(p4,b4a),false,81).
+holds(supported_f(b8j1),true,81).
+holds(loc_f(p4,p5a),false,81).
+holds(supported_f(b7l2),true,81).
+holds(in_assembly_f(b8l4),true,81).
+holds(supported_f(b4j1),true,81).
+holds(supported_f(b8j3),true,81).
+holds(supported_f(b7l1),true,81).
+holds(loc_f(p4,p4a),false,81).
+holds(loc_f(p4,b4t),false,81).
+holds(loc_c(b4,assembly_area),true,81).
+holds(loc_c(b7,assembly_area),true,81).
+holds(supported_f(b4j2),true,81).
+holds(supported_c(b8),true,81).
+holds(loc_c(b8,assembly_area),true,81).
+holds(loc_f(p4,p2t),false,81).
+holds(loc_f(p4,b8a),false,81).
+holds(loc_f(p4,p5t),false,81).
+holds(supported_c(b7),true,81).
+holds(supported_f(b8l4),true,81).
+holds(loc_f(p4,b5a),false,81).
+holds(in_assembly_f(b7l2),true,81).
+holds(loc_f(p4,p3t),false,81).
+holds(supported_f(b8j4),true,81).
+holds(supported_f(b8l3),true,81).
+holds(supported_f(b7j2),true,81).
+holds(supported_c(b4),true,81).
+holds(loc_f(p4,b7t),false,81).
+holds(in_assembly_f(b7l3),true,81).
+holds(supported_f(b4l2),true,81).
 holds(loc_f(p4,b7a),false,81).
 holds(in_assembly_f(b7l4),true,81).
-holds(loc_f(p4,p4t),false,81).
-holds(loc_f(p4,p3a),false,81).
-holds(in_assembly_f(b8l2),true,81).
-holds(supported_f(b8l3),true,81).
-holds(loc_f(p4,p5t),false,81).
-holds(loc_f(p4,b5t),false,81).
-holds(in_assembly_f(b7l1),true,81).
-holds(loc_f(p4,b7t),false,81).
-holds(supported_c(b8),true,81).
-holds(supported_f(b7j5),true,81).
-holds(supported_f(b4j1),true,81).
 -holds(loc_f(rob0,above_assembly_area),false,81).
 -holds(loc_c(rob0,assembly_area),false,81).
 -holds(loc_f(p4,above_assembly_area),false,81).
@@ -667,3 +667,102 @@ holds(loc_f(rob0,above_assembly_area),true,81).
 holds(loc_c(rob0,assembly_area),true,81).
 holds(loc_f(p4,above_assembly_area),true,81).
 holds(loc_c(p4,assembly_area),true,81).
+component(p4,p4).
+fits_into_f(b4j1,b7j1).
+fits_into_f(b4j3,b8j1).
+connected_to(b7j1,b7l1).
+connected_to(b7l1,b7j2).
+connected_to(b7j2,b7l2).
+connected_to(b7l2,b7j3).
+connected_to(b7j3,b7l3).
+connected_to(b7l3,b7j4).
+connected_to(b7j4,b7l4).
+connected_to(b7l4,b7j5).
+component(b7,b7j1).
+component(b7,b7l1).
+component(b7,b7j2).
+component(b7,b7l2).
+component(b7,b7j3).
+component(b7,b7l3).
+component(b7,b7j4).
+component(b7,b7l4).
+component(b7,b7j5).
+connected_to(b4j1,b4l1).
+connected_to(b4l1,b4j2).
+connected_to(b4j2,b4l2).
+connected_to(b4l2,b4j3).
+component(b4,b4j1).
+component(b4,b4l1).
+component(b4,b4j2).
+component(b4,b4l2).
+component(b4,b4j3).
+connected_to(b8j1,b8l1).
+connected_to(b8l1,b8j2).
+connected_to(b8j2,b8l2).
+connected_to(b8l2,b8j3).
+connected_to(b8j3,b8l3).
+connected_to(b8l3,b8j4).
+connected_to(b8j4,b8l4).
+connected_to(b8l4,b8j5).
+component(b8,b8j1).
+component(b8,b8l1).
+component(b8,b8j2).
+component(b8,b8l2).
+component(b8,b8j3).
+component(b8,b8l3).
+component(b8,b8j4).
+component(b8,b8l4).
+component(b8,b8j5).
+assem_target_loc(b7,b7t).
+assem_target_loc(b4,b4t).
+assem_target_loc(b8,b8t).
+assem_target_loc(p4,p4t).
+assem_approach_loc(b7,b7a).
+assem_approach_loc(b4,b4a).
+assem_approach_loc(b8,b8a).
+assem_approach_loc(p4,p4a).
+component(assembly_area,b7t).
+component(assembly_area,b4t).
+component(assembly_area,b5t).
+component(assembly_area,b8t).
+component(assembly_area,p1t).
+component(assembly_area,p2t).
+component(assembly_area,p3t).
+component(assembly_area,p4t).
+component(assembly_area,p5t).
+component(assembly_area,b7a).
+component(assembly_area,b4a).
+component(assembly_area,b5a).
+component(assembly_area,b8a).
+component(assembly_area,p1a).
+component(assembly_area,p2a).
+component(assembly_area,p3a).
+component(assembly_area,p4a).
+component(assembly_area,p5a).
+next_to_f(b7t,b7a).
+next_to_f(b4t,b4a).
+next_to_f(b5t,b5a).
+next_to_f(b8t,b8a).
+next_to_f(p1t,p1a).
+next_to_f(p2t,p2a).
+next_to_f(p3t,p3a).
+next_to_f(p4t,p4a).
+next_to_f(p5t,p5a).
+next_to_f(above_assembly_area,b7a).
+next_to_f(above_assembly_area,b4a).
+next_to_f(above_assembly_area,b5a).
+next_to_f(above_assembly_area,b8a).
+next_to_f(above_assembly_area,p1a).
+next_to_f(above_assembly_area,p2a).
+next_to_f(above_assembly_area,p3a).
+next_to_f(above_assembly_area,p4a).
+next_to_f(above_assembly_area,p5a).
+next_to_f(above_assembly_area,b7t).
+next_to_f(above_assembly_area,b4t).
+next_to_f(above_assembly_area,b5t).
+next_to_f(above_assembly_area,b8t).
+next_to_f(above_assembly_area,p1t).
+next_to_f(above_assembly_area,p2t).
+next_to_f(above_assembly_area,p3t).
+next_to_f(above_assembly_area,p4t).
+next_to_f(above_assembly_area,p5t).

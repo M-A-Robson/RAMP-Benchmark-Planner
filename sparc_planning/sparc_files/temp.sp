@@ -3,7 +3,7 @@
 %% Author: MARK ROBSON 2023
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#const numSteps = 50.
+#const numSteps = 10.
 #const startStep = 0.
 
 sorts
