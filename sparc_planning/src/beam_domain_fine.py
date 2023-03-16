@@ -1,4 +1,4 @@
-from al_structures import *
+from sparc_planning.src.al_structures import *
 
 SAVE_DIR = '/home/local/MTC_ORI_Collab/sparc_planning/sparc_files/'
 
