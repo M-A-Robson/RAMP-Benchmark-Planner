@@ -4,14 +4,36 @@
 
 ### 1. Installation
 
-1. Install SPARC
+Tested on ubuntu 22.04.02 LTS
 
+1. Install Dependencies
+
+java runtime environment
+   - install via apt
+   ```bash
+   sudo apt install default-jre
+   ```
+
+clingo
+   - Add potassco stable ppa to apt and install clingo
+   ```bash
+   sudo add-apt-repository  ppa:potassco/stable
+   sudo apt update
+   sudo apt install clingo
+   ```
+
+ SPARC
    - Clone SPARC to ASP translator repo (https://github.com/iensen/sparc/)
-   - Follow instructions in SPARC user manual (https://github.com/iensen/sparc/blob/master/User_Manual/Sparc_Manual.pdf) to install JRE and clingo
    - Set environment variable
      ```bash
      echo 'export SPARC_PATH=path/to/sparc/folder' >> ~/.bashrc
      ```
+
+Python distutils
+   - if not included with your python build can be installed using apt, we use python3.10 but this should also work for other versions.
+   ```bash
+   sudo apt install python3.10-distutils
+   ```
 
 2. Download this Repo and configure
    - Clone this repo
@@ -22,9 +44,16 @@
      ```bash
      echo 'export PLANNER_PATH=path/to/repo/folder' >> ~/.bashrc
      ```
-   - Install python modules (may vary depening on your python install)
+   - Change to repo base directory
      ```bash
      cd MTC_ORI_Collab
+     ```
+   - Install python dependencies
+     ```bash
+     python3 -m pip install -r requirements.txt
+     ```
+   - Install python modules (may vary depening on your python install)
+     ```bash
      python3 setup.py build
      sudo python3 setup.py install
      ```
