@@ -379,6 +379,18 @@ def generate_coarse_beam_domain():
         condition_object_instance_names=[['B2'],['B1','B2'],['B1','B2']],
         condition_values=[True, True, True],
     )
+    # need reverse for when we put a cap beam in place
+    asem_c3a = CausalLaw(
+        action = assemble,
+        object_instances = {'R':robot, 'B1':beam, 'B2':beam},
+        fluent_affected = can_fasten,
+        fluent_value=True,
+        fluent_object_instance_names=['B1','B2'],
+        action_object_instance_names=['R','B2'],
+        conditions=[in_assembly,fits_into,Property('B1','B2',Relation.NOT_EQUAL)],
+        condition_object_instance_names=[['B1'],['B1','B2'],['B1','B2']],
+        condition_values=[True, True, True],
+    )
     asem_c4 = CausalLaw(
         action = assemble,
         object_instances = {'R':robot, 'B1':beam, 'B2':beam},
@@ -476,7 +488,7 @@ def generate_coarse_beam_domain():
     )
     # assemble_action = Action(assemble,[asem_c1],[asem_ec1,asem_ec2,asem_ec3,asem_ec5,asem_ec6,asem_ec7,asem_ec8,asem_ec9])
     assemble_action = Action(assemble,
-                             [asem_c1,asem_c2, asem_c3, asem_c4],
+                             [asem_c1,asem_c2, asem_c3, asem_c3a, asem_c4],
                              [asem_ec1,asem_ec2,asem_ec3,asem_ec5,
                               asem_ec6,asem_ec7,asem_ec8,asem_ec9,
                               asem_ec10])
