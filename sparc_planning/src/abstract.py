@@ -3,8 +3,10 @@ import copy
 from beam_domain_abstract import generate_abstract_beam_domain
 from beam_domain_coarse import generate_coarse_beam_domain
 from beam_domain_fine import generate_fine_beam_domain
-from example_domains.example_latest import generate_domain_setup
 # from example_domains.example_latest import generate_domain_setup
+# from example_domains.example_easy_1 import generate_domain_setup
+from example_domains.example_easy_2 import generate_domain_setup
+# from example_domains.example_easy_3 import generate_domain_setup
 import logging
 import asyncio
 from al_structures import ActionInstance, GoalDefinition, StateConstraint
@@ -18,10 +20,13 @@ from beam_assembly.beam_assembly_parser import load_beam_xml, load_assembly_xml
 from beam_assembly.beam_to_sparc import create_sparc_data
 
 
-MIN_COARSE_PLAN_LENGTH = 50
+# MIN_COARSE_PLAN_LENGTH = 50
+# MAX_COARSE_PLAN_LENGTH = 55
+# MIN_COARSE_PLAN_LENGTH = 30
+MAX_COARSE_PLAN_LENGTH = 40
 MAX_COARSE_PLAN_LENGTH = 55
 FINE_ITERATION_MIN = 1
-FINE_ITERATION_LIMIT = 10
+FINE_ITERATION_LIMIT = 15
 COARSE_ITERATION_MIN = 5
 COARSE_PLAN_ITERATION_LIMIT = 32
 
@@ -64,15 +69,17 @@ async def main():
     abstract = generate_abstract_beam_domain()
     
     coarse = generate_coarse_beam_domain()
-    coarse.save_AL('/home/local/MTC_ORI_Collab/sparc_planning/action_lang_files/coarse_beam_AL.txt')
+    # coarse.save_AL('/home/local/MTC_ORI_Collab/sparc_planning/action_lang_files/coarse_beam_AL.txt')
     #s = coarse.to_sparc_program()
     #s.save('/home/local/MTC_ORI_Collab/sparc_planning/sparc_files/beam_domain_coarse.sp')
 
     fine = generate_fine_beam_domain()
-    fine.save_AL('/home/local/MTC_ORI_Collab/sparc_planning/action_lang_files/fine_beam_AL.txt')
+    # fine.save_AL('/home/local/MTC_ORI_Collab/sparc_planning/action_lang_files/fine_beam_AL.txt')
 
     beams = load_beam_xml(os.path.join(os.environ['PLANNER_PATH'], "example_beamset_latest.xml"))
-    assem = load_assembly_xml(beams, os.path.join(os.environ['PLANNER_PATH'], "assembly_latest.xml"))
+    # assem = load_assembly_xml(beams, os.path.join(os.environ['PLANNER_PATH'], "assembly_latest.xml"))
+    # assem = load_assembly_xml(beams, os.path.join(os.environ['PLANNER_PATH'], "assembly_easy_1.xml"))
+    assem = load_assembly_xml(beams, os.path.join(os.environ['PLANNER_PATH'], "assembly_easy_2.xml"))
     
     # scene = assem.create_display_scene()
     # scene.show()
@@ -270,7 +277,8 @@ async def main():
         if fine_plan_success:
             logging.info(f'Fine Res plan found with {len(all_fine_actions)} Fine Actions, took {t_stop_fine-t_start_fine:.03f} seconds')
         else:
-            logging.critical(f'Fine Res plan failed after {len(all_fine_actions)} Fine Actions, took {t_stop_fine-t_start_fine:.03f} seconds')
+            # logging.critical(f'Fine Res plan failed after {len(all_fine_actions)} Fine Actions, took {t_stop_fine-t_start_fine:.03f} seconds')
+            logging.critical(f'Fine Res plan failed after {len(all_fine_actions)} Fine Actions')
         logging.info(f'Fine Actions:\n {all_fine_actions}\n')
 
     

@@ -15,19 +15,19 @@ sorts
 #in_f_end = {b7j1,b7j5,b8j1,b8j5}.
 #joint = #in_m_end + #in_f_end + #angle_m_end + #in_f + #thru_m + #angle_f + #thru_f.
 #beam_part = #link + #joint.
-#pin = {p1,p2,p3}.
+#pin = {p1,p2,p3,p4}.
 #thing = #beam + #pin.
 #thing_part = #beam_part + #pin.
 #object = #robot + #thing.
 #place_c = {input_area,intermediate_area,assembly_area}.
 #non_placement_location = {above_input_area,above_intermediate_area,above_assembly_area}.
-#approach_location = {b7a,b4a,b5a,b8a,p1a,p2a,p3a}.
+#approach_location = {b7a,b4a,b5a,b8a,p1a,p2a,p3a,p4a}.
 #prerot_location = {dummy_prerot_location}.
 #through_location = {dummy_through_location}.
-#target_location = {b7t,b4t,b5t,b8t,p1t,p2t,p3t}.
+#target_location = {b7t,b4t,b5t,b8t,p1t,p2t,p3t,p4t}.
 #assembly_location = #approach_location + #target_location + #prerot_location + #through_location.
-#near_to_location = {nt_b7i,nt_b4i,nt_b5i,nt_b8i,nt_p1i,nt_p2i,nt_p3i,nt_b7t,nt_b4t,nt_b5t,nt_b8t,nt_p1t,nt_p2t,nt_p3t,nt_b7a,nt_b4a,nt_b5a,nt_b8a,nt_p1a,nt_p2a,nt_p3a}.
-#input_location = {b7i,b4i,b5i,b8i,p1i,p2i,p3i}.
+#near_to_location = {nt_b7i,nt_b4i,nt_b5i,nt_b8i,nt_p1i,nt_p2i,nt_p3i,nt_p4i,nt_b7t,nt_b4t,nt_b5t,nt_b8t,nt_p1t,nt_p2t,nt_p3t,nt_p4t,nt_b7a,nt_b4a,nt_b5a,nt_b8a,nt_p1a,nt_p2a,nt_p3a,nt_p4a}.
+#input_location = {b7i,b4i,b5i,b8i,p1i,p2i,p3i,p4i}.
 #place_f = #assembly_location + #near_to_location + #input_location + #non_placement_location.
 #fine_res_sort = #place_f + #thing_part.
 #coarse_res_sort = #place_c + #thing.
@@ -283,9 +283,11 @@ holds(loc_f(p4,p4i),true,0).
 component(p1,p1).
 component(p2,p2).
 component(p3,p3).
+component(p4,p4).
 fits_into_f(b4j1,b7j1).
 fits_into_f(b5j1,b7j5).
 fits_into_f(b4j3,b8j1).
+fits_into_f(b5j3,b8j5).
 connected_to(b7j1,b7l1).
 connected_to(b7l1,b7j2).
 connected_to(b7j2,b7l2).
@@ -345,6 +347,7 @@ assem_target_loc(b8,b8t).
 assem_target_loc(p1,p1t).
 assem_target_loc(p2,p2t).
 assem_target_loc(p3,p3t).
+assem_target_loc(p4,p4t).
 assem_approach_loc(b7,b7a).
 assem_approach_loc(b4,b4a).
 assem_approach_loc(b5,b5a).
@@ -352,6 +355,7 @@ assem_approach_loc(b8,b8a).
 assem_approach_loc(p1,p1a).
 assem_approach_loc(p2,p2a).
 assem_approach_loc(p3,p3a).
+assem_approach_loc(p4,p4a).
 near_to(nt_b7i,b7i).
 near_to(nt_b4i,b4i).
 near_to(nt_b5i,b5i).
@@ -359,6 +363,7 @@ near_to(nt_b8i,b8i).
 near_to(nt_p1i,p1i).
 near_to(nt_p2i,p2i).
 near_to(nt_p3i,p3i).
+near_to(nt_p4i,p4i).
 near_to(nt_b7t,b7t).
 near_to(nt_b4t,b4t).
 near_to(nt_b5t,b5t).
@@ -366,6 +371,7 @@ near_to(nt_b8t,b8t).
 near_to(nt_p1t,p1t).
 near_to(nt_p2t,p2t).
 near_to(nt_p3t,p3t).
+near_to(nt_p4t,p4t).
 near_to(nt_b7a,b7a).
 near_to(nt_b4a,b4a).
 near_to(nt_b5a,b5a).
@@ -373,6 +379,7 @@ near_to(nt_b8a,b8a).
 near_to(nt_p1a,p1a).
 near_to(nt_p2a,p2a).
 near_to(nt_p3a,p3a).
+near_to(nt_p4a,p4a).
 component(input_area,b7i).
 component(input_area,b4i).
 component(input_area,b5i).
@@ -380,6 +387,7 @@ component(input_area,b8i).
 component(input_area,p1i).
 component(input_area,p2i).
 component(input_area,p3i).
+component(input_area,p4i).
 component(assembly_area,b7t).
 component(assembly_area,b4t).
 component(assembly_area,b5t).
@@ -387,6 +395,7 @@ component(assembly_area,b8t).
 component(assembly_area,p1t).
 component(assembly_area,p2t).
 component(assembly_area,p3t).
+component(assembly_area,p4t).
 component(assembly_area,b7a).
 component(assembly_area,b4a).
 component(assembly_area,b5a).
@@ -394,6 +403,7 @@ component(assembly_area,b8a).
 component(assembly_area,p1a).
 component(assembly_area,p2a).
 component(assembly_area,p3a).
+component(assembly_area,p4a).
 next_to_f(b7t,b7a).
 next_to_f(b4t,b4a).
 next_to_f(b5t,b5a).
@@ -401,6 +411,7 @@ next_to_f(b8t,b8a).
 next_to_f(p1t,p1a).
 next_to_f(p2t,p2a).
 next_to_f(p3t,p3a).
+next_to_f(p4t,p4a).
 next_to_f(above_assembly_area,b7a).
 next_to_f(above_assembly_area,b4a).
 next_to_f(above_assembly_area,b5a).
@@ -408,6 +419,7 @@ next_to_f(above_assembly_area,b8a).
 next_to_f(above_assembly_area,p1a).
 next_to_f(above_assembly_area,p2a).
 next_to_f(above_assembly_area,p3a).
+next_to_f(above_assembly_area,p4a).
 next_to_f(above_assembly_area,b7t).
 next_to_f(above_assembly_area,b4t).
 next_to_f(above_assembly_area,b5t).
@@ -415,6 +427,7 @@ next_to_f(above_assembly_area,b8t).
 next_to_f(above_assembly_area,p1t).
 next_to_f(above_assembly_area,p2t).
 next_to_f(above_assembly_area,p3t).
+next_to_f(above_assembly_area,p4t).
 next_to_f(above_assembly_area,nt_b7t).
 next_to_f(above_assembly_area,nt_b4t).
 next_to_f(above_assembly_area,nt_b5t).
@@ -422,6 +435,7 @@ next_to_f(above_assembly_area,nt_b8t).
 next_to_f(above_assembly_area,nt_p1t).
 next_to_f(above_assembly_area,nt_p2t).
 next_to_f(above_assembly_area,nt_p3t).
+next_to_f(above_assembly_area,nt_p4t).
 next_to_f(above_assembly_area,nt_b7a).
 next_to_f(above_assembly_area,nt_b4a).
 next_to_f(above_assembly_area,nt_b5a).
@@ -429,6 +443,7 @@ next_to_f(above_assembly_area,nt_b8a).
 next_to_f(above_assembly_area,nt_p1a).
 next_to_f(above_assembly_area,nt_p2a).
 next_to_f(above_assembly_area,nt_p3a).
+next_to_f(above_assembly_area,nt_p4a).
 next_to_f(above_input_area,nt_b7i).
 next_to_f(above_input_area,nt_b4i).
 next_to_f(above_input_area,nt_b5i).
@@ -436,6 +451,7 @@ next_to_f(above_input_area,nt_b8i).
 next_to_f(above_input_area,nt_p1i).
 next_to_f(above_input_area,nt_p2i).
 next_to_f(above_input_area,nt_p3i).
+next_to_f(above_input_area,nt_p4i).
 next_to_f(above_input_area,b7i).
 next_to_f(above_input_area,b4i).
 next_to_f(above_input_area,b5i).
@@ -443,6 +459,7 @@ next_to_f(above_input_area,b8i).
 next_to_f(above_input_area,p1i).
 next_to_f(above_input_area,p2i).
 next_to_f(above_input_area,p3i).
+next_to_f(above_input_area,p4i).
 % coarse next_to location mapping
 next_to_c(input_area,intermediate_area).
 next_to_c(assembly_area,intermediate_area).

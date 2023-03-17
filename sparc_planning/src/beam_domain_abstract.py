@@ -1,5 +1,5 @@
 import os
-from al_structures import *
+from sparc_planning.src.al_structures import *
 
 SAVE_DIR = os.path.join(os.environ['PLANNER_PATH'], '/sparc_planning/sparc_files/')
 

@@ -7,7 +7,7 @@
 #const startStep = 0.
 
 sorts
-#beam = {b7,b4,b5,b8}.
+#beam = {b7,b4,b9,b8}.
 #action = assemble(#beam).
 #boolean = {true, false}.
 #outcome = {true, false, undet}.
@@ -59,12 +59,11 @@ something_happened(I) :- occurs(A, I).
 :- not goal(I), not something_happened(I).
 
 % goal definition
-goal(I) :- holds(in_assembly_c(b4), true, I) , holds(in_assembly_c(b5), true, I) , holds(in_assembly_c(b8), true, I).
+goal(I) :- holds(in_assembly_c(b4), true, I) , holds(in_assembly_c(b9), true, I) , holds(in_assembly_c(b8), true, I).
 
 % domain setup
 holds(in_assembly_c(b7),true,0).
 fits_into_c(b4,b7).
-fits_into_c(b5,b7).
+fits_into_c(b9,b4).
 fits_into_c(b4,b8).
-fits_into_c(b5,b8).
 base(b7).

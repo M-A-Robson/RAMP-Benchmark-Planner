@@ -232,7 +232,7 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DH:ActionLangSysDesc, 
             if sort.name == 'through_location':
                 through_locations = sort.instances
         # temporarily remove locations from relevant_fine_objects
-        assembly_locations = target_locations + approach_locations + prerot_locations + through_locations
+        assembly_locations = list(target_locations) + list(approach_locations) + list(prerot_locations) + list(through_locations)
         relevant_fine_objects = relevant_fine_objects - {*assembly_locations}
         # for each thing
         for thing in relevant_things:

@@ -13,6 +13,23 @@ ACTION_SET = [
     'assemble_f_rotate',
     ]
 
+def get_insert_end(
+        beam_assem:BeamAssembly,
+        insertion_actions:List[str],
+    ):
+    actions = []
+    components = []
+    for action_str in insertion_actions:
+        split = re.split('\(|\)|\,',action_str)
+        # only care about relevant assembly actions
+        if split[1] in ACTION_SET:
+            actions.append(split[1])
+            components.append(split[3])
+    # find beam by part names
+    beam = beam_assem.get_beam_by_component_name(components[-1])
+    insert_end = beam.get_component_by_name(components[-1])
+    return insert_end
+
 def get_target_connection(
         beam_assembly:BeamAssembly,
         beam_to_insert:Beam,
@@ -130,6 +147,8 @@ def calculate_insertion_poses(
             components.append(split[3])
     logging.info(components)
     # find beam by part names
+    if len(components) == 0:
+        return {}
     beam = beam_assem.get_beam_by_component_name(components[-1])
     # only update positions if not already calculated (default beam origin is I)
     if np.allclose(beam.origin, np.eye(4), 0.001):
