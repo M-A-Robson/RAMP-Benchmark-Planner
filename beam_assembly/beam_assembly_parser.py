@@ -869,14 +869,11 @@ def main():
     logger.setLevel(logging.INFO)
 
     beams = load_beam_xml("example_beamset_latest.xml")
-    assem = load_assembly_xml(beams, "assembly_latest.xml")
+    # assem = load_assembly_xml(beams, "assembly_latest.xml")
+    assem = load_assembly_xml(beams, "assembly_easy_1.xml")
     
     scene = assem.create_display_scene(colorise=True)
     scene.show()
-
-
-
-
 
 
 if __name__ == "__main__":
