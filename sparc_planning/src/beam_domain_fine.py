@@ -258,15 +258,15 @@ def generate_fine_beam_domain():
         condition_values=[True,True]
         ))
     ##all parts of beam are supported if one is
-    state_constraints.append(StateConstraint(
-        object_instances={'P1':beam_part,'B1':beam},
-        head=supported_f,
-        head_value=True,
-        head_object_instance_names=['P1'],
-        conditions=[supported_c,component],
-        condition_object_instance_names=[['B1'],['B1','P1']],
-        condition_values=[True,True]
-        ))
+    # state_constraints.append(StateConstraint(
+    #     object_instances={'P1':beam_part,'B1':beam},
+    #     head=supported_f,
+    #     head_value=True,
+    #     head_object_instance_names=['P1'],
+    #     conditions=[supported_c,component],
+    #     condition_object_instance_names=[['B1'],['B1','P1']],
+    #     condition_values=[True,True]
+    #     ))
     #in_assembly bridge axioms
     state_constraints.append(StateConstraint(
         object_instances={'P1':beam_part,'B1':beam},
@@ -320,30 +320,30 @@ def generate_fine_beam_domain():
     ## beams supported if either end can be joined to another beam
     support_constraint = StateConstraint(
         object_instances={'B1':beam,'B2':beam},
-        head=supported_c,
+        head=supported_f,
         head_object_instance_names=['B1'],
         head_value=True,
-        conditions=[in_assembly_c,fits_into_c],
+        conditions=[in_assembly_f,fits_into_f],
         condition_object_instance_names=[['B2'],['B1','B2']],
         condition_values=[True,True]
     )
     # cap beams support
     support_constraint2 = StateConstraint(
         object_instances={'B1':beam,'B2':beam},
-        head=supported_c,
+        head=supported_f,
         head_object_instance_names=['B1'],
         head_value=True,
-        conditions=[in_assembly_c,fits_into_c],
+        conditions=[in_assembly_f,fits_into_f],
         condition_object_instance_names=[['B2'],['B2','B1']],
         condition_values=[True,True]
     )
     # through beam support
     support_constraint3 = StateConstraint(
         object_instances={'B1':beam,'B2':beam},
-        head=supported_c,
+        head=supported_f,
         head_object_instance_names=['B1'],
         head_value=True,
-        conditions=[in_assembly_c,fits_through_c],
+        conditions=[in_assembly_f,fits_through_f],
         condition_object_instance_names=[['B2'],['B1','B2']],
         condition_values=[True,True]
     )

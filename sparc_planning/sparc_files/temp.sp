@@ -3,8 +3,8 @@
 %% Author: MARK ROBSON 2023
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#const numSteps = 43.
-#const startStep = 27.
+#const numSteps = 42.
+#const startStep = 34.
 
 sorts
 #robot = {rob0}.
@@ -68,6 +68,7 @@ holds(in_hand_c(R,T), true, I+1) :- occurs(pick_up(R,T), I).
 holds(in_assembly_c(B), true, I+1) :- occurs(assemble(R,B), I).
 holds(misaligned_c(B2), true, I+1) :- occurs(assemble(R,B1), I), holds(in_assembly_c(B2), true, I), not base(B2), B1!=B2.
 holds(can_fasten_c(B1,B2), true, I+1) :- occurs(assemble(R,B1), I), holds(in_assembly_c(B2), true, I), fits_into_c(B1,B2), B1!=B2.
+holds(can_fasten_c(B1,B2), true, I+1) :- occurs(assemble(R,B2), I), holds(in_assembly_c(B1), true, I), fits_into_c(B1,B2), B1!=B2.
 holds(can_fasten_c(B1,B2), true, I+1) :- occurs(assemble(R,B1), I), holds(in_assembly_c(B2), true, I), fits_through_c(B1,B2), B1!=B2.
 -occurs(assemble(R,B), I) :- not holds(in_hand_c(R,B), true, I).
 -occurs(assemble(R,B1), I) :- holds(in_assembly_c(B2), true, I), holds(in_assembly_c(B3), true, I), is_capped_by(B1,B2,B3), B2!=B3.
@@ -111,96 +112,102 @@ something_happened(I) :- occurs(A, I).
 goal(I) :- holds(in_assembly_c(b4), true, I) , holds(in_assembly_c(b8), true, I) , holds(in_assembly_c(b9), true, I) , holds(fastened_c(b4,b7,P0), true, I) , holds(fastened_c(b9,b4,P1), true, I) , holds(fastened_c(b4,b8,P2), true, I).
 
 % domain setup
--holds(in_assembly_c(b4),false,27).
--holds(in_assembly_c(b8),false,27).
--holds(in_assembly_c(b7),false,27).
--holds(fastened_c(b4,b7,p1),false,27).
--holds(fastened_c(b7,b4,p1),false,27).
--holds(supported_c(b7),false,27).
--holds(supported_c(b8),false,27).
--holds(supported_c(b4),false,27).
--holds(supported_c(b9),false,27).
--holds(can_fasten_c(b4,b7),true,27).
-holds(in_assembly_c(b4),true,27).
-holds(in_assembly_c(b8),true,27).
-holds(in_assembly_c(b7),true,27).
-holds(fastened_c(b4,b7,p1),true,27).
-holds(fastened_c(b7,b4,p1),true,27).
-holds(can_fasten_c(b4,b7),false,27).
-holds(supported_c(b7),true,27).
-holds(supported_c(b8),true,27).
-holds(supported_c(b4),true,27).
-holds(supported_c(b9),true,27).
--holds(in_assembly_c(b9),false,27).
--holds(in_hand_c(rob0,p3),true,27).
--holds(in_hand_c(rob0,b8),true,27).
--holds(in_hand_c(rob0,p1),true,27).
--holds(in_hand_c(rob0,p2),true,27).
--holds(in_hand_c(rob0,b7),true,27).
--holds(in_hand_c(rob0,b4),true,27).
--holds(loc_c(rob0,input_area),true,27).
--holds(loc_c(rob0,intermediate_area),true,27).
--holds(loc_c(p3,assembly_area),true,27).
--holds(loc_c(p3,intermediate_area),true,27).
--holds(loc_c(b8,input_area),true,27).
--holds(loc_c(b8,intermediate_area),true,27).
--holds(loc_c(b9,input_area),true,27).
--holds(loc_c(b9,intermediate_area),true,27).
--holds(loc_c(p1,input_area),true,27).
--holds(loc_c(p1,intermediate_area),true,27).
--holds(loc_c(p2,assembly_area),true,27).
--holds(loc_c(p2,intermediate_area),true,27).
--holds(loc_c(b7,input_area),true,27).
--holds(loc_c(b7,intermediate_area),true,27).
--holds(loc_c(b4,input_area),true,27).
--holds(loc_c(b4,intermediate_area),true,27).
--holds(in_hand_c(rob0,b9),false,27).
--holds(loc_c(rob0,assembly_area),false,27).
--holds(can_fasten_c(b9,b4),false,27).
--holds(misaligned_c(b8),false,27).
--holds(misaligned_c(b4),false,27).
--holds(loc_c(b4,assembly_area),false,27).
--holds(loc_c(b7,assembly_area),false,27).
--holds(loc_c(p2,input_area),false,27).
--holds(loc_c(p1,assembly_area),false,27).
--holds(loc_c(b9,assembly_area),false,27).
--holds(loc_c(b8,assembly_area),false,27).
--holds(loc_c(p3,input_area),false,27).
-holds(in_assembly_c(b9),true,27).
-holds(in_hand_c(rob0,b9),true,27).
-holds(loc_c(rob0,assembly_area),true,27).
-holds(in_hand_c(rob0,p3),false,27).
-holds(in_hand_c(rob0,b8),false,27).
-holds(in_hand_c(rob0,p1),false,27).
-holds(in_hand_c(rob0,p2),false,27).
-holds(in_hand_c(rob0,b7),false,27).
-holds(in_hand_c(rob0,b4),false,27).
-holds(can_fasten_c(b9,b4),true,27).
-holds(misaligned_c(b8),true,27).
-holds(misaligned_c(b4),true,27).
-holds(loc_c(b4,assembly_area),true,27).
-holds(loc_c(b7,assembly_area),true,27).
-holds(loc_c(p2,input_area),true,27).
-holds(loc_c(p1,assembly_area),true,27).
-holds(loc_c(b9,assembly_area),true,27).
-holds(loc_c(b8,assembly_area),true,27).
-holds(loc_c(p3,input_area),true,27).
-holds(loc_c(rob0,input_area),false,27).
-holds(loc_c(rob0,intermediate_area),false,27).
-holds(loc_c(p3,assembly_area),false,27).
-holds(loc_c(p3,intermediate_area),false,27).
-holds(loc_c(b8,input_area),false,27).
-holds(loc_c(b8,intermediate_area),false,27).
-holds(loc_c(b9,input_area),false,27).
-holds(loc_c(b9,intermediate_area),false,27).
-holds(loc_c(p1,input_area),false,27).
-holds(loc_c(p1,intermediate_area),false,27).
-holds(loc_c(p2,assembly_area),false,27).
-holds(loc_c(p2,intermediate_area),false,27).
-holds(loc_c(b7,input_area),false,27).
-holds(loc_c(b7,intermediate_area),false,27).
-holds(loc_c(b4,input_area),false,27).
-holds(loc_c(b4,intermediate_area),false,27).
+-holds(in_assembly_c(b4),false,34).
+-holds(in_assembly_c(b8),false,34).
+-holds(in_assembly_c(b7),false,34).
+-holds(fastened_c(b7,b4,p3),false,34).
+-holds(fastened_c(b4,b7,p3),false,34).
+-holds(supported_c(b7),false,34).
+-holds(supported_c(b8),false,34).
+-holds(supported_c(b4),false,34).
+-holds(supported_c(b9),false,34).
+-holds(can_fasten_c(b4,b7),true,34).
+holds(in_assembly_c(b4),true,34).
+holds(in_assembly_c(b8),true,34).
+holds(in_assembly_c(b7),true,34).
+holds(fastened_c(b7,b4,p3),true,34).
+holds(fastened_c(b4,b7,p3),true,34).
+holds(can_fasten_c(b4,b7),false,34).
+holds(supported_c(b7),true,34).
+holds(supported_c(b8),true,34).
+holds(supported_c(b4),true,34).
+holds(supported_c(b9),true,34).
+-holds(in_assembly_c(b9),false,34).
+-holds(fastened_c(b4,b8,p1),false,34).
+-holds(fastened_c(b8,b4,p1),false,34).
+-holds(in_hand_c(rob0,b9),false,34).
+-holds(loc_c(rob0,assembly_area),false,34).
+-holds(can_fasten_c(b9,b4),false,34).
+-holds(misaligned_c(b8),false,34).
+-holds(misaligned_c(b4),false,34).
+-holds(loc_c(b4,assembly_area),false,34).
+-holds(loc_c(b7,assembly_area),false,34).
+-holds(loc_c(p2,input_area),false,34).
+-holds(loc_c(p1,assembly_area),false,34).
+-holds(loc_c(b9,assembly_area),false,34).
+-holds(loc_c(b8,assembly_area),false,34).
+-holds(loc_c(p3,assembly_area),false,34).
+-holds(in_hand_c(rob0,p3),true,34).
+-holds(in_hand_c(rob0,b8),true,34).
+-holds(in_hand_c(rob0,p1),true,34).
+-holds(in_hand_c(rob0,p2),true,34).
+-holds(in_hand_c(rob0,b7),true,34).
+-holds(in_hand_c(rob0,b4),true,34).
+-holds(can_fasten_c(b4,b8),true,34).
+-holds(loc_c(rob0,input_area),true,34).
+-holds(loc_c(rob0,intermediate_area),true,34).
+-holds(loc_c(p3,input_area),true,34).
+-holds(loc_c(p3,intermediate_area),true,34).
+-holds(loc_c(b8,input_area),true,34).
+-holds(loc_c(b8,intermediate_area),true,34).
+-holds(loc_c(b9,input_area),true,34).
+-holds(loc_c(b9,intermediate_area),true,34).
+-holds(loc_c(p1,input_area),true,34).
+-holds(loc_c(p1,intermediate_area),true,34).
+-holds(loc_c(p2,assembly_area),true,34).
+-holds(loc_c(p2,intermediate_area),true,34).
+-holds(loc_c(b7,input_area),true,34).
+-holds(loc_c(b7,intermediate_area),true,34).
+-holds(loc_c(b4,input_area),true,34).
+-holds(loc_c(b4,intermediate_area),true,34).
+holds(in_assembly_c(b9),true,34).
+holds(fastened_c(b4,b8,p1),true,34).
+holds(fastened_c(b8,b4,p1),true,34).
+holds(in_hand_c(rob0,b9),true,34).
+holds(loc_c(rob0,assembly_area),true,34).
+holds(in_hand_c(rob0,p3),false,34).
+holds(in_hand_c(rob0,b8),false,34).
+holds(in_hand_c(rob0,p1),false,34).
+holds(in_hand_c(rob0,p2),false,34).
+holds(in_hand_c(rob0,b7),false,34).
+holds(in_hand_c(rob0,b4),false,34).
+holds(can_fasten_c(b4,b8),false,34).
+holds(can_fasten_c(b9,b4),true,34).
+holds(misaligned_c(b8),true,34).
+holds(misaligned_c(b4),true,34).
+holds(loc_c(b4,assembly_area),true,34).
+holds(loc_c(b7,assembly_area),true,34).
+holds(loc_c(p2,input_area),true,34).
+holds(loc_c(p1,assembly_area),true,34).
+holds(loc_c(b9,assembly_area),true,34).
+holds(loc_c(b8,assembly_area),true,34).
+holds(loc_c(p3,assembly_area),true,34).
+holds(loc_c(rob0,input_area),false,34).
+holds(loc_c(rob0,intermediate_area),false,34).
+holds(loc_c(p3,input_area),false,34).
+holds(loc_c(p3,intermediate_area),false,34).
+holds(loc_c(b8,input_area),false,34).
+holds(loc_c(b8,intermediate_area),false,34).
+holds(loc_c(b9,input_area),false,34).
+holds(loc_c(b9,intermediate_area),false,34).
+holds(loc_c(p1,input_area),false,34).
+holds(loc_c(p1,intermediate_area),false,34).
+holds(loc_c(p2,assembly_area),false,34).
+holds(loc_c(p2,intermediate_area),false,34).
+holds(loc_c(b7,input_area),false,34).
+holds(loc_c(b7,intermediate_area),false,34).
+holds(loc_c(b4,input_area),false,34).
+holds(loc_c(b4,intermediate_area),false,34).
 fits_into_c(b4,b7).
 fits_into_c(b9,b4).
 fits_into_c(b4,b8).
