@@ -1,6 +1,6 @@
 import copy
 from typing import List, Dict, Tuple
-from beam_assembly.beam_assembly_parser import Beam, BeamAssembly, BeamComponent
+from beam_assembly.beam_assembly_parser import Beam, BeamAssembly, BeamComponent, ElementType
 import numpy as np
 import re
 import logging
@@ -73,6 +73,10 @@ def calculate_approach(
     target_component, target_component_pose = get_target_connection(beam_assembly,beam_to_insert, insertion_end)
     # insertion axis should be target part x axis for square insertion
     insertion_axis = target_component_pose[:3,0]
+
+    # FIXME: fix this for IN_F insertion
+    if target_component.type.value == ElementType.IN_F.value:
+        insertion_axis *= -1
     if cap:
         # insertion axis should be target part -x axis for cap insertion
         insertion_axis = -target_component_pose[:3,0]
