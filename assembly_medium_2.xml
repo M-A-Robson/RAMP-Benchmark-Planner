@@ -1,9 +1,10 @@
 <?xml version="1.0"?>
-<!-- This is an easy assembly with 3 connections - looks like a rectangle -->
+<!-- This is medium assembly 2 -->
 <assembly>
     <component beam="b7" base="True"/>
     <component beam="b4" />
     <component beam="b5" />
+    <component beam="b6" />
     <component beam="b8" flipped="True"/>
     <connection name="C1">
         <element component="b4" joint="b4j1" />
@@ -20,5 +21,13 @@
     <connection name="C4">
         <element component="b5" joint="b5j3" />
         <element component="b8" joint="b8j5" />
+    </connection>
+    <connection name="C5">
+        <element component="b6" joint="b6j1" />
+        <element component="b7" joint="b7j2" />
+    </connection>
+    <connection name="C6">
+        <element component="b6" joint="b6j3" />
+        <element component="b8" joint="b8j4" />
     </connection>
 </assembly>

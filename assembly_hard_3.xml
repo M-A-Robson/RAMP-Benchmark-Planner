@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<!-- This is hard assembly 3 -->
+<assembly>
+    <component beam="b7" base="True"/>
+    <component beam="b1" />
+    <component beam="b5" />
+    <component beam="b6" />
+    <component beam="b8" flipped="True"/>
+    <connection name="C1">
+        <element component="b7" joint="b7j2" />
+        <element component="b6" joint="b6j2" />
+    </connection>
+    <connection name="C2">
+        <element component="b7" joint="b7j3" />
+        <element component="b1" joint="b1j1" />
+    </connection>
+    <connection name="C3">
+        <element component="b6" joint="b6j2" />
+        <element component="b8" joint="b8j2" />
+    </connection>
+    <connection name="C4">
+        <element component="b8" joint="b8j4" />
+        <element component="b1" joint="b1j2" />
+    </connection>
+    <connection name="C5">
+        <element component="b5" joint="b5j2" />
+        <element component="b1" joint="b1j3" />
+    </connection>
+</assembly>
