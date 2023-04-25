@@ -1,6 +1,9 @@
-# MTC ORI Collaboration 2022
+# RAMP Benchmark Planner 2023
 
-## Beam Assembly Benchmark
+A collaboration between the Manufacturing Technology Centre and Oxford Robotics Institute.
+For more information please see the project website: https://sites.google.com/oxfordrobotics.institute/ramp
+
+## Planning Module for the RAMP Assembly Benchmark
 
 ### 1. Installation
 
