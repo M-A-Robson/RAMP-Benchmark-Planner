@@ -2,6 +2,8 @@
 <!-- This is an easy assembly with 3 connections - looks like a rectangle -->
 <assembly>
     <component beam="b7" base="True"/>
+    <component beam="b1" />
+    <component beam="b2" />
     <component beam="b4" />
     <component beam="b5" />
     <component beam="b8" flipped="True"/>

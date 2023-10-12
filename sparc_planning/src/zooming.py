@@ -161,7 +161,7 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DH:ActionLangSysDesc, 
                 # add fine res object to set
                 relevant_fine_objects.add(obs[1])
 
-    logging.debug(f'Relevant objects (fine resolution): {relevant_fine_objects}')
+    logging.info(f'Relevant objects (fine resolution): {relevant_fine_objects}')
 
     # STEP 2: extract relevant fine system description DLRT
     sorts_DLRT = set()
@@ -208,62 +208,75 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DH:ActionLangSysDesc, 
     logging.debug(f'Relevant Sorts (fine res): {[s.name for s in sorts_DLRT]}')
 
     if location_restriction:
-        # concept here is that we only care about relevant assembly locaitons, i.e. if we are inserting pin1,
-        # we dont care about the locations for assembling beam15 which would otherwise be identified as locations
-        # within the assembly area in the default zooming operation.
-        #todo test impact on planning speed.
-        target_locations,refined_target_locs = [],[]
-        approach_locations,refined_approach_locs = [],[]
-        prerot_locations,refined_prerot_locs = [],[]
-        through_locations,refined_through_locs = [],[]
-        # grab instances of relevant sorts
-        relevant_things = []
-        for sort in sorts_DLRT:
-            # thing is a super sort with subsorts containing handlable objects
-            if sort.name == 'thing':
-                for subsort in sort.subsorts:
-                    relevant_things += subsort.instances
-            if sort.name == 'target_locations':
-                target_locations = sort.instances
-            if sort.name == 'approach_locations':
-                approach_locations = sort.instances
-            if sort.name == 'prerot_location':
-                prerot_locations = sort.instances
-            if sort.name == 'through_location':
-                through_locations = sort.instances
-        # temporarily remove locations from relevant_fine_objects
-        assembly_locations = list(target_locations) + list(approach_locations) + list(prerot_locations) + list(through_locations)
-        relevant_fine_objects = relevant_fine_objects - {*assembly_locations}
-        # for each thing
-        for thing in relevant_things:
-            # check for relevant locations
-            for target_loc in target_locations:
-                if f'assem_target_loc({thing}, {target_loc}).' in DLR.domain_setup:
-                    refined_target_locs.append(target_loc)
-            for approach_loc in approach_locations:
-                if f'assem_approach_loc({thing}, {approach_loc}).' in DLR.domain_setup:
-                    refined_approach_locs.append(approach_loc)
-            for pr_loc in prerot_locations:
-                if f'beam_prerotate_loc({thing}, {pr_loc}).' in DLR.domain_setup:
-                    refined_prerot_locs.append(pr_loc)
-            for th_loc in through_locations:
-                if f'beam_through_loc({thing}, {th_loc}).' in DLR.domain_setup:
-                    refined_through_locs.append(th_loc)
-        # update sort instances of DLRT
-        for sort in sorts_DLRT:
-            if sort.name == 'target_locations':
-                sort.instances = refined_target_locs
-            if sort.name == 'approach_locations':
-                sort.instances = refined_approach_locs
-            if sort.name == 'prerot_location':
-                sort.instances = refined_prerot_locs
-            if sort.name == 'through_location':
-                sort.instances = refined_through_locs
-        # update relevant_fine_objects to put back good locations
-        refined_assembly_locations = refined_target_locs + refined_approach_locs + refined_prerot_locs + refined_through_locs
-        relevant_fine_objects = relevant_fine_objects.union({*refined_assembly_locations})
-        logging.debug(f'Relevant objects (post location reduction): {relevant_fine_objects}')
-    
+        # only perform location pruning if the robot is holding an object
+        holding = False
+        for state_fluent in s1flu:
+            if type(re.search(r'(?<!-)\bholds\(in_hand_c\(([a-z0-9]+),([a-z0-9]+)\),true', state_fluent)) != type(None):
+                logging.info('detected that robot is holding an object')
+                holding = True
+        
+        if holding:
+            logging.info('performing location pruning')
+            # concept here is that we only care about relevant assembly locaitons, i.e. if we are inserting pin1,
+            # we dont care about the locations for assembling beam15 which would otherwise be identified as locations
+            # within the assembly area in the default zooming operation.
+            #todo test impact on planning speed.
+            target_locations,refined_target_locs = [],[]
+            approach_locations,refined_approach_locs = [],[]
+            prerot_locations,refined_prerot_locs = [],[]
+            through_locations,refined_through_locs = [],[]
+            # grab instances of relevant sorts
+            relevant_things = []
+            for sort in sorts_DLRT:
+                # thing is a super sort with subsorts containing handlable objects
+                if sort.name == 'thing':
+                    for subsort in sort.subsorts:
+                        relevant_things += subsort.instances
+                if sort.name == 'target_location':
+                    target_locations = sort.instances
+                if sort.name == 'approach_location':
+                    approach_locations = sort.instances
+                if sort.name == 'prerot_location':
+                    prerot_locations = sort.instances
+                if sort.name == 'through_location':
+                    through_locations = sort.instances
+            logging.debug(f'relevant ~things~: {relevant_things}')
+            # temporarily remove locations from relevant_fine_objects
+            assembly_locations = list(target_locations) + list(approach_locations) + list(prerot_locations) + list(through_locations)
+            logging.debug(f'found assembly locations: {assembly_locations}')
+            relevant_fine_objects = relevant_fine_objects - {*assembly_locations}
+            logging.debug(f'relevant objects with locations removed: {relevant_fine_objects}')
+            # for each thing
+            for thing in relevant_things:
+                # check for relevant locations
+                for target_loc in target_locations:
+                    if f'assem_target_loc({thing},{target_loc}).' in DLR.domain_setup:
+                        refined_target_locs.append(target_loc)
+                for approach_loc in approach_locations:
+                    if f'assem_approach_loc({thing},{approach_loc}).' in DLR.domain_setup:
+                        refined_approach_locs.append(approach_loc)
+                for pr_loc in prerot_locations:
+                    if f'beam_prerotate_loc({thing},{pr_loc}).' in DLR.domain_setup:
+                        refined_prerot_locs.append(pr_loc)
+                for th_loc in through_locations:
+                    if f'beam_through_loc({thing},{th_loc}).' in DLR.domain_setup:
+                        refined_through_locs.append(th_loc)
+            logging.debug(f'refined approach locs: {refined_approach_locs}')
+            # update sort instances of DLRT
+            for sort in sorts_DLRT:
+                if sort.name == 'target_location':
+                    sort.instances = refined_target_locs
+                if sort.name == 'approach_location':
+                    sort.instances = refined_approach_locs
+                if sort.name == 'prerot_location':
+                    sort.instances = refined_prerot_locs
+                if sort.name == 'through_location':
+                    sort.instances = refined_through_locs
+            # update relevant_fine_objects to put back good locations
+            refined_assembly_locations = refined_target_locs + refined_approach_locs + refined_prerot_locs + refined_through_locs
+            relevant_fine_objects = relevant_fine_objects.union({*refined_assembly_locations})
+            logging.info(f'Relevant objects (post location reduction): {relevant_fine_objects}')
+        
     # The domain attributes and actions of ΣLR(T) are those of ΣLR restricted to the basic sorts of ΣLR(T)
     sorts_DLRT_names = [s.name for s in sorts_DLRT]
 
@@ -302,8 +315,12 @@ def zoom(s1:SparcState, s2:SparcState, aH:ActionInstance, DH:ActionLangSysDesc, 
                                     logging.debug(f'Action: {act.action_def.name} Not possible as sort:{execut.conditions[_c].object1} not in scope')
                                     logging.debug(f'Relevant Exec Cond: {execut.to_sparc()}')
                         else:
-                            for sort_ in  execut.conditions[_c].sorts:
-                                if not sort.name in sorts_DLRT_names:
+                            for sort_ in execut.conditions[_c].sorts:
+                                if not sort_.name in sorts_DLRT_names:
+                                    logging.debug(f'Action: {act.action_def.name} Not possible as sort:{sort.name} not in scope')
+                                    logging.debug(f'Relevant Exec Cond: {execut.to_sparc()}')
+                                    logging.debug(f'Exec Cond sorts: {[s.to_sparc() for s in execut.conditions[_c].sorts]}')
+                                    logging.debug(f'sorts in domain: {sorts_DLRT_names}')
                                     action_possible = False
                 if not remove_exec_cond: 
                     exec_conditions.append(execut)

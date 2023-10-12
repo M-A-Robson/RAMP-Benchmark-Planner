@@ -22,7 +22,7 @@
     </beam>
     <beam name="b2">
         <joint name="b2j1" marker="3" part="in-m-end">
-            <child link="b2j1"/>
+            <child link="b2l1"/>
         </joint>
         <link name="b2l1" length="120">
             <parent joint="b2j1"/>

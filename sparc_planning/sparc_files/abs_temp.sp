@@ -3,11 +3,11 @@
 %% Author: MARK ROBSON 2023
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#const numSteps = 3.
+#const numSteps = 4.
 #const startStep = 0.
 
 sorts
-#beam = {b7,b4,b9,b8}.
+#beam = {b7,b4,b5,b8,b3}.
 #action = assemble(#beam).
 #boolean = {true, false}.
 #outcome = {true, false, undet}.
@@ -27,24 +27,37 @@ goal(#step).
 something_happened(#step).
 
 rules
+% a beam is capped by two other beams if it fits into both of those beams
 is_capped_by(B1,B2,B3):- fits_into_c(B1,B2), fits_into_c(B1,B3), B2!=B3.
 is_capped_by(B1,B2,B3):- is_capped_by(B1,B3,B2).
+% CWA on capping
 -is_capped_by(B1,B2,B3):- not is_capped_by(B1,B2,B3).
+% beams are supported if a beam they fit into is already in the assembly
 holds(supported_c(B1), true, I) :- holds(in_assembly_c(B2), true, I), fits_into_c(B1,B2).
 holds(supported_c(B1), true, I) :- holds(in_assembly_c(B2), true, I), fits_into_c(B2,B1).
+% beams cant connect to themselves
 -fits_into_c(B1,B2):- B1=B2.
 -fits_through_c(B1,B2):- B1=B2.
+% cannot have multiple relationships between beams
 -fits_through_c(B1,B2):- fits_into_c(B1,B2).
 -fits_into_c(B1,B2):- fits_through_c(B1,B2).
+% fits are one way relationships
 -fits_into_c(B1,B2):- fits_into_c(B2,B1).
 -fits_through_c(B1,B2):- fits_through_c(B2,B1).
+% CWA on fit relationships
 -fits_into_c(B1,B2):- not fits_into_c(B1,B2).
 
+% causal law on assemble action puts beams into the assembly
 holds(in_assembly_c(B), true, I+1) :- occurs(assemble(B), I).
+% cannot assemble a beam if beams which would cap its ends are already in the assembly
 -occurs(assemble(B1), I) :- holds(in_assembly_c(B2), true, I), holds(in_assembly_c(B3), true, I), is_capped_by(B1,B2,B3), B2!=B3.
+% cannot assemble a beam if a beam which needs to be passed through it already is in the assembly
 -occurs(assemble(B1), I) :- holds(in_assembly_c(B2), true, I), fits_through_c(B2,B1).
+% cannot assemble a capping beam untill all of the beams it caps are in the assembly
 -occurs(assemble(B1), I) :- not holds(in_assembly_c(B2), true, I), holds(in_assembly_c(B3), true, I), is_capped_by(B2,B1,B3), B2!=B3.
+% cannot assemble a beam already in the assembly
 -occurs(assemble(B), I) :- holds(in_assembly_c(B), true, I).
+% cannot assemble beams that are not yet supported
 -occurs(assemble(B), I) :- not holds(supported_c(B), true, I).
 
 % planning rules
@@ -59,11 +72,14 @@ something_happened(I) :- occurs(A, I).
 :- not goal(I), not something_happened(I).
 
 % goal definition
-goal(I) :- holds(in_assembly_c(b4), true, I) , holds(in_assembly_c(b9), true, I) , holds(in_assembly_c(b8), true, I).
+goal(I) :- holds(in_assembly_c(b4), true, I) , holds(in_assembly_c(b5), true, I) , holds(in_assembly_c(b8), true, I) , holds(in_assembly_c(b3), true, I).
 
 % domain setup
 holds(in_assembly_c(b7),true,0).
 fits_into_c(b4,b7).
-fits_into_c(b9,b4).
+fits_into_c(b5,b7).
 fits_into_c(b4,b8).
+fits_into_c(b5,b8).
+fits_into_c(b3,b7).
+fits_into_c(b3,b8).
 base(b7).

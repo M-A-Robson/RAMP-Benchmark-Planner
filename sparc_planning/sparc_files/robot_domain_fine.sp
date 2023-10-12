@@ -19,7 +19,7 @@ sorts
 #action = putdown(#robot,#thing) + move_f(#robot,#place_f) + pick_up(#robot,#thing) + change_grasp_mode(#robot,#grasp_mode).
 #boolean = {true, false}.
 #outcome = {true, false, undet}.
-#inertial_fluent = in_hand(#robot, #thing)+ loc_c(#object, #place_c)+ loc_f(#object, #place_f)+ current_grasp_mode(#robot, #grasp_mode)+ on(#thing, #thing)+ clear(#thing).
+#inertial_fluent = in_hand(#robot, #thing)+ loc_c(#object, #place_c)+ loc_f(#object, #place_f)+ current_grasp_mode(#robot, #grasp_mode).
 #step = 0..numSteps.
 #fluent = #inertial_fluent.
 
@@ -34,30 +34,34 @@ goal(#step).
 something_happened(#step).
 
 rules
+% only place_f can be a component of place_c
 -component(C1,P1):- #place_c(P1), not #place_f(C1).
+% next_to relationships in fine level link coarse locations
 next_to_f(C1,C2):- next_to_f(C2,C1).
--next_to_c(P1,P2):- not next_to_c(P1,P2).
+next_to_c(C1,C2):- next_to_c(C2,C1).
+-next_to_f(P1,P2):- not next_to_f(P1,P2).
 -next_to_c(P1,P2):- not next_to_c(P1,P2).
 next_to_c(P1,P2):- next_to_f(C1,C2), component(P1,C1), component(P2,C2).
+% location bridge axiom
 holds(loc_c(T,P), true, I) :- holds(loc_f(T,C), true, I), component(P,C).
+% can only hold one fine location at a time
 holds(loc_f(T,P1), false, I) :- holds(loc_f(T,P2), true, I), P1!=P2.
 holds(current_grasp_mode(R,G1), false, I) :- holds(current_grasp_mode(R,G2), true, I), G1!=G2.
-holds(loc_f(T1,P1), true, I) :- holds(loc_f(T2,P1), true, I), holds(on(T1,T2), true, I).
 holds(in_hand(R,T), false, I+1) :- occurs(putdown(R,T), I).
-holds(on(T1,T2), true, I+1) :- occurs(putdown(R,T1), I), holds(loc_f(R,P1), true, I), holds(loc_f(T1,P2), true, I), P1=P2, holds(clear(T2), true, I).
 -occurs(putdown(R,T), I) :- not holds(in_hand(R,T), true, I).
+% moving now affects fine location fluent
 holds(loc_f(R,P), true, I+1) :- occurs(move_f(R,P), I).
 holds(loc_f(T,P), true, I+1) :- occurs(move_f(R,P), I), holds(in_hand(R,T), true, I).
 -occurs(move_f(R,P1), I) :- holds(loc_f(R,P2), true, I), P1=P2.
 -occurs(move_f(R,P1), I) :- holds(loc_f(R,P2), true, I), not next_to_f(P1,P2).
 holds(in_hand(R,T), true, I+1) :- occurs(pick_up(R,T), I).
-holds(on(T1,T2), false, I+1) :- occurs(pick_up(R,T1), I).
-holds(clear(T2), true, I+1) :- occurs(pick_up(R,T1), I), holds(on(T1,T2), true, I).
--occurs(pick_up(R,T1), I) :- not holds(clear(T1), true, I).
+-occurs(pick_up(R,T1), I) :- holds(in_hand(R,T2), true, I), #thing(T2).
 -occurs(pick_up(R,T1), I) :- holds(loc_f(T1,P1), true, I), holds(loc_f(T2,P2), true, I), P1!=P2.
 holds(current_grasp_mode(R,G), true, I+1) :- occurs(change_grasp_mode(R,G), I).
 -occurs(change_grasp_mode(R,G1), I) :- holds(current_grasp_mode(R,G1), true, I), G1=G2.
 -occurs(change_grasp_mode(R,G), I) :- holds(in_hand(R,T), true, I).
+
+% planning rules
 -holds(F, V2, I) :- holds(F, V1, I), V1!=V2.
 holds(F, Y, I+1) :- #inertial_fluent(F), holds(F, Y, I), not -holds(F, Y, I+1), I < numSteps.
 -occurs(A,I) :- not occurs(A,I).
@@ -67,8 +71,22 @@ occurs(A, I) | -occurs(A, I) :- not goal(I).
 -occurs(A2, I) :- occurs(A1, I), A1 != A2.
 something_happened(I) :- occurs(A, I).
 :- not goal(I), not something_happened(I).
-goal(I) :- holds(in_hand(rob0,textbook), false, I).
-holds(in_hand(rob0,textbook), true, 0).
 
-display
-occurs.
+% no specified goal
+goal(I) :- .
+
+% domain set up links locations and defines components
+next_to_f(above_intermediate_area, above_assembly_area).
+next_to_f(above_intermediate_area, above_input_area).
+component(c1, intermediate_area).
+next_to_f(c1, above_intermediate_area).
+component(c2, intermediate_area).
+next_to_f(c2, above_intermediate_area).
+component(c3, intermediate_area).
+next_to_f(c3, above_intermediate_area).
+component(c4, intermediate_area).
+next_to_f(c4, above_intermediate_area).
+component(c5, intermediate_area).
+next_to_f(c5, above_intermediate_area).
+component(c6, intermediate_area).
+next_to_f(c6, above_intermediate_area).

@@ -724,6 +724,7 @@ def load_assembly_xml(beams:list[Beam],assem_xml_file:str) -> BeamAssembly:
         connection_beams = []
         connection_joints = []
         for element in connection.findall('element'):
+            logging.info(f"parsing connecting element: {element.get('joint')}")
             b = find_beam_by_name(element.get('component'), beams)
             connection_beams.append(b)
             connection_joints.append(b.get_component_by_name(element.get('joint')))
@@ -868,9 +869,9 @@ def main():
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 
-    beams = load_beam_xml("example_beamset_latest.xml")
+    beams = load_beam_xml("/home/mark/MTC_ORI_Collab/example_beamset_latest.xml")
     # assem = load_assembly_xml(beams, "assembly_latest.xml")
-    assem = load_assembly_xml(beams, "assembly_easy_2.xml")
+    assem = load_assembly_xml(beams, "/home/mark/MTC_ORI_Collab/assembly_mid_3.xml")
     
     scene = assem.create_display_scene(colorise=True)
     scene.show()

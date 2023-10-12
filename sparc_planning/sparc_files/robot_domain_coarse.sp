@@ -4,20 +4,20 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 #const numSteps = 1.
+#const startStep = 0.
 
 sorts
 #robot = {rob0}.
-#thing = {}.
+#thing = {dummy_thing}.
 #object = #robot + #thing.
 #place = {input_area,intermediate_area,assembly_area}.
 #grasp_mode = {dexterous,vacuum}.
-#action = putdown(#robot,#thing), move(#robot,#place), pick_up(#robot,#thing), change_grasp_mode(#robot,#grasp_mode).
+#action = putdown(#robot,#thing) + move(#robot,#place) + pick_up(#robot,#thing) + change_grasp_mode(#robot,#grasp_mode).
 #boolean = {true, false}.
 #outcome = {true, false, undet}.
-#defined_fluent = {}.
 #inertial_fluent = in_hand(#robot, #thing)+ location(#object, #place)+ current_grasp_mode(#robot, #grasp_mode)+ on(#thing, #thing)+ clear(#thing).
-#fluent = #inertial_fluent + #defined_fluent.
-#step = 0..numSteps.
+#step = startStep..numSteps.
+#fluent = #inertial_fluent.
 
 predicates
 next_to(#place, #place).
@@ -33,20 +33,27 @@ next_to(P1,P2):- next_to(P2,P1).
 holds(location(T,P1), false, I) :- holds(location(T,P2), true, I), P1!=P2.
 holds(current_grasp_mode(R,G1), false, I) :- holds(current_grasp_mode(R,G2), true, I), G1!=G2.
 holds(location(T1,P1), true, I) :- holds(location(T2,P1), true, I), holds(on(T1,T2), true, I).
+
 holds(in_hand(R,T), false, I+1) :- occurs(putdown(R,T), I).
 holds(on(T1,T2), true, I+1) :- occurs(putdown(R,T1), I), holds(location(R,P1), true, I), holds(location(T1,P2), true, I), P1=P2, holds(clear(T2), true, I).
 -occurs(putdown(R,T), I) :- not holds(in_hand(R,T), true, I).
+
 holds(location(R,P), true, I+1) :- occurs(move(R,P), I).
 holds(location(T,P), true, I+1) :- occurs(move(R,P), I), holds(in_hand(R,T), true, I).
 -occurs(move(R,P1), I) :- holds(location(R,P2), true, I), P1=P2.
 -occurs(move(R,P1), I) :- holds(location(R,P2), true, I), not next_to(P1,P2).
+
 holds(in_hand(R,T), true, I+1) :- occurs(pick_up(R,T), I).
 holds(on(T1,T2), false, I+1) :- occurs(pick_up(R,T1), I).
 holds(clear(T2), true, I+1) :- occurs(pick_up(R,T1), I), holds(on(T1,T2), true, I).
--occurs(pick_up(R,T1), I) :- holds(clear(T1), true, I).
+-occurs(pick_up(R,T1), I) :- not holds(clear(T1), true, I).
+-occurs(pick_up(R,T1), I) :- holds(location(T1,P1), true, I), holds(location(T2,P2), true, I), P1!=P2.
+
 holds(current_grasp_mode(R,G), true, I+1) :- occurs(change_grasp_mode(R,G), I).
 -occurs(change_grasp_mode(R,G1), I) :- holds(current_grasp_mode(R,G1), true, I), G1=G2.
 -occurs(change_grasp_mode(R,G), I) :- holds(in_hand(R,T), true, I).
+
+% planning rules
 -holds(F, V2, I) :- holds(F, V1, I), V1!=V2.
 holds(F, Y, I+1) :- #inertial_fluent(F), holds(F, Y, I), not -holds(F, Y, I+1), I < numSteps.
 -occurs(A,I) :- not occurs(A,I).
@@ -56,7 +63,11 @@ occurs(A, I) | -occurs(A, I) :- not goal(I).
 -occurs(A2, I) :- occurs(A1, I), A1 != A2.
 something_happened(I) :- occurs(A, I).
 :- not goal(I), not something_happened(I).
-goal(I) :- holds(in_hand(rob0,textbook), false, I).
+
+% goal definition
+goal(I) :- holds(Func(name='in_hand', sorts=[<al_structures.BasicSort object at 0x7f4251d37fd0>, <al_structures.BasicSort object at 0x7f4251d37f70>], func_type=<FuncType.FLUENT: 1>)(rob0,textbook), false, I).
+
+% domain setup
 holds(in_hand(rob0,textbook), true, 0).
 
 display

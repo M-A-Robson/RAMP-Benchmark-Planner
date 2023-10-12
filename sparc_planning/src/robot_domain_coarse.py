@@ -1,6 +1,6 @@
 from al_structures import *
 
-SAVE_DIR = '/home/local/MTC_ORI_Collab/sparc_planning/sparc_files/'
+SAVE_DIR = '/home/mark/MTC_ORI_Collab/sparc_planning/sparc_files/'
 
 #!sorts
 robot = BasicSort('robot', ['rob0'])
@@ -236,4 +236,6 @@ ALD = ActionLangSysDesc(
         goal_description=[GoalDefinition(in_hand,['rob0','textbook'],False)],
         display_hints=['occurs.'], planning_steps=1)
 
+
+ALD.save_AL(SAVE_DIR+'robot_domain_coarse.txt')
 ALD.to_sparc_program().save(SAVE_DIR+'robot_domain_coarse.sp')

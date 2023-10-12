@@ -1188,6 +1188,14 @@ def generate_fine_beam_domain():
         action_object_instance_names=['R','B1','B2','P1'],
         fluent_object_instance_names=['B1','B2','P1']
     )
+    f_c1a = CausalLaw(
+        action=fasten,
+        fluent_affected=fastened_f,
+        fluent_value=True,
+        object_instances={'R':robot,'B1':joint,'B2':joint,'P1':pin},
+        action_object_instance_names=['R','B1','B2','P1'],
+        fluent_object_instance_names=['B2','B1','P1']
+    )
     ## causes movment to target_location for pin
     f_c2 = CausalLaw(
         action=fasten,
@@ -1216,6 +1224,25 @@ def generate_fine_beam_domain():
         object_instances={'R':robot,'BP1':joint,'BP2':joint,'P1':pin},
         action_object_instance_names=['R','BP1','BP2','P1'],
         fluent_object_instance_names=['B1','B2'],
+        conditions=[component,component],
+        condition_object_instance_names=[['B1','BP1'],['B2','BP2']],
+        condition_values=[True,True]
+    )
+    f_c5 = CausalLaw(
+        action=fasten,
+        fluent_affected=can_fasten_f,
+        fluent_value=False,
+        object_instances={'R':robot,'B1':joint,'B2':joint,'P1':pin},
+        action_object_instance_names=['R','B1','B2','P1'],
+        fluent_object_instance_names=['B2','B1']
+    )
+    f_c6 = CausalLaw(
+        action=fasten,
+        fluent_affected=can_fasten_c,
+        fluent_value=False,
+        object_instances={'R':robot,'BP1':joint,'BP2':joint,'P1':pin},
+        action_object_instance_names=['R','BP1','BP2','P1'],
+        fluent_object_instance_names=['B2','B1'],
         conditions=[component,component],
         condition_object_instance_names=[['B1','BP1'],['B2','BP2']],
         condition_values=[True,True]
@@ -1290,7 +1317,7 @@ def generate_fine_beam_domain():
         condition_values=[True],
         condition_object_instance_names=[['BP1','BP2','P2']],
     )
-    fasten_action = Action(fasten,[f_c1,f_c2,f_c3,f_c4],
+    fasten_action = Action(fasten,[f_c1,f_c1a,f_c2,f_c3,f_c4,f_c5,f_c6],
                         [f_ec1,f_ec2,f_ec3,f_ec4,f_ec5,f_ec6,f_ec7,f_ec8])
 
 

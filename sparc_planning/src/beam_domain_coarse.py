@@ -513,6 +513,15 @@ def generate_coarse_beam_domain():
         action_object_instance_names=['R','B1','B2','P1'],
         fluent_object_instance_names=['B1','B2'],
     )
+     # causes can_fasten = False state
+    f_c3 = CausalLaw(
+        action=fasten,
+        fluent_affected=can_fasten,
+        fluent_value=False,
+        object_instances={'R':robot,'B1':beam,'B2':beam,'P1':pin},
+        action_object_instance_names=['R','B1','B2','P1'],
+        fluent_object_instance_names=['B2','B1'],
+    )
     ## parts must be assembled to be fastened
     f_ec1 = ExecutabilityCondition(
         action= fasten,
@@ -594,7 +603,7 @@ def generate_coarse_beam_domain():
         condition_object_instance_names=[['B3','B4','P1']]
     )
     fasten_action = Action(fasten,
-                           [f_c1,f_c2],
+                           [f_c1,f_c2, f_c3],
                            [f_ec1,f_ec2,f_ec3,f_ec4,f_ec5,f_ec6, f_ec7, f_ec8, f_ec9])
 
     push = ActionDefinition('push',[robot,beam])
